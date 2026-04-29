@@ -1,0 +1,22 @@
+{
+  "name": "no-repo",
+  "version": "1.0.0",
+  "description": "This project is an **experimental operator workspace** for interacting with AI Engine **without cloning or reading the codebase directly**.",
+  "type": "module",
+  "main": "scripts/ping.mjs",
+  "scripts": {
+    "check": "node --check ./scripts/ping.mjs",
+    "check:experiment": "node --check ./scripts/run-experiment.mjs && node --check ./scripts/shape-evidence.mjs",
+    "evidence:shape": "node ./scripts/shape-evidence.mjs",
+    "experiment": "node ./scripts/run-experiment.mjs",
+    "ping": "node ./scripts/ping.mjs",
+    "smoke": "npm run ping",
+    "test": "npm run check && npm run check:experiment"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@bpmsoftwaresolutions/ai-engine-client": "^1.1.0"
+  }
+}
