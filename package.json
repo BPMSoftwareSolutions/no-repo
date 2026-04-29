@@ -6,9 +6,11 @@
   "main": "scripts/ping.mjs",
   "scripts": {
     "check": "node --check ./scripts/ping.mjs",
-    "check:experiment": "node --check ./scripts/run-experiment.mjs && node --check ./scripts/shape-evidence.mjs",
+    "check:experiment": "node --check ./scripts/run-experiment.mjs && node --check ./scripts/shape-evidence.mjs && node --check ./scripts/run-loga-experiments.mjs && node --check ./scripts/shape-loga-evidence.mjs",
     "evidence:shape": "node ./scripts/shape-evidence.mjs",
     "experiment": "node ./scripts/run-experiment.mjs",
+    "loga:evidence:shape": "node ./scripts/shape-loga-evidence.mjs",
+    "loga:experiment": "node ./scripts/run-loga-experiments.mjs",
     "ping": "node ./scripts/ping.mjs",
     "smoke": "npm run ping",
     "test": "npm run check && npm run check:experiment"

@@ -94,6 +94,14 @@ The discovery test intentionally records the current missing surface:
 }
 ```
 
+Run the LOGA markdown projection experiment harness:
+
+```bash
+npm run loga:experiment
+```
+
+By default this inspects the Operator Home Dashboard projection. Use `AI_ENGINE_LOGA_EXPERIMENTS=all` to probe the full set and record which projection surfaces are runnable, blocked by missing identifiers, or unsupported.
+
 ## Basic Usage
 
 ```js

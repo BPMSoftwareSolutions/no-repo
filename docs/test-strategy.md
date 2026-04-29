@@ -12,7 +12,9 @@ The current harness is a governed execution simulation. It emits contract, execu
 2. Run the executable experiment with `npm run experiment`.
 3. Review the JSON report printed by the experiment script, especially `contract`, `wrapper_execution_record`, `operation_log`, and `gate_ready_evidence_payload`.
 4. Shape a dry-run gate-ready payload with `npm run evidence:shape`.
-5. Submit evidence only through a governed AI Engine endpoint when an implementation item or session contract exists.
+5. Run LOGA projection experiments with `npm run loga:experiment`.
+6. Shape LOGA evidence without service calls with `npm run loga:evidence:shape`.
+7. Submit evidence only through a governed AI Engine endpoint when an implementation item or session contract exists.
 
 ## Required Environment
 
@@ -59,6 +61,14 @@ Local scripts may inspect API responses and shape artifacts, but they must not b
 - Intent-based search is missing from the current SDK boundary.
 - Repo-less discovery remains constrained without symbol foreknowledge.
 - Governed execution submission is not connected by this harness yet.
+
+## LOGA Projection Findings To Preserve
+
+- `getLogaOperatorHomeProjection()` gives Experiment 1 a real governed projection read surface.
+- Project, workflow, and evidence projections require scoped identifiers before they can be inspected.
+- Approval review, diagnostic failure, live monitor, comparison, human workspace, and polished demo projections are not exposed as direct SDK surfaces yet.
+- Prompt-to-LOGA markdown contract generation is missing as a governed endpoint.
+- Experiment 1 is ready for upstream implementation: patch the AI Engine `operator.home` projection emitter, then rerun `npm test` and `npm run loga:experiment` here.
 
 Expected missing-surface finding:
 
