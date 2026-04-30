@@ -921,11 +921,27 @@ body:has(main.projection-workspace) > main {
   background: transparent;
 }
 
+.tree-summary.is-active-branch {
+  color: var(--text);
+}
+
+.tree-summary.is-active-branch .tree-label {
+  color: var(--text-strong);
+}
+
+.tree-summary.is-active-branch .tree-arrow {
+  color: var(--accent-2);
+}
+
 .tree-summary.is-current {
   color: var(--text-strong);
 }
 
 .tree-summary.is-current .tree-label {
+  color: var(--accent-2);
+}
+
+.tree-summary.is-current .tree-meta {
   color: var(--accent-2);
 }
 
