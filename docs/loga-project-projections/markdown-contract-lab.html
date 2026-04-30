@@ -1,0 +1,1077 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Markdown Contract Lab</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090d14;
+      --panel: #0f1724;
+      --panel-2: #121c2b;
+      --ink: #e6edf7;
+      --strong: #f8fbff;
+      --muted: #8b98aa;
+      --line: #263244;
+      --accent: #7c9cff;
+      --accent-soft: rgba(124, 156, 255, 0.14);
+      --green: #3fb950;
+      --amber: #d29922;
+      --red: #f87171;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(124, 156, 255, 0.18), transparent 32rem),
+        linear-gradient(180deg, #0d1117, var(--bg));
+      color: var(--ink);
+      font: 14px/1.55 var(--sans);
+    }
+
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    .lab-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .lab-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      padding: 24px clamp(18px, 3vw, 34px) 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(9, 13, 20, 0.78);
+      backdrop-filter: blur(20px);
+    }
+
+    .eyebrow {
+      margin: 0 0 4px;
+      color: var(--muted);
+      font: 11px/1.2 var(--mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--strong);
+      font-size: clamp(34px, 4vw, 58px);
+      line-height: 0.95;
+      letter-spacing: -0.07em;
+    }
+
+    .lab-header p:last-child {
+      max-width: 76ch;
+      margin: 10px 0 0;
+      color: var(--muted);
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    button {
+      min-height: 34px;
+      padding: 6px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(17, 28, 43, 0.72);
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    button:hover,
+    button.primary {
+      border-color: rgba(124, 156, 255, 0.6);
+      background: var(--accent-soft);
+      color: var(--strong);
+    }
+
+    .lab-grid {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(360px, 0.42fr) minmax(0, 1fr);
+    }
+
+    .editor-pane,
+    .preview-pane {
+      min-width: 0;
+      min-height: 0;
+      padding: clamp(16px, 2.2vw, 28px);
+    }
+
+    .editor-pane {
+      display: grid;
+      grid-template-rows: auto minmax(340px, 1fr) auto;
+      gap: 14px;
+      border-right: 1px solid var(--line);
+      background: rgba(9, 13, 20, 0.52);
+    }
+
+    .pane-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0;
+    }
+
+    .pane-title h2 {
+      margin: 0;
+      color: var(--strong);
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+
+    .pane-title span,
+    .diagnostics li {
+      color: var(--muted);
+      font: 12px/1.4 var(--mono);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 100%;
+      resize: none;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(3, 7, 18, 0.72);
+      color: #dbeafe;
+      outline: none;
+      font: 13px/1.55 var(--mono);
+      tab-size: 2;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124, 156, 255, 0.18);
+    }
+
+    .editor-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .diagnostics {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .diagnostics li {
+      padding: 5px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(17, 28, 43, 0.58);
+    }
+
+    .diagnostics .pass { color: var(--green); }
+    .diagnostics .warn { color: var(--amber); }
+    .diagnostics .fail { color: var(--red); }
+
+    .preview-pane {
+      overflow: auto;
+    }
+
+    .preview-frame {
+      max-width: 1040px;
+      margin-inline: auto;
+    }
+
+    .projection-meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 24px;
+      color: var(--muted);
+      font: 12px/1.4 var(--mono);
+    }
+
+    .question-first {
+      margin: 0 0 24px;
+      padding: 22px 0 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .question-first .label {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font: 12px/1.4 var(--mono);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .question-first h2 {
+      margin: 0;
+      color: var(--strong);
+      font-size: clamp(28px, 4vw, 52px);
+      line-height: 1;
+      letter-spacing: -0.06em;
+    }
+
+    .question-first .answer {
+      max-width: 78ch;
+      margin: 12px 0 0;
+      color: var(--ink);
+      font-size: 17px;
+    }
+
+    .rendered {
+      padding-bottom: 72px;
+    }
+
+    .rendered h1,
+    .rendered h2,
+    .rendered h3 {
+      color: var(--strong);
+      line-height: 1.05;
+      letter-spacing: -0.045em;
+    }
+
+    .rendered h1 {
+      margin: 8px 0 8px;
+      font-size: clamp(42px, 6vw, 76px);
+    }
+
+    .rendered h2 {
+      margin: 34px 0 14px;
+      font-size: clamp(24px, 3vw, 34px);
+    }
+
+    .rendered h3 {
+      margin: 0 0 6px;
+      font-size: 20px;
+    }
+
+    .rendered p {
+      max-width: 78ch;
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+
+    .rendered a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .loga-breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 8px 0 20px;
+      color: var(--muted);
+      font: 12px/1.4 var(--mono);
+    }
+
+    .loga-breadcrumb a::after {
+      margin-left: 6px;
+      color: var(--muted);
+      content: "/";
+    }
+
+    .loga-toolbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1.2fr) minmax(260px, 0.9fr);
+      gap: 14px;
+      align-items: start;
+      margin: 18px 0 30px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(15, 23, 36, 0.72);
+    }
+
+    .loga-toolbar__zone {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .loga-toolbar__zone--left {
+      justify-content: flex-start;
+    }
+
+    .loga-toolbar__zone--center {
+      justify-content: center;
+    }
+
+    .loga-toolbar__zone--right {
+      justify-content: flex-end;
+    }
+
+    .loga-toolbar__context {
+      display: grid;
+      gap: 2px;
+      min-width: 180px;
+    }
+
+    .loga-toolbar__context strong {
+      color: var(--strong);
+      font-size: 18px;
+      letter-spacing: -0.04em;
+    }
+
+    .loga-toolbar__status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 10px;
+      border: 1px solid rgba(63, 185, 80, 0.32);
+      border-radius: 999px;
+      background: rgba(63, 185, 80, 0.08);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .loga-control {
+      display: grid;
+      gap: 4px;
+      min-width: 180px;
+    }
+
+    .loga-control label {
+      color: var(--muted);
+      font: 11px/1.3 var(--mono);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .loga-control input,
+    .loga-control select {
+      width: 100%;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(3, 7, 18, 0.62);
+      color: var(--ink);
+    }
+
+    .loga-control--search {
+      min-width: min(100%, 320px);
+      flex: 1 1 320px;
+    }
+
+    .loga-chip-group,
+    .loga-action-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .loga-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 10px;
+      border: 1px solid rgba(124, 156, 255, 0.42);
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--strong);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .loga-focus,
+    .loga-surface {
+      margin: 22px 0 30px;
+      padding: 22px 0 24px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .loga-focus .question {
+      margin: 0 0 10px;
+      color: var(--strong);
+      font-size: clamp(25px, 3.2vw, 42px);
+      font-weight: 850;
+      letter-spacing: -0.055em;
+      line-height: 1;
+    }
+
+    .loga-focus .answer,
+    .loga-surface .answer {
+      max-width: 84ch;
+      color: var(--ink);
+      font-size: 17px;
+    }
+
+    .loga-panel {
+      margin: 18px 0 24px;
+      padding-left: 18px;
+      border-left: 2px solid var(--accent);
+    }
+
+    .loga-nav,
+    .loga-actions,
+    .loga-list {
+      display: grid;
+      gap: 8px;
+      margin: 18px 0 28px;
+    }
+
+    .loga-nav,
+    .loga-actions {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .loga-list-item,
+    .loga-nav a,
+    .loga-actions button {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(17, 28, 43, 0.32);
+      color: var(--ink);
+    }
+
+    .loga-nav a,
+    .loga-actions button {
+      border-radius: 999px;
+    }
+
+    .loga-list-item span {
+      color: var(--muted);
+      font: 12px/1.4 var(--mono);
+    }
+
+    dl {
+      display: grid;
+      grid-template-columns: minmax(130px, 0.28fr) 1fr;
+      margin: 14px 0 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    dt,
+    dd {
+      margin: 0;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    dt {
+      color: var(--muted);
+      font: 11px/1.4 var(--mono);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    dd {
+      color: var(--ink);
+    }
+
+    details {
+      margin: 18px 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(17, 28, 43, 0.42);
+      overflow: hidden;
+    }
+
+    summary {
+      padding: 12px 14px;
+      color: var(--strong);
+      font: 12px/1.4 var(--mono);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    pre {
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      background: rgba(3, 7, 18, 0.8);
+      color: #dbeafe;
+      font: 12px/1.5 var(--mono);
+    }
+
+    .primitive {
+      border-left-color: var(--amber);
+    }
+
+    .empty-state {
+      display: grid;
+      place-items: center;
+      min-height: 45vh;
+      border: 1px dashed var(--line);
+      border-radius: 20px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 980px) {
+      .lab-header,
+      .lab-grid,
+      .loga-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .loga-toolbar__zone {
+        justify-content: flex-start;
+      }
+
+      .header-actions {
+        justify-content: flex-start;
+      }
+
+      .editor-pane {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="lab-shell">
+    <header class="lab-header">
+      <div>
+        <p class="eyebrow">Standalone UX experiment</p>
+        <h1>Markdown Contract Lab</h1>
+        <p>Paste AI Engine LOGA markdown and render it locally. No backend. No app integration. No route assumptions.</p>
+      </div>
+      <div class="header-actions">
+        <button id="load-sample" type="button">Load Sample</button>
+        <button id="clear-input" type="button">Clear</button>
+        <button id="render-now" class="primary" type="button">Render</button>
+      </div>
+    </header>
+
+    <main class="lab-grid">
+      <section class="editor-pane" aria-labelledby="editor-title">
+        <div class="pane-title">
+          <h2 id="editor-title">Paste Markdown</h2>
+          <span id="input-count">0 chars</span>
+        </div>
+
+        <textarea id="markdown-input" spellcheck="false" aria-label="Markdown input"></textarea>
+
+        <div class="editor-footer">
+          <label class="checkbox">
+            <input id="auto-render" type="checkbox" checked>
+            Auto render
+          </label>
+          <ul id="diagnostics" class="diagnostics" aria-label="Contract diagnostics"></ul>
+        </div>
+      </section>
+
+      <section class="preview-pane" aria-labelledby="preview-title">
+        <div class="preview-frame">
+          <div class="pane-title">
+            <h2 id="preview-title">Rendered Contract UI</h2>
+            <span id="block-count">0 blocks</span>
+          </div>
+          <div id="projection-meta" class="projection-meta"></div>
+          <article id="rendered-output" class="rendered">
+            <div class="empty-state">
+              <div>
+                <strong>Paste markdown to begin.</strong>
+                <p>The renderer will convert LOGA primitives into UI blocks.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const SAMPLE = `---
+loga_contract: "ai-engine-ui/v1"
+ux_contract: "loga-ux/v1"
+surface_type: "operator.projection_graph"
+projection_type: "operator.project_roadmap"
+source_truth: "sql"
+primary_question: "What should I care about right now?"
+---
+
+::toolbar id="projection-graph-toolbar"
+
+  ::toolbar_zone name="context" align="left"
+  eyebrow: "Inspection Workspace"
+  title: "Projection Graph"
+  status: "Agent active · Turn 3"
+  ::
+
+  ::toolbar_zone name="navigation" align="left"
+  ::nav variant="pills"
+  - Roadmap
+  - Promotions
+  - Workflows
+  - CI/CD
+  - Memory
+  - Evidence
+  ::
+  ::
+
+  ::toolbar_zone name="search" align="center"
+  ::search
+  placeholder: "Search projects, tasks, evidence..."
+  ::
+  ::
+
+  ::toolbar_zone name="scope" align="center"
+  ::select label="Scope"
+  value: "AI Engine"
+  options:
+    - AI Engine
+    - LOGA
+    - All Workspaces
+  ::
+
+  ::select label="Mode"
+  value: "Focus"
+  options:
+    - Focus
+    - Review
+    - Diagnostic
+    - Evidence
+  ::
+  ::
+
+  ::toolbar_zone name="filters" align="right"
+  ::filter_group variant="chips"
+  - Needs Attention
+  - Blocked Only
+  - High Priority
+  ::
+  ::
+
+  ::toolbar_zone name="actions" align="right"
+  ::action_group
+  - Expand Focus
+  - Collapse All
+  - Refresh Branch
+  ::
+  ::
+
+::
+
+# Projection Graph
+
+::roadmap
+- key: "generic-wrapper-runtime"
+  title: "Establish Generic Wrapper Runtime"
+  status: "in progress"
+  priority: "high"
+  progress: "2 / 4 tasks complete"
+
+- key: "sdk-refactor-surfaces"
+  title: "Promote Refactor SDK Surfaces"
+  status: "not started"
+  priority: "high"
+  progress: "0 / 5 tasks complete"
+::
+
+::next_actions
+- Open current roadmap item
+- Review refactor candidate
+- Approve decomposition contract
+::`;
+
+    const input = document.getElementById('markdown-input');
+    const output = document.getElementById('rendered-output');
+    const meta = document.getElementById('projection-meta');
+    const diagnostics = document.getElementById('diagnostics');
+    const inputCount = document.getElementById('input-count');
+    const blockCount = document.getElementById('block-count');
+    const autoRender = document.getElementById('auto-render');
+
+    document.getElementById('load-sample').addEventListener('click', () => {
+      input.value = SAMPLE;
+      render();
+    });
+
+    document.getElementById('clear-input').addEventListener('click', () => {
+      input.value = '';
+      render();
+      input.focus();
+    });
+
+    document.getElementById('render-now').addEventListener('click', render);
+    input.addEventListener('input', () => {
+      updateCounts();
+      if (autoRender.checked) render();
+    });
+
+    input.value = SAMPLE;
+    render();
+
+    function render() {
+      try {
+        const markdown = input.value;
+        updateCounts();
+        const parsed = parseMarkdown(markdown);
+        meta.innerHTML = renderMeta(parsed.frontmatter);
+        diagnostics.innerHTML = renderDiagnostics(markdown, parsed).join('');
+        blockCount.textContent = `${parsed.blocks.length} block${parsed.blocks.length === 1 ? '' : 's'} · rendered ${new Date().toLocaleTimeString()}`;
+        output.innerHTML = markdown.trim()
+          ? renderMarkdown(parsed.body)
+          : '<div class="empty-state"><div><strong>Paste markdown to begin.</strong><p>The renderer will convert LOGA primitives into UI blocks.</p></div></div>';
+      } catch (error) {
+        diagnostics.innerHTML = `<li class="fail">Render error: ${escapeHtml(error.message)}</li>`;
+        output.innerHTML = `<div class="empty-state"><div><strong>Render failed.</strong><p>${escapeHtml(error.message)}</p></div></div>`;
+      }
+    }
+
+    function updateCounts() {
+      inputCount.textContent = `${input.value.length} chars`;
+    }
+
+    function parseMarkdown(markdown) {
+      const frontmatterMatch = markdown.match(/^---\n([\s\S]*?)\n---\n?/);
+      const frontmatter = {};
+      let body = markdown;
+      if (frontmatterMatch) {
+        body = markdown.slice(frontmatterMatch[0].length);
+        frontmatterMatch[1].split(/\r?\n/).forEach((line) => {
+          const match = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
+          if (match) frontmatter[match[1]] = match[2];
+        });
+      }
+      const blocks = [...body.matchAll(/^:{2,3}([a-zA-Z0-9_]+)(?:\s+[^\n]*)?$/gm)].map((match) => match[1]);
+      return { frontmatter, body, blocks };
+    }
+
+    function renderMeta(frontmatter) {
+      const entries = [
+        ['contract', frontmatter.loga_contract],
+        ['projection', frontmatter.projection_type],
+        ['truth', frontmatter.source_truth],
+        ['question', frontmatter.primary_question],
+      ].filter(([, value]) => value);
+
+      return entries.map(([key, value]) => `<span>${escapeHtml(key)}: ${escapeHtml(value)}</span>`).join('');
+    }
+
+    function renderDiagnostics(markdown, parsed) {
+      const checks = [
+        ['contract', Boolean(parsed.frontmatter.loga_contract), 'Missing loga_contract'],
+        ['ux contract', Boolean(parsed.frontmatter.ux_contract), 'Missing ux_contract'],
+        ['source truth', parsed.frontmatter.source_truth === 'sql', 'source_truth is not sql'],
+        ['toolbar', parsed.blocks.includes('toolbar'), 'Missing ::toolbar'],
+        ['zones', markdown.includes('::toolbar_zone'), 'Missing ::toolbar_zone'],
+        ['actions', parsed.blocks.includes('next_actions') || markdown.includes('::action_group'), 'Missing actions block'],
+        ['raw leak', !/::[a-zA-Z0-9_]+[^\n]*\n[\s\S]*?\n(?!:{2,3})$/.test(markdown), 'Possible unclosed primitive'],
+      ];
+
+      return checks.map(([label, pass, fail]) => {
+        const cls = pass ? 'pass' : 'warn';
+        return `<li class="${cls}">${escapeHtml(pass ? label : fail)}</li>`;
+      });
+    }
+
+    function renderMarkdown(markdown) {
+      const lines = markdown.split(/\r?\n/);
+      const html = [];
+
+      for (let index = 0; index < lines.length; index++) {
+        const line = lines[index];
+        const directive = line.trim().match(/^:{2,3}([a-zA-Z0-9_]+)(?:\s+(.*))?$/);
+        if (directive) {
+          const collected = collectBlock(lines, index);
+          html.push(renderBlock(directive[1], collected.lines, parseAttrs(directive[2])));
+          index = collected.endIndex;
+          continue;
+        }
+
+        if (/^###\s+/.test(line)) html.push(`<h3>${inline(line.replace(/^###\s+/, ''))}</h3>`);
+        else if (/^##\s+/.test(line)) html.push(`<h2>${inline(line.replace(/^##\s+/, ''))}</h2>`);
+        else if (/^#\s+/.test(line)) html.push(`<h1>${inline(line.replace(/^#\s+/, ''))}</h1>`);
+        else if (/^>\s+/.test(line)) html.push(`<blockquote>${inline(line.replace(/^>\s+/, ''))}</blockquote>`);
+        else if (!line.trim()) html.push('');
+        else html.push(`<p>${inline(line)}</p>`);
+      }
+
+      return html.join('');
+    }
+
+    function collectBlock(lines, startIndex) {
+      const blockLines = [];
+      let depth = 1;
+      let index = startIndex + 1;
+
+      for (; index < lines.length; index++) {
+        const current = lines[index] || '';
+        const trimmed = current.trim();
+        const isStart = /^:{2,3}[a-zA-Z0-9_]+(?:\s+.*)?$/.test(trimmed);
+        const isEnd = /^:{2,3}$/.test(trimmed);
+
+        if (isStart) {
+          depth++;
+          blockLines.push(current);
+          continue;
+        }
+
+        if (isEnd) {
+          depth--;
+          if (depth === 0) break;
+          blockLines.push(current);
+          continue;
+        }
+
+        blockLines.push(current);
+      }
+
+      return { lines: blockLines, endIndex: index };
+    }
+
+    function collectChildBlocks(lines) {
+      const blocks = [];
+      for (let index = 0; index < lines.length; index++) {
+        const directive = (lines[index] || '').trim().match(/^:{2,3}([a-zA-Z0-9_]+)(?:\s+(.*))?$/);
+        if (!directive) continue;
+        const collected = collectBlock(lines, index);
+        blocks.push({
+          name: directive[1],
+          attrs: parseAttrs(directive[2]),
+          lines: collected.lines,
+        });
+        index = collected.endIndex;
+      }
+      return blocks;
+    }
+
+    function renderBlock(name, lines, attrs) {
+      const block = name.toLowerCase();
+      const records = parseRecords(lines);
+      const keyValues = parseKeyValues(lines);
+      const value = (key) => keyValues[key] || attrs[key] || '';
+
+      if (block === 'toolbar') {
+        const zones = collectChildBlocks(lines).filter((child) => child.name.toLowerCase() === 'toolbar_zone');
+        const grouped = {
+          left: zones.filter((zone) => (zone.attrs.align || 'left') === 'left'),
+          center: zones.filter((zone) => zone.attrs.align === 'center'),
+          right: zones.filter((zone) => zone.attrs.align === 'right'),
+        };
+        return `
+          <header class="loga-toolbar" data-toolbar-id="${escapeHtml(attrs.id || '')}">
+            <section class="loga-toolbar__zone loga-toolbar__zone--left">${grouped.left.map(renderToolbarZone).join('')}</section>
+            <section class="loga-toolbar__zone loga-toolbar__zone--center">${grouped.center.map(renderToolbarZone).join('')}</section>
+            <section class="loga-toolbar__zone loga-toolbar__zone--right">${grouped.right.map(renderToolbarZone).join('')}</section>
+          </header>
+        `;
+      }
+
+      if (block === 'toolbar_zone') {
+        return `<section class="loga-toolbar__zone loga-toolbar__zone--${escapeHtml(attrs.align || 'left')}">${renderToolbarZone({ lines, attrs })}</section>`;
+      }
+
+      if (block === 'search') {
+        return `<div class="loga-control loga-control--search"><label>Search</label><input type="search" value="" placeholder="${escapeHtml(value('placeholder') || 'Search...')}"></div>`;
+      }
+
+      if (block === 'select') {
+        const options = parseOptions(lines);
+        const selected = value('value');
+        return `
+          <div class="loga-control">
+            <label>${escapeHtml(value('label') || 'Select')}</label>
+            <select>${options.map((option) => `<option${option === selected ? ' selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select>
+          </div>
+        `;
+      }
+
+      if (block === 'filter_group') {
+        return `<div class="loga-chip-group">${records.map((record) => `<span class="loga-chip">${escapeHtml(record.label || 'Filter')}</span>`).join('')}</div>`;
+      }
+
+      if (block === 'action_group') {
+        return `<div class="loga-action-group">${records.map((record) => `<button type="button">${escapeHtml(record.label || 'Action')}</button>`).join('')}</div>`;
+      }
+
+      if (block === 'status') {
+        return `<span class="loga-toolbar__status">${escapeHtml(value('label') || value('status') || lines.join(' ').trim())}</span>`;
+      }
+
+      if (block === 'breadcrumb') {
+        return `<nav class="loga-breadcrumb" aria-label="Projection path">${records.map((record) => `<a href="#">${escapeHtml(record.label || record.projection_type || 'Open')}</a>`).join('')}</nav>`;
+      }
+
+      if (block === 'surface') {
+        const type = value('type') || 'surface';
+        const priority = value('priority');
+        const summary = value('summary');
+        return `<section class="loga-surface"><p class="eyebrow">${escapeHtml([type.replaceAll('_', ' '), priority].filter(Boolean).join(' / '))}</p>${summary ? `<p class="answer">${inline(summary)}</p>` : ''}</section>`;
+      }
+
+      if (block === 'focus') {
+        return `<section class="loga-focus"><p class="eyebrow">${escapeHtml(value('status') || 'focus')}</p><p class="question">${inline(value('question') || 'What matters?')}</p><p class="answer">${inline(value('answer'))}</p></section>`;
+      }
+
+      if (block === 'panel') {
+        const title = value('title');
+        const summary = value('summary');
+        const detailEntries = Object.entries(keyValues).filter(([key]) => !['title', 'summary'].includes(key));
+        return `<section class="loga-panel">${title ? `<h3>${inline(title)}</h3>` : ''}${summary ? `<p>${inline(summary)}</p>` : ''}${detailEntries.length ? renderDl(Object.fromEntries(detailEntries)) : ''}</section>`;
+      }
+
+      if (['roadmap', 'task_list', 'run_list', 'promotion_list', 'cicd_list', 'turn_list', 'memory', 'checklist'].includes(block)) {
+        return `<section class="loga-list ${escapeHtml(block)}">${records.map((record) => {
+          const title = record.title || record.label || record.text || record.reminder || record.key || (record.turn ? `Turn ${record.turn}` : 'Untitled');
+          const status = [record.status, record.priority, record.progress, record.stage, record.tier].filter(Boolean).join(' | ');
+          return `<a class="loga-list-item" href="#"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(status)}</span></a>`;
+        }).join('')}</section>`;
+      }
+
+      if (block === 'nav') {
+        return `<nav class="loga-nav">${records.map((record) => `<a href="#">${escapeHtml(record.label || record.projection_type || 'Open')}</a>`).join('')}</nav>`;
+      }
+
+      if (block === 'next_actions') {
+        return `<section class="loga-actions">${lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => `<button type="button">${escapeHtml(line.slice(2))}</button>`).join('')}</section>`;
+      }
+
+      if (block === 'evidence_drawer') {
+        return `<details><summary>Evidence Drawer</summary><pre><code>${escapeHtml(lines.join('\n'))}</code></pre></details>`;
+      }
+
+      return `<section class="loga-panel primitive"><h3>${escapeHtml(name.replaceAll('_', ' '))}</h3>${renderDl(attrs)}${lines.some((line) => line.trim()) ? `<p>${inline(lines.join(' '))}</p>` : ''}</section>`;
+    }
+
+    function parseAttrs(raw = '') {
+      const attrs = {};
+      const pattern = /([a-zA-Z0-9_-]+)=("([^"]*)"|'([^']*)'|([^\s]+))/g;
+      let match;
+      while ((match = pattern.exec(raw))) attrs[match[1]] = match[3] ?? match[4] ?? match[5] ?? '';
+      return attrs;
+    }
+
+    function renderToolbarZone(zone) {
+      const values = parseKeyValues(zone.lines);
+      const children = collectChildBlocks(zone.lines);
+      const context = [];
+      if (values.eyebrow || values.title || values.status) {
+        context.push(`
+          <div class="loga-toolbar__context">
+            ${values.eyebrow ? `<span class="eyebrow">${escapeHtml(values.eyebrow)}</span>` : ''}
+            ${values.title ? `<strong>${escapeHtml(values.title)}</strong>` : ''}
+            ${values.status ? `<span class="loga-toolbar__status">${escapeHtml(values.status)}</span>` : ''}
+          </div>
+        `);
+      }
+
+      return [
+        ...context,
+        ...children.map((child) => renderBlock(child.name, child.lines, child.attrs)),
+      ].join('');
+    }
+
+    function parseOptions(lines) {
+      const options = [];
+      let inOptions = false;
+      lines.forEach((raw) => {
+        const line = raw.trim();
+        if (/^options:\s*$/.test(line)) {
+          inOptions = true;
+          return;
+        }
+        if (inOptions && line.startsWith('- ')) {
+          options.push(line.slice(2).replace(/^"|"$/g, ''));
+          return;
+        }
+        if (inOptions && line && !line.startsWith('- ')) inOptions = false;
+      });
+      return options.length ? options : ['Option'];
+    }
+
+    function parseKeyValues(lines) {
+      const values = {};
+      lines.forEach((raw) => {
+        const line = raw.trim();
+        const match = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
+        if (match) values[match[1]] = match[2];
+      });
+      return values;
+    }
+
+    function parseRecords(lines) {
+      const records = [];
+      let current = null;
+      lines.forEach((raw) => {
+        const line = raw.trim();
+        if (line.startsWith('- ')) {
+          if (current) records.push(current);
+          current = {};
+          const inlineValue = line.slice(2);
+          const pair = inlineValue.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
+          if (pair) current[pair[1]] = pair[2];
+          else current.label = inlineValue;
+          return;
+        }
+        const pair = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
+        if (pair) {
+          if (!current) current = {};
+          current[pair[1]] = pair[2];
+        }
+      });
+      if (current) records.push(current);
+      return records;
+    }
+
+    function renderDl(values) {
+      const entries = Object.entries(values).filter(([, value]) => value);
+      if (!entries.length) return '';
+      return `<dl>${entries.map(([key, value]) => `<dt>${escapeHtml(key.replaceAll('_', ' '))}</dt><dd>${inline(value)}</dd>`).join('')}</dl>`;
+    }
+
+    function inline(value) {
+      return escapeHtml(value)
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="#">$1</a>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>
