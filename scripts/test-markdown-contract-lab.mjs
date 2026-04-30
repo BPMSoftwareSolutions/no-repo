@@ -90,7 +90,9 @@ assert.equal(linearResult.diagnostics.fatal.length, 0, 'linear toolbar must not 
 assert.match(linearResult.html, /data-toolbar-variant="linear"/, 'linear toolbar must declare its layout mode');
 assert.match(linearResult.html, /<header class="loga-toolbar loga-toolbar--linear"/, 'linear toolbar must render inline toolbar shell');
 assert.doesNotMatch(linearResult.html, /<section class="loga-toolbar__zone/, 'linear toolbar zones must not render as section/card wrappers');
-assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--left"/, 'linear toolbar zones must render as flex item divs');
+assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--left"[^>]*data-align="left"/, 'linear left zones must render as fixed flex item divs');
+assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--center"[^>]*data-align="center"/, 'linear center zones must expose center alignment for flexible search');
+assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--right"[^>]*data-align="right"/, 'linear right zones must render as fixed flex item divs');
 assert.match(linearResult.html, /Roadmap/, 'linear toolbar must render nav content');
 assert.match(linearResult.html, /Refresh/, 'linear toolbar must render action content');
 
@@ -110,6 +112,14 @@ assert.match(blockResult.html, /<header class="loga-toolbar loga-toolbar--stacke
 assert.match(blockResult.html, /Roadmap/, 'supported toolbar must render nav labels');
 
 const browserRuntime = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/browser.js', 'utf8');
+const labHtml = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab.html', 'utf8');
+
+assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?flex-wrap:\s*nowrap;/, 'linear toolbar CSS must prevent wrapping');
+assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-x:\s*auto;/, 'linear toolbar CSS must scroll horizontally when needed');
+assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="center"\]\s*{[\s\S]*?flex:\s*1 1 240px;/, 'linear center zone must be the flexible toolbar segment');
+assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="left"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="right"\]\s*{[\s\S]*?flex:\s*0 0 auto;/, 'linear left and right zones must stay fixed');
+assert.match(labHtml, /\.loga-toolbar--linear \.loga-control--search\s*{[\s\S]*?width:\s*100%;/, 'linear search control must fill the flexible center zone');
+
 const elements = {};
 const documentStub = {
   getElementById(id) {

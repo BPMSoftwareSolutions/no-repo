@@ -108,7 +108,7 @@ function renderToolbarZone(zone, renderBlock) {
 function renderToolbarZoneShell(zone, html, tagName) {
   const align = zone.attrs.align || 'left';
   const name = zone.attrs.name || align;
-  return `<${tagName} class="loga-toolbar__zone loga-toolbar__zone--${escapeHtml(align)}" data-zone-name="${escapeHtml(name)}">${html}</${tagName}>`;
+  return `<${tagName} class="loga-toolbar__zone loga-toolbar__zone--${escapeHtml(align)}" data-zone-name="${escapeHtml(name)}" data-align="${escapeHtml(align)}">${html}</${tagName}>`;
 }
 
 function renderToolbarContext(values) {

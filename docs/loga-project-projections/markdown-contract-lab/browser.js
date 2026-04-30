@@ -339,7 +339,7 @@ primary_question: "What should I care about right now?"
   function renderToolbarZoneShell(zone, html) {
     const align = zone.attrs.align || 'left';
     const name = zone.attrs.name || align;
-    return `<div class="loga-toolbar__zone loga-toolbar__zone--${escapeHtml(align)}" data-zone-name="${escapeHtml(name)}">${html}</div>`;
+    return `<div class="loga-toolbar__zone loga-toolbar__zone--${escapeHtml(align)}" data-zone-name="${escapeHtml(name)}" data-align="${escapeHtml(align)}">${html}</div>`;
   }
 
   function renderToolbarContext(values) {
