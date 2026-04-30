@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Candidate Analysis</title>
+  <link rel="stylesheet" href="../css/global-inspection.css">
+</head>
+<body>
+  <header>
+    <p><a href="index.html">Inspection Home</a> / <a href="refactor-workbench.html">Refactor Workbench</a></p>
+    <h1>Candidate Analysis: workflow_run_service.py</h1>
+    <p><strong>Primary question:</strong> Can this file be safely split by responsibility?</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="responsibility-map-title">
+      <h2 id="responsibility-map-title">Responsibility Map</h2>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Responsibility</th>
+            <th scope="col">Source Evidence</th>
+            <th scope="col">Proposed Destination</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Run lifecycle</td>
+            <td>start and complete workflow symbols</td>
+            <td>workflow_run_lifecycle.py</td>
+            <td>Mapped</td>
+          </tr>
+          <tr>
+            <td>Checkpoint evidence</td>
+            <td>derive evidence symbols</td>
+            <td>workflow_checkpoint_evidence.py</td>
+            <td>Mapped</td>
+          </tr>
+          <tr>
+            <td>Gate transition</td>
+            <td>gate decision symbols</td>
+            <td>workflow_gate_transition.py</td>
+            <td>Mapped</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section aria-labelledby="scope-title">
+      <h2 id="scope-title">Scope Evaluation</h2>
+      <ul>
+        <li>Responsibilities mapped: yes</li>
+        <li>Destination modules proposed: yes</li>
+        <li>Retained role: thin coordinator / facade</li>
+        <li>Blast radius: needs review</li>
+      </ul>
+    </section>
+
+    <p><a href="remediation-proposals.html">Draft governed remediation proposal</a></p>
+  </main>
+
+</body>
+</html>

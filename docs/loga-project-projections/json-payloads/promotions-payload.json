@@ -1,0 +1,35 @@
+{
+  "projection_type": "operator.promotions",
+  "primary_question": "What capabilities were promoted?",
+  "recent_promotions": [
+    {
+      "key": "startWork",
+      "status": "promoted",
+      "impact": "Unified governed entrypoint"
+    },
+    {
+      "key": "completeTurn",
+      "status": "promoted",
+      "impact": "Governed execution exit and DB turn persistence"
+    },
+    {
+      "key": "runCharter",
+      "status": "promoted",
+      "impact": "Charter execution through a single workflow primitive"
+    }
+  ],
+  "needed_promotions": [
+    {
+      "key": "createRefactorImplementationPlan",
+      "status": "needed"
+    },
+    {
+      "key": "executeGovernedRefactorWrapper",
+      "status": "needed"
+    },
+    {
+      "key": "getRefactorWrapperEvidence",
+      "status": "needed"
+    }
+  ]
+}

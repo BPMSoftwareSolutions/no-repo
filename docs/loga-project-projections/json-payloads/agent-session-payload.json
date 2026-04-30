@@ -1,0 +1,40 @@
+{
+  "projection_type": "operator.agent_session",
+  "primary_question": "What is the agent doing?",
+  "current_turn": {
+    "objective": "Advance generic wrapper runtime implementation",
+    "status": "active",
+    "claim_id": "claim-refactor-runtime-example"
+  },
+  "memory": [
+    {
+      "tier": "required",
+      "reminder": "Wrapper is the only mutation authority"
+    },
+    {
+      "tier": "required",
+      "reminder": "No local scripts as authority"
+    },
+    {
+      "tier": "required",
+      "reminder": "SQL is durable truth; markdown is projection"
+    }
+  ],
+  "turns": [
+    {
+      "turn": 1,
+      "action": "startWork",
+      "status": "persisted"
+    },
+    {
+      "turn": 2,
+      "action": "analyze candidate",
+      "status": "persisted"
+    },
+    {
+      "turn": 3,
+      "action": "propose contract",
+      "status": "pending"
+    }
+  ]
+}

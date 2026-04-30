@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Symbol Detail</title>
+  <link rel="stylesheet" href="../css/global-inspection.css">
+</head>
+<body>
+  <header>
+    <p><a href="index.html">Inspection Home</a> / <a href="code-intelligence.html">Code Intelligence</a></p>
+    <h1>Symbol Detail: derive_checkpoint_evidence</h1>
+    <p><strong>Primary question:</strong> Why does this symbol matter?</p>
+  </header>
+
+  <main>
+    <dl>
+      <dt>Defined in</dt>
+      <dd>src/orchestration/workflow_run_service.py</dd>
+      <dt>Responsibility</dt>
+      <dd>Checkpoint-derived evidence assembly</dd>
+      <dt>Risk</dt>
+      <dd>Mixes lifecycle, evidence, and persistence concerns</dd>
+    </dl>
+
+    <section aria-labelledby="relationships-title">
+      <h2 id="relationships-title">Relationships</h2>
+
+      <h3>Calls</h3>
+      <ul>
+        <li>load_checkpoint</li>
+        <li>build_evidence_packet</li>
+        <li>persist_gate_evidence</li>
+      </ul>
+
+      <h3>Called By</h3>
+      <ul>
+        <li>complete_workflow_step</li>
+        <li>advance_workflow_gate</li>
+      </ul>
+    </section>
+
+    <nav aria-label="Symbol actions">
+      <ul>
+        <li><a href="file-detail.html">Open containing file</a></li>
+        <li><a href="patterns.html">Map to anti-pattern</a></li>
+        <li><a href="refactor-workbench.html">Use in refactor analysis</a></li>
+      </ul>
+    </nav>
+  </main>
+  <script src="../js/symbol-detail.js" type="module"></script>
+</body>
+</html>

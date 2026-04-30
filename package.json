@@ -12,6 +12,7 @@
     "loga:evidence:shape": "node ./scripts/shape-loga-evidence.mjs",
     "loga:experiment": "node ./scripts/run-loga-experiments.mjs",
     "ping": "node ./scripts/ping.mjs",
+    "start": "node server.mjs",
     "smoke": "npm run ping",
     "test": "npm run check && npm run check:experiment"
   },
@@ -19,6 +20,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@bpmsoftwaresolutions/ai-engine-client": "^1.1.0"
+    "@bpmsoftwaresolutions/ai-engine-client": "^1.1.6"
   }
 }

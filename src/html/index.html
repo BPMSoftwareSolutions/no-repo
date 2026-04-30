@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Engine Inspection</title>
+  <link rel="stylesheet" href="../css/global-inspection.css">
+</head>
+<body>
+  <header>
+    <span class="eyebrow">Inspection workspace</span>
+    <h1>AI Engine Inspection</h1>
+    <p class="lead">What do you want to inspect?</p>
+  </header>
+
+  <main class="home-layout">
+    <section class="modes" aria-labelledby="primary-question">
+      <h2 id="primary-question" style="position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);">What needs inspection?</h2>
+
+      <a class="mode" href="projections.html">
+        <h3 class="title">Projection Inspection</h3>
+        <p class="desc">Validate whether projected markdown pages answer a human question clearly.</p>
+      </a>
+
+      <a class="mode" href="repositories.html">
+        <h3 class="title">Repository Explorer</h3>
+        <p class="desc">Move from repository to project area to file without raw repo dumps.</p>
+      </a>
+
+      <a class="mode" href="code-intelligence.html">
+        <h3 class="title">Code Intelligence</h3>
+        <p class="desc">Inspect symbols, relationships, and bounded code context.</p>
+      </a>
+
+      <a class="mode" href="patterns.html">
+        <h3 class="title">Patterns and Anti-patterns</h3>
+        <p class="desc">Review governed architecture patterns, anti-pattern rules, and mapped findings.</p>
+      </a>
+
+      <a class="mode" href="refactor-workbench.html">
+        <h3 class="title">Refactor Candidate Workbench</h3>
+        <p class="desc">Rank candidate files and evaluate responsibility splits.</p>
+      </a>
+
+      <a class="mode" href="remediation-proposals.html">
+        <h3 class="title">Governed Remediation Proposals</h3>
+        <p class="desc">Draft proposals for wrapper-governed execution, not direct patches.</p>
+      </a>
+
+      <p class="hint">Tab to move &middot; Enter to open &middot; Esc to return</p>
+    </section>
+
+    <aside class="side-panel" aria-labelledby="attention-title">
+      <h2 id="attention-title">Recent attention</h2>
+      <ul>
+        <li>God-file candidates found: <span class="count">7</span></li>
+        <li>Open anti-pattern findings: <span class="count">12</span></li>
+        <li>Proposals awaiting review: <span class="count">3</span></li>
+      </ul>
+    </aside>
+  </main>
+</body>
+</html>

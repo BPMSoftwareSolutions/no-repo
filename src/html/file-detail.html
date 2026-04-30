@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>File Detail</title>
+  <link rel="stylesheet" href="../css/global-inspection.css">
+</head>
+<body>
+  <header>
+    <p><a href="index.html">Inspection Home</a> / <a href="repositories.html">Repository Explorer</a> / <a href="repository-detail.html">ai-engine</a></p>
+    <h1>File Detail: workflow_run_service.py</h1>
+    <p><strong>Primary question:</strong> What responsibility does this file currently carry?</p>
+  </header>
+
+  <main>
+    <dl>
+      <dt>LOC</dt>
+      <dd>1347</dd>
+      <dt>Symbols</dt>
+      <dd>59</dd>
+      <dt>Candidate type</dt>
+      <dd>Mixed responsibility / God-file risk</dd>
+    </dl>
+
+    <nav aria-label="File inspection pages">
+      <ul>
+        <li><a href="code-intelligence.html">Inspect symbols</a></li>
+        <li><a href="refactor-workbench.html">Analyze as refactor candidate</a></li>
+        <li><a href="patterns.html">Map anti-patterns</a></li>
+      </ul>
+    </nav>
+
+    <section aria-labelledby="responsibility-title">
+      <h2 id="responsibility-title">Responsibility Inventory</h2>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Responsibility</th>
+            <th scope="col">Evidence</th>
+            <th scope="col">Likely Destination</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Run lifecycle</td>
+            <td>start, complete, advance workflow symbols</td>
+            <td>workflow_run_lifecycle.py</td>
+          </tr>
+          <tr>
+            <td>Checkpoint evidence</td>
+            <td>derive and persist evidence symbols</td>
+            <td>workflow_checkpoint_evidence.py</td>
+          </tr>
+          <tr>
+            <td>Gate transition</td>
+            <td>gate decision and state transition symbols</td>
+            <td>workflow_gate_transition.py</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <details>
+      <summary>Content Window</summary>
+      <pre><code>Bounded source excerpt appears here.</code></pre>
+    </details>
+  </main>
+
+</body>
+</html>

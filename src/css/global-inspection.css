@@ -1,0 +1,995 @@
+/* ==========================================================================
+   AI Engine Inspection — Global Styles
+   --------------------------------------------------------------------------
+   Editorial dark surface. Markdown rhythm. Minimal chrome.
+   One narrow column, one accent, generous spacing.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #0d1117;
+  --panel: #111827;
+  --surface: rgba(17, 24, 39, 0.55);
+  --surface-hover: rgba(124, 156, 255, 0.08);
+
+  --text: #e5e7eb;
+  --text-strong: #f8fafc;
+  --muted: #8b949e;
+  --muted-2: #64748b;
+
+  --line: #273241;
+  --line-soft: rgba(148, 163, 184, 0.18);
+
+  --accent: #7c9cff;
+  --accent-2: #9db4ff;
+  --accent-soft: rgba(124, 156, 255, 0.12);
+
+  --green: #3fb950;
+  --amber: #d29922;
+  --red: #f87171;
+
+  --mono:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    monospace;
+
+  --sans:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  --max: 860px;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --focus-ring: 0 0 0 3px rgba(124, 156, 255, 0.28);
+}
+
+* { box-sizing: border-box; }
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(124, 156, 255, 0.14), transparent 34rem),
+    var(--bg);
+  color: var(--text);
+  font: 15px/1.65 var(--sans);
+}
+
+/* --------------------------------------------------------------------------
+   Page frame
+   -------------------------------------------------------------------------- */
+
+body > header,
+body > main,
+body > footer {
+  width: min(var(--max), calc(100% - 40px));
+  margin-inline: auto;
+}
+
+body > header {
+  padding-top: 56px;
+  padding-bottom: 14px;
+}
+
+body > main {
+  padding-bottom: 56px;
+}
+
+body > footer {
+  padding-bottom: 32px;
+  color: var(--muted);
+}
+
+main > section,
+main > article,
+main > aside,
+main > form,
+main > nav {
+  margin-block: 26px;
+}
+
+/* --------------------------------------------------------------------------
+   Typography
+   -------------------------------------------------------------------------- */
+
+h1, h2, h3, h4 {
+  color: var(--text-strong);
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+h1 {
+  margin: 8px 0 6px;
+  font-size: clamp(34px, 6vw, 56px);
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+h2 {
+  margin: 32px 0 12px;
+  font-size: clamp(22px, 3vw, 32px);
+  letter-spacing: -0.03em;
+}
+
+h3 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  transition: color 140ms ease;
+}
+
+h4 {
+  margin: 18px 0 6px;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+p {
+  max-width: 70ch;
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+strong { color: var(--text-strong); }
+em { color: var(--accent-2); font-style: normal; }
+
+a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+a:hover { color: var(--accent-2); }
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+/* Helpers for editorial header rhythm */
+.eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lead {
+  margin: 0 0 36px;
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.hint {
+  margin-top: 32px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+/* Breadcrumb pattern: header's first <p> when it contains a link */
+body > header > p:first-of-type:has(> a) {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+body > header > p:first-of-type:has(> a) a {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+body > header > p:first-of-type:has(> a) a:hover {
+  color: var(--accent);
+}
+
+/* Primary-question line: highlight the leading <strong> label */
+body > header > p strong {
+  color: var(--accent-2);
+}
+
+/* --------------------------------------------------------------------------
+   Navigation — quiet pill chips for action lists at the bottom of pages
+   -------------------------------------------------------------------------- */
+
+nav ul {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+}
+
+main > nav[aria-label] ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+main > nav[aria-label] a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+main > nav[aria-label] a:hover,
+main > nav[aria-label] a[aria-current="page"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+
+/* --------------------------------------------------------------------------
+   Home page — single content container, modes + attention panel sit together
+   -------------------------------------------------------------------------- */
+
+/* One container holds header + the two-column grid. Wide enough to feel
+   filled on a large monitor, tight enough that the columns stay related. */
+body:has(main.home-layout) > header,
+body:has(main.home-layout) > main {
+  width: min(1180px, calc(100% - 64px));
+  max-width: none;
+  margin-inline: auto;
+  padding-inline: 0;
+}
+
+body:has(main.home-layout) > header {
+  padding-top: 56px;
+  padding-bottom: 14px;
+}
+
+main.home-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  column-gap: 48px;
+  align-items: start;
+  margin-block: 0;
+  padding-bottom: 56px;
+}
+
+main.home-layout > .modes {
+  margin-block: 0;
+}
+
+main.home-layout > .side-panel {
+  margin-top: 30px;
+  padding-left: 18px;
+  border-left: 2px solid var(--accent);
+}
+
+main.home-layout > .side-panel h2 {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+main.home-layout > .side-panel ul {
+  padding-left: 0;
+  list-style: none;
+  margin: 0;
+}
+
+main.home-layout > .side-panel li {
+  position: relative;
+  padding: 6px 0 6px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+main.home-layout > .side-panel li::before {
+  position: absolute;
+  left: 0;
+  top: 0.78em;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  content: "";
+}
+
+.modes {
+  counter-reset: mode;
+  margin-top: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.mode {
+  counter-increment: mode;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  column-gap: 16px;
+  align-items: start;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.mode::before {
+  content: counter(mode, decimal-leading-zero);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 14px;
+  padding-top: 4px;
+}
+
+.mode > * {
+  grid-column: 2;
+  margin: 0;
+}
+
+.mode .desc {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.mode::after {
+  content: "→";
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: start;
+  padding-top: 2px;
+  color: var(--muted);
+  font-size: 20px;
+  transition: color 140ms ease, transform 140ms ease;
+}
+
+.mode:hover .title,
+.mode:focus-visible .title { color: var(--accent); }
+.mode:hover::after,
+.mode:focus-visible::after { color: var(--accent); transform: translateX(2px); }
+
+/* --------------------------------------------------------------------------
+   Section treatment — document surface, not card wall
+   -------------------------------------------------------------------------- */
+
+section,
+article,
+aside,
+form,
+details {
+  border: 0;
+  background: transparent;
+}
+
+main > section,
+main > article {
+  padding: 0;
+}
+
+/* "Recent attention" style aside — left-rule accent */
+main > aside,
+.attention {
+  margin-top: 34px;
+  padding-left: 18px;
+  border-left: 2px solid var(--accent);
+}
+
+main > aside h2,
+.attention h2 {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+hr,
+.markdown-rule {
+  width: 100%;
+  margin: 28px 0;
+  border: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line), transparent);
+}
+
+/* --------------------------------------------------------------------------
+   Lists
+   -------------------------------------------------------------------------- */
+
+ul,
+ol {
+  padding-left: 1.25rem;
+}
+
+li {
+  color: var(--text);
+}
+
+li + li {
+  margin-top: 4px;
+}
+
+/* Bullet-dot style for aside lists */
+main > aside ul,
+.attention ul,
+section[aria-labelledby*="attention"] ul,
+section[aria-labelledby*="Attention"] ul {
+  padding-left: 0;
+  list-style: none;
+}
+
+main > aside li,
+.attention li,
+section[aria-labelledby*="attention"] li,
+section[aria-labelledby*="Attention"] li {
+  position: relative;
+  padding-left: 18px;
+}
+
+main > aside li::before,
+.attention li::before,
+section[aria-labelledby*="attention"] li::before,
+section[aria-labelledby*="Attention"] li::before {
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  content: "";
+}
+
+.count { color: var(--text-strong); font-weight: 700; }
+
+/* --------------------------------------------------------------------------
+   Tables — clean dark catalog
+   -------------------------------------------------------------------------- */
+
+table {
+  width: 100%;
+  margin: 18px 0 28px;
+  border-collapse: collapse;
+}
+
+caption {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+  text-align: left;
+}
+
+thead { border-bottom: 1px solid var(--line); }
+
+tbody tr {
+  border-bottom: 1px solid var(--line-soft);
+  transition: background 140ms ease;
+}
+
+tbody tr:hover { background: var(--surface-hover); }
+
+th, td {
+  padding: 12px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+td { color: var(--text); }
+
+td a { white-space: nowrap; }
+
+[data-table-filter] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+[data-table-filter] label {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   Definition lists — two-column key/value
+   -------------------------------------------------------------------------- */
+
+dl {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.28fr) 1fr;
+  gap: 0;
+  margin: 20px 0 28px;
+  border-top: 1px solid var(--line);
+}
+
+dt, dd {
+  margin: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+dt {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+dd { color: var(--text); }
+
+/* --------------------------------------------------------------------------
+   Forms and controls
+   -------------------------------------------------------------------------- */
+
+form {
+  display: grid;
+  gap: 14px;
+  margin-block: 20px 28px;
+}
+
+fieldset {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  background: var(--surface);
+}
+
+legend {
+  padding-inline: 8px;
+  color: var(--text-strong);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+label {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+input[type="search"],
+input[type="text"],
+textarea,
+select {
+  width: min(100%, 520px);
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(9, 13, 20, 0.7);
+  color: var(--text);
+  font: inherit;
+}
+
+input[type="search"]::placeholder,
+input[type="text"]::placeholder,
+textarea::placeholder {
+  color: var(--muted-2);
+}
+
+input[type="checkbox"] { accent-color: var(--accent); }
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 34px;
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+
+button + button { margin-left: 8px; }
+
+/* --------------------------------------------------------------------------
+   Evidence drawers
+   -------------------------------------------------------------------------- */
+
+details {
+  margin-block: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+summary {
+  padding: 12px 16px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+summary:hover { background: var(--surface-hover); }
+
+details[open] summary { border-bottom: 1px solid var(--line); }
+
+pre {
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  background: rgba(3, 7, 18, 0.82);
+  color: #dbeafe;
+  font: 13px/1.58 var(--mono);
+}
+
+code { font-family: var(--mono); }
+
+/* --------------------------------------------------------------------------
+   LOGA projection blocks
+   -------------------------------------------------------------------------- */
+
+.markdown-body {
+  margin-top: 24px;
+}
+
+.loga-breadcrumb {
+  margin: 6px 0 18px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.loga-breadcrumb a {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.loga-focus {
+  margin: 24px 0 28px;
+  padding: 20px 0 22px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.loga-focus h2 {
+  margin: 0 0 10px;
+  max-width: 820px;
+}
+
+.loga-focus .lead {
+  margin-bottom: 0;
+  max-width: 76ch;
+  color: var(--text);
+}
+
+.loga-panel {
+  margin: 18px 0 24px;
+  padding-left: 18px;
+  border-left: 2px solid var(--accent);
+}
+
+.loga-panel h3 {
+  margin-top: 0;
+}
+
+.loga-panel dl {
+  margin-block: 12px 0;
+}
+
+.loga-nav,
+.loga-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0 26px;
+}
+
+.loga-nav a,
+.loga-list-item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.loga-nav a:hover,
+.loga-list-item:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+
+.loga-list {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 28px;
+}
+
+.loga-list-item {
+  justify-content: space-between;
+  width: 100%;
+  border-radius: var(--radius-sm);
+}
+
+.loga-list-item span {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.loga-primitive {
+  margin-block: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.surface-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.surface-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(180px, 0.36fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  color: inherit;
+  font-weight: 400;
+}
+
+.surface-card:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.surface-number {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.surface-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.surface-copy strong {
+  color: var(--text-strong);
+  font-size: 18px;
+}
+
+.surface-copy span,
+.surface-meaning {
+  color: var(--muted);
+}
+
+.surface-copy em {
+  color: var(--accent-2);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.surface-open {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.surface-card:hover .surface-copy strong,
+.surface-card:hover .surface-open {
+  color: var(--accent-2);
+}
+
+.surface-card:hover {
+  background: linear-gradient(90deg, transparent, var(--surface-hover), transparent);
+}
+
+/* --------------------------------------------------------------------------
+   Auto-injected page summary / live region
+   -------------------------------------------------------------------------- */
+
+#page-summary-title,
+#evidence-controls-title {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#inspection-live-region {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  z-index: 20;
+  max-width: min(520px, calc(100% - 32px));
+  padding: 10px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.94);
+  color: var(--text);
+  transform: translateX(-50%);
+}
+
+/* Subtle accent on cells whose links point to detail/analysis/proposal pages */
+td:has(a[href*="detail"]),
+td:has(a[href*="analysis"]),
+td:has(a[href*="proposal"]) {
+  color: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
+
+/* Collapse the home-page sidebar before mode rows get squeezed */
+@media (max-width: 760px) {
+  body:has(main.home-layout) > header,
+  body:has(main.home-layout) > main {
+    width: min(100% - 32px, 1180px);
+  }
+
+  main.home-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  main.home-layout > .side-panel {
+    margin-top: 28px;
+  }
+}
+
+@media (max-width: 640px) {
+  body > header { padding-top: 32px; }
+
+  body > header,
+  body > main,
+  body > footer {
+    width: min(100% - 28px, var(--max));
+  }
+
+  h1 { font-size: clamp(30px, 11vw, 48px); }
+
+  .mode {
+    grid-template-columns: 34px 1fr;
+  }
+
+  .mode::after { display: none; }
+
+  .surface-card {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .surface-meaning,
+  .surface-open {
+    grid-column: 2;
+  }
+
+  dl {
+    grid-template-columns: 1fr;
+  }
+
+  dt {
+    padding-bottom: 2px;
+    border-bottom: 0;
+  }
+
+  dd { padding-top: 0; }
+
+  table, thead, tbody, tr, th, td {
+    display: block;
+  }
+
+  thead { display: none; }
+
+  tr { padding: 10px 0; }
+
+  td { padding: 6px 0; }
+
+  td::before {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    content: attr(data-label);
+  }
+
+  button + button {
+    margin-top: 8px;
+    margin-left: 0;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Print
+   -------------------------------------------------------------------------- */
+
+@media print {
+  :root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --text: #000000;
+    --text-strong: #000000;
+    --muted: #333333;
+    --muted-2: #444444;
+    --line: #999999;
+    --line-soft: #cccccc;
+    --accent: #000000;
+    --accent-2: #000000;
+    --accent-soft: transparent;
+  }
+
+  body { background: #ffffff; }
+
+  nav, button, [data-table-filter], #inspection-live-region {
+    display: none !important;
+  }
+
+  a { color: #000000; text-decoration: none; }
+
+  details { break-inside: avoid; }
+}

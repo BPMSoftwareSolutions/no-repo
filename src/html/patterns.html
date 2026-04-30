@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pattern Registry</title>
+  <link rel="stylesheet" href="../css/global-inspection.css">
+</head>
+<body>
+  <header>
+    <p><a href="index.html">Inspection Home</a></p>
+    <h1>Pattern and Anti-pattern Registry</h1>
+    <p><strong>Primary question:</strong> Is this code following the architecture we want?</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="patterns-title">
+      <h2 id="patterns-title">Patterns</h2>
+      <ul>
+        <li>generic-wrapper-runtime</li>
+        <li>sql-first-truth</li>
+        <li>governed-retrieval</li>
+        <li>wrapper-only-mutation</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="anti-patterns-title">
+      <h2 id="anti-patterns-title">Anti-pattern Rules</h2>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Anti-pattern</th>
+            <th scope="col">Severity</th>
+            <th scope="col">Open</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>bespoke-wrapper-script</td>
+            <td>High</td>
+            <td><a href="anti-pattern-detail.html">Open</a></td>
+          </tr>
+          <tr>
+            <td>markdown-as-authority</td>
+            <td>High</td>
+            <td><a href="anti-pattern-detail.html">Open</a></td>
+          </tr>
+          <tr>
+            <td>ad-hoc-repo-scan</td>
+            <td>Medium</td>
+            <td><a href="anti-pattern-detail.html">Open</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+</body>
+</html>

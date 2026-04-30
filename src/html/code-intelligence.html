@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Code Intelligence</title>
+  <link rel="stylesheet" href="../css/global-inspection.css">
+</head>
+<body>
+  <header>
+    <p><a href="index.html">Inspection Home</a></p>
+    <h1>Code Intelligence</h1>
+    <p><strong>Primary question:</strong> What code relationship are we trying to understand?</p>
+  </header>
+
+  <main>
+    <form role="search">
+      <label for="symbol-search">Search symbols or code intent</label>
+      <input id="symbol-search" name="query" type="search" value="workflow evidence derivation">
+      <button type="button">Search</button>
+    </form>
+
+    <section aria-labelledby="symbol-results-title">
+      <h2 id="symbol-results-title">Ranked Results</h2>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Candidate</th>
+            <th scope="col">Why Matched</th>
+            <th scope="col">Open</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>derive_checkpoint_evidence</td>
+            <td>Matched evidence and checkpoint terms</td>
+            <td><a href="symbol-detail.html">Open</a></td>
+          </tr>
+          <tr>
+            <td>WorkflowRunService</td>
+            <td>Matched lifecycle and evidence symbols</td>
+            <td><a href="symbol-detail.html">Open</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+  <script src="../js/code-intelligence.js" type="module"></script>
+</body>
+</html>

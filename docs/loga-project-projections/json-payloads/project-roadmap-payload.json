@@ -1,0 +1,50 @@
+{
+  "projection_type": "operator.project_roadmap",
+  "project": {
+    "id": "project-ai-engine",
+    "name": "AI Engine",
+    "status": "active"
+  },
+  "primary_question": "What should I care about right now?",
+  "focus": {
+    "answer": "Wrapper standardization is incomplete. This blocks safe automated refactoring and SDK promotion confidence.",
+    "status": "in progress"
+  },
+  "current_item": {
+    "key": "generic-wrapper-runtime",
+    "title": "Establish Generic Wrapper Runtime",
+    "status": "in progress",
+    "owner": "operator",
+    "priority": "high",
+    "progress": {
+      "completed_tasks": 2,
+      "total_tasks": 4
+    }
+  },
+  "items": [
+    {
+      "key": "generic-wrapper-runtime",
+      "title": "Establish Generic Wrapper Runtime",
+      "status": "in progress",
+      "priority": "high"
+    },
+    {
+      "key": "sdk-refactor-surfaces",
+      "title": "Promote Refactor SDK Surfaces",
+      "status": "not started",
+      "priority": "high"
+    },
+    {
+      "key": "workflow-ci-observability",
+      "title": "Expose Workflow and CI/CD Status",
+      "status": "in progress",
+      "priority": "medium"
+    },
+    {
+      "key": "agent-memory-turns",
+      "title": "Expose Memory and DB Turns",
+      "status": "in progress",
+      "priority": "high"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Governed Remediation Proposals</title>
+  <link rel="stylesheet" href="../css/global-inspection.css">
+</head>
+<body>
+  <header>
+    <p><a href="index.html">Inspection Home</a></p>
+    <h1>Governed Remediation Proposals</h1>
+    <p><strong>Primary question:</strong> What governed change should be submitted?</p>
+  </header>
+
+  <main>
+    <article>
+      <h2>Proposal Draft</h2>
+
+      <dl>
+        <dt>Proposal type</dt>
+        <dd>God-file decomposition</dd>
+        <dt>Source file</dt>
+        <dd>src/orchestration/workflow_run_service.py</dd>
+        <dt>Replacement pattern</dt>
+        <dd>generic-wrapper-runtime plus thin coordinator</dd>
+        <dt>Execution rule</dt>
+        <dd>Proposal only. Wrapper executes. Gate validates.</dd>
+      </dl>
+
+      <section aria-labelledby="required-evidence-title">
+        <h3 id="required-evidence-title">Required Evidence</h3>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Evidence</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Responsibility map</td>
+              <td>Ready</td>
+            </tr>
+            <tr>
+              <td>Destination map</td>
+              <td>Ready</td>
+            </tr>
+            <tr>
+              <td>Blast radius</td>
+              <td>Needs review</td>
+            </tr>
+            <tr>
+              <td>Validation plan</td>
+              <td>Ready</td>
+            </tr>
+            <tr>
+              <td>Rollback strategy</td>
+              <td>Ready</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <form>
+        <button type="button">Submit Proposal</button>
+        <button type="button">Save Draft</button>
+        <button type="button">Open Evidence Drawer</button>
+      </form>
+
+      <details>
+        <summary>Evidence Drawer</summary>
+        <pre><code>{
+  "proposal_type": "god_file_decomposition",
+  "mutation_authority": "generic_wrapper_runtime",
+  "gate_policy": "planned_vs_actual_ownership_required"
+}</code></pre>
+      </details>
+    </article>
+  </main>
+
+</body>
+</html>

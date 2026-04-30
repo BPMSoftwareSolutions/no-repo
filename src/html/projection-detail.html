@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projection Detail</title>
+  <link rel="stylesheet" href="../css/global-inspection.css">
+</head>
+<body>
+  <header>
+    <p><a href="index.html">Inspection Home</a> / <a href="projections.html">Projection Inspection</a></p>
+    <h1 id="detail-title">Projection Detail</h1>
+    <p><strong>Primary question:</strong> <span id="detail-question">What does this surface help the operator decide?</span></p>
+  </header>
+
+  <main>
+    <article>
+      <div id="projection-content" class="markdown-body" aria-live="polite">
+        <p>Loading projection...</p>
+      </div>
+
+      <details>
+        <summary>Evidence Drawer</summary>
+        <pre><code id="evidence-content">Projection evidence will appear after the surface loads.</code></pre>
+      </details>
+    </article>
+  </main>
+
+  <script src="../js/projection-detail.js" type="module"></script>
+</body>
+</html>

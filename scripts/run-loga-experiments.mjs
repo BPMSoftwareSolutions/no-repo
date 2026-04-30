@@ -7,10 +7,10 @@ const INTENT = 'human_friendly_markdown_ui_projection_validation';
 const REQUIRED_PRIMITIVES = ['::focus', '::panel', '::metric_row', '::nav', '::evidence_drawer', '::next_actions'];
 const CANONICAL_QUESTIONS = [
   'What is happening?',
-  'What should I care about?',
-  'What do I decide?',
-  'Why trust this?',
-  'What next?',
+  'What should I care about right now?',
+  'What do I need to decide?',
+  'Why should I trust this?',
+  'What should I do next?',
 ];
 const EXPERIMENT_1_CORRECTION_PAYLOAD = `Experiment 1 failed the LOGA UX contract gate.
 
@@ -30,10 +30,10 @@ Primary question:
 
 2. Explicit canonical question sections:
 - What is happening?
-- What should I care about?
-- What do I decide?
-- Why trust this?
-- What next?
+- What should I care about right now?
+- What do I need to decide?
+- Why should I trust this?
+- What should I do next?
 
 3. ::evidence_drawer
 Move raw IDs, source versions, SQL provenance, evidence result, and gate-review details into this drawer.
@@ -91,19 +91,19 @@ status: "[pass | needs-gate-review | blocked | unknown]"
 [summarize transport/governance/project/workflow state]
 ::
 
-## What should I care about?
+## What should I care about right now?
 
 ::panel
 [summarize active blockers, gate-review needs, or current focus]
 ::
 
-## What do I decide?
+## What do I need to decide?
 
 ::panel
 [summarize whether operator approval/review/retry is needed]
 ::
 
-## Why trust this?
+## Why should I trust this?
 
 ::evidence_drawer
 - source_truth: sql
@@ -114,7 +114,7 @@ status: "[pass | needs-gate-review | blocked | unknown]"
 - source_version: [value if present]
 ::
 
-## What next?
+## What should I do next?
 
 ::next_actions
 - Review gate evidence
@@ -176,6 +176,7 @@ const EXPERIMENTS = [
     inspect: 'Is the decision framed cleanly?',
     feedback_prompt: 'Make the approval choice explicit and summarize risk before actions.',
     missing_surface: 'loga_approval_review_projection',
+    thinking_mode: 'review',
   },
   {
     id: 6,
@@ -185,6 +186,7 @@ const EXPERIMENTS = [
     inspect: 'Can user identify cause and recovery path fast?',
     feedback_prompt: 'Separate symptom, likely cause, and recommended fix.',
     missing_surface: 'loga_diagnostic_failure_projection',
+    thinking_mode: 'diagnostic',
   },
   {
     id: 7,
@@ -194,6 +196,7 @@ const EXPERIMENTS = [
     inspect: 'Does it feel alive without being noisy?',
     feedback_prompt: 'Add progress, recent event, and next expected state.',
     missing_surface: 'loga_execution_live_monitor_projection',
+    thinking_mode: 'execution',
   },
   {
     id: 8,
@@ -203,6 +206,7 @@ const EXPERIMENTS = [
     inspect: 'Are changes scannable?',
     feedback_prompt: 'Group changes by user impact, not file/system fields.',
     missing_surface: 'loga_projection_version_comparison',
+    thinking_mode: 'evidence',
   },
   {
     id: 9,
@@ -322,6 +326,7 @@ async function recordExperiment(operationId, experiment, inputs, action) {
       finding: {
         finding_type: 'missing_surface',
         surface: experiment.missing_surface,
+        thinking_mode: experiment.thinking_mode || 'general',
         impact: 'cannot_complete_human_friendly_projection_loop_for_this_experiment',
         feedback_instruction: experiment.feedback_prompt,
       },
@@ -404,10 +409,12 @@ function buildFindings(operationLog) {
       const missingPrimitives = operation.outputs.primitives.filter((item) => !item.present).map((item) => item.primitive);
       if (missingPrimitives.length > 0) {
         findings.push({
-          finding_type: 'contract_quality_gap',
+          finding_type: 'ux_contract_violation',
+          violation_type: 'missing_required_primitives',
+          severity: 'block',
           surface: operation.experiment_key,
-          impact: 'projection_may_not_use_required_loga_primitives',
-          missing_primitives: missingPrimitives,
+          expected: missingPrimitives,
+          observed: [],
           correction_payload: operation.experiment_key === 'operator_home_dashboard'
             ? EXPERIMENT_1_CORRECTION_PAYLOAD
             : undefined,
@@ -425,10 +432,12 @@ function buildFindings(operationLog) {
         .map((item) => item.question);
       if (missingCanonicalQuestions.length > 0) {
         findings.push({
-          finding_type: 'contract_quality_gap',
+          finding_type: 'ux_contract_violation',
+          violation_type: 'missing_canonical_questions',
+          severity: 'block',
           surface: operation.experiment_key,
-          impact: 'projection_missing_canonical_question_labels',
-          missing_canonical_questions: missingCanonicalQuestions,
+          expected: missingCanonicalQuestions,
+          observed: [],
           correction_payload: operation.experiment_key === 'operator_home_dashboard'
             ? EXPERIMENT_1_CORRECTION_PAYLOAD
             : undefined,
@@ -449,6 +458,13 @@ function buildFindings(operationLog) {
     impact: 'cannot_ask_ai_engine_to_emit_a_new_arbitrary_markdown_ui_contract_from_the_experiment_prompt',
   });
 
+  findings.push({
+    finding_type: 'missing_process_surface',
+    surface: 'upstream_ticket_creation_for_ux_gate_remediation',
+    impact: 'upstream ticket creation for UX gate remediation is not available on the deployed service',
+    detail: 'The SDK exposes submitUxGateRemediation(), listUxGateRemediations(), and getUxGateRemediation(), but the deployed API route /api/loga/ux-gate-remediations returned 404.',
+  });
+
   return findings;
 }
 
@@ -457,7 +473,7 @@ function buildEvidence({ contract, executionRecord, operationLog, findings }) {
   const blockedOperations = operationLog.filter((operation) => operation.status === 'blocked');
   const unsupportedOperations = operationLog.filter((operation) => operation.status === 'unsupported');
   const missingSurfaceFindings = findings.filter((finding) => finding.finding_type === 'missing_surface');
-  const qualityGapFindings = findings.filter((finding) => finding.finding_type === 'contract_quality_gap');
+  const qualityGapFindings = findings.filter((finding) => finding.finding_type === 'ux_contract_violation');
 
   return {
     artifact_type: 'gate_ready_loga_projection_experiment_evidence',
@@ -553,6 +569,7 @@ console.log(JSON.stringify({
   gate_ready_evidence_payload: evidence,
 }, null, 2));
 
-if (failedOperations.length > 0) {
+const blockingFindings = findings.filter((finding) => finding.severity === 'block');
+if (failedOperations.length > 0 || blockingFindings.length > 0) {
   process.exitCode = 1;
 }
