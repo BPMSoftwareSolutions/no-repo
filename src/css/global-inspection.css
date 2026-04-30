@@ -46,7 +46,7 @@
     "Segoe UI",
     sans-serif;
 
-  --max: 860px;
+  --max: none;
   --radius: 12px;
   --radius-sm: 8px;
   --focus-ring: 0 0 0 3px rgba(124, 156, 255, 0.28);
@@ -78,7 +78,8 @@ body {
 body > header,
 body > main,
 body > footer {
-  width: min(var(--max), calc(100% - 40px));
+  width: calc(100% - 64px);
+  max-width: none;
   margin-inline: auto;
 }
 
@@ -259,7 +260,7 @@ main > nav[aria-label] a[aria-current="page"] {
    filled on a large monitor, tight enough that the columns stay related. */
 body:has(main.home-layout) > header,
 body:has(main.home-layout) > main {
-  width: min(1180px, calc(100% - 64px));
+  width: calc(100% - 64px);
   max-width: none;
   margin-inline: auto;
   padding-inline: 0;
@@ -846,6 +847,137 @@ code { font-family: var(--mono); }
 }
 
 /* --------------------------------------------------------------------------
+   Projection inspection tree
+   -------------------------------------------------------------------------- */
+
+body:has(main.projection-workspace) > header,
+body:has(main.projection-workspace) > main {
+  width: calc(100% - 64px);
+  max-width: none;
+}
+
+.projection-workspace {
+  display: grid;
+  grid-template-columns: minmax(min(100%, 22rem), 28vw) minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+
+.projection-tree-panel {
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding-right: 24px;
+  border-right: 1px solid var(--line);
+}
+
+.projection-tree-panel h2 {
+  margin-top: 0;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.projection-surface-panel {
+  min-width: 0;
+}
+
+.projection-tree {
+  margin-top: 12px;
+}
+
+.tree-node {
+  position: relative;
+  margin-left: 14px;
+}
+
+.tree-node::before {
+  position: absolute;
+  left: -10px;
+  top: 15px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  content: "";
+}
+
+.tree-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 30px;
+  padding: 4px 0;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.tree-summary:hover {
+  color: var(--accent-2);
+  background: transparent;
+}
+
+.tree-leaf {
+  font-weight: 500;
+}
+
+.tree-label {
+  min-width: 0;
+  font-weight: 700;
+}
+
+.tree-meta {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.tree-arrow {
+  width: 12px;
+  color: var(--muted);
+  font-size: 11px;
+  transform: rotate(0deg);
+  transition: transform 140ms ease;
+}
+
+details[open] > .tree-summary .tree-arrow {
+  transform: rotate(90deg);
+}
+
+.tree-children {
+  margin-left: 14px;
+  padding-left: 6px;
+  border-left: 1px solid var(--line-soft);
+}
+
+.projection-tree details {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+}
+
+.projection-tree summary {
+  list-style: none;
+  border: 0;
+  padding: 4px 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.projection-tree summary::-webkit-details-marker {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
    Auto-injected page summary / live region
    -------------------------------------------------------------------------- */
 
@@ -887,7 +1019,7 @@ td:has(a[href*="proposal"]) {
 @media (max-width: 760px) {
   body:has(main.home-layout) > header,
   body:has(main.home-layout) > main {
-    width: min(100% - 32px, 1180px);
+    width: calc(100% - 32px);
   }
 
   main.home-layout {
@@ -897,6 +1029,25 @@ td:has(a[href*="proposal"]) {
   main.home-layout > .side-panel {
     margin-top: 28px;
   }
+
+  body:has(main.projection-workspace) > header,
+  body:has(main.projection-workspace) > main {
+    width: calc(100% - 32px);
+  }
+
+  .projection-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+
+  .projection-tree-panel {
+    position: static;
+    max-height: none;
+    padding-right: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 18px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -905,7 +1056,7 @@ td:has(a[href*="proposal"]) {
   body > header,
   body > main,
   body > footer {
-    width: min(100% - 28px, var(--max));
+    width: calc(100% - 28px);
   }
 
   h1 { font-size: clamp(30px, 11vw, 48px); }

@@ -1,8 +1,10 @@
 import { callAiEngine } from './api-client.js';
+import { renderProjectionTree } from './projection-tree.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const surfaceList = document.getElementById('surface-list');
   const attentionList = document.getElementById('recent-attention');
+  const tree = document.getElementById('projection-tree');
 
   try {
     const [homeResult, catalogResult, projectsResult] = await Promise.allSettled([
@@ -23,6 +25,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       surfaceList.appendChild(renderSurface(surface, index + 1));
     });
 
+    renderProjectionTree(tree, { projects });
+
     attentionList.innerHTML = '';
     buildAttention({ projects, surfaceGroups }).forEach((item) => {
       const li = document.createElement('li');
@@ -31,6 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   } catch (error) {
     surfaceList.innerHTML = `<p style="color: var(--red)">Error loading operator surfaces: ${error.message}</p>`;
+    tree.innerHTML = `<p style="color: var(--red)">Error loading projection tree: ${error.message}</p>`;
   }
 });
 
@@ -104,11 +109,11 @@ function renderSurface(surface, index) {
   card.innerHTML = `
     <span class="surface-number">${String(index).padStart(2, '0')}</span>
     <span class="surface-copy">
-      <strong>${surface.label}</strong>
-      <span>${surface.question}</span>
-      <em>${surface.count} · ${surface.status}</em>
+      <strong>${escapeHtml(surface.label)}</strong>
+      <span>${escapeHtml(surface.question)}</span>
+      <em>${escapeHtml(surface.count)} &middot; ${escapeHtml(surface.status)}</em>
     </span>
-    <span class="surface-meaning">${surface.meaning}</span>
+    <span class="surface-meaning">${escapeHtml(surface.meaning)}</span>
     <span class="surface-open">Open</span>
   `;
   return card;
@@ -123,4 +128,13 @@ function buildAttention({ projects, surfaceGroups }) {
     `${projectCount} roadmap projection${projectCount === 1 ? '' : 's'} exist because project roadmaps are inspected separately from project orientation.`,
     unavailable === 0 ? 'No invalid projection surfaces detected.' : `${unavailable} projection surface${unavailable === 1 ? '' : 's'} unavailable.`,
   ];
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
