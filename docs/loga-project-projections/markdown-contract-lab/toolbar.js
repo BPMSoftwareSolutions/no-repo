@@ -11,7 +11,7 @@ export function renderToolbar({ lines, attrs, renderBlock, renderContractErrors 
       example: [
         '::toolbar variant="linear"',
         '  ::toolbar_zone name="context" align="left"',
-        '  title: "Projection Graph"',
+        '  eyebrow: "Inspection Workspace"',
         '  status: "Agent active - Turn 3"',
         '  ::',
         '::',
@@ -95,7 +95,7 @@ function renderToolbarZone(zone, renderBlock) {
   const values = parseKeyValues(zone.lines);
   const children = collectChildBlocks(zone.lines);
   const context = [];
-  if (values.eyebrow || values.title || values.status) {
+  if (values.eyebrow || values.status) {
     context.push(renderToolbarContext(values));
   }
 
@@ -122,11 +122,10 @@ function inferZoneName(zone, html) {
 }
 
 function renderToolbarContext(values) {
-  if (!values.eyebrow && !values.title && !values.status) return '';
+  if (!values.eyebrow && !values.status) return '';
   return `
     <div class="loga-toolbar__context">
       ${values.eyebrow ? `<span class="eyebrow">${escapeHtml(values.eyebrow)}</span>` : ''}
-      ${values.title ? `<strong>${escapeHtml(values.title)}</strong>` : ''}
       ${values.status ? `<span class="loga-toolbar__status">${escapeHtml(values.status)}</span>` : ''}
     </div>
   `;

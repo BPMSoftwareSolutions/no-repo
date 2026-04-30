@@ -95,7 +95,6 @@ Markdown AST
 
   ::toolbar_zone name="context" align="left"
   eyebrow: "Inspection Workspace"
-  title: "Projection Graph"
   status: "Agent active · Turn 3"
   ::
 
@@ -277,7 +276,6 @@ primary_question: "What should I care about right now?"
 
   ::toolbar_zone name="context" align="left"
   eyebrow: "Inspection Workspace"
-  title: "Projection Graph"
   status: "Agent active · Turn 3"
   ::
 

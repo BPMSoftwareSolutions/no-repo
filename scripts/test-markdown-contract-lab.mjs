@@ -64,6 +64,7 @@ assert.match(yamlResult.html, /Expand Focus/, 'YAML zones toolbar must render ac
 
 const linearToolbar = `::toolbar variant="linear"
 eyebrow: "Inspection Workspace"
+title: "Projection Graph"
 status: "Agent active · Turn 3"
 
 zones:
@@ -89,6 +90,7 @@ const linearResult = renderContract(linearToolbar);
 assert.equal(linearResult.diagnostics.fatal.length, 0, 'linear toolbar must not produce fatal validation errors');
 assert.match(linearResult.html, /data-toolbar-variant="linear"/, 'linear toolbar must declare its layout mode');
 assert.match(linearResult.html, /<header class="loga-toolbar loga-toolbar--linear"/, 'linear toolbar must render inline toolbar shell');
+assert.doesNotMatch(linearResult.html, /<strong>Projection Graph<\/strong>/, 'toolbar context must not render page or document title');
 assert.doesNotMatch(linearResult.html, /<section class="loga-toolbar__zone/, 'linear toolbar zones must not render as section/card wrappers');
 assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--left"[^>]*data-name="navigation"[^>]*data-align="left"/, 'linear navigation zone must be named for compact sizing');
 assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--center"[^>]*data-name="search"[^>]*data-align="center"/, 'linear search zone must be named for flexible sizing');
@@ -117,8 +119,12 @@ const browserRuntime = fs.readFileSync('./docs/loga-project-projections/markdown
 const labHtml = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab.html', 'utf8');
 
 assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?flex-wrap:\s*nowrap;/, 'linear toolbar CSS must prevent wrapping');
+assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?align-items:\s*flex-end;/, 'linear toolbar must bottom-align zones');
 assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-x:\s*auto;/, 'linear toolbar CSS must scroll horizontally instead of overlapping');
 assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-y:\s*hidden;/, 'linear toolbar CSS must prevent vertical overflow');
+assert.match(labHtml, /\.loga-toolbar__zone\s*{[\s\S]*?align-items:\s*flex-end;/, 'toolbar zones must bottom-align children by default');
+assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="context"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="search"\]\s*{[\s\S]*?flex-direction:\s*column;[\s\S]*?align-items:\s*flex-start;[\s\S]*?justify-content:\s*flex-end;/, 'label-bearing linear zones must stack vertically and bottom justify');
+assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="navigation"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="actions"\]\s*{[\s\S]*?align-self:\s*flex-end;/, 'control-only linear zones must sit on the bottom edge');
 assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="search"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="center"\]\s*{[\s\S]*?flex:\s*0 0 320px;/, 'linear search zone must have stable debug width');
 assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="context"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="actions"\]\s*{[\s\S]*?flex:\s*0 0 auto;/, 'linear context, filters, and actions zones must stay fixed');
 assert.match(labHtml, /\.loga-toolbar--linear \.loga-control--search\s*{[\s\S]*?width:\s*100%;/, 'linear search control must fill the flexible center zone');

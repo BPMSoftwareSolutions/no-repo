@@ -12,7 +12,6 @@ primary_question: "What should I care about right now?"
 
   ::toolbar_zone name="context" align="left"
   eyebrow: "Inspection Workspace"
-  title: "Current Work"
   status: "Agent active - Turn 3"
   ::
 
@@ -332,7 +331,7 @@ primary_question: "What should I care about right now?"
 
   function renderToolbarZone(zone) {
     const values = parseKeyValues(zone.lines);
-    const context = values.eyebrow || values.title || values.status ? renderToolbarContext(values) : '';
+    const context = values.eyebrow || values.status ? renderToolbarContext(values) : '';
     return context + collectChildBlocks(zone.lines).map((child) => renderBlock(child.name, child.lines, child.attrs)).join('');
   }
 
@@ -353,8 +352,8 @@ primary_question: "What should I care about right now?"
   }
 
   function renderToolbarContext(values) {
-    if (!values.eyebrow && !values.title && !values.status) return '';
-    return `<div class="loga-toolbar__context">${values.eyebrow ? `<span class="eyebrow">${escapeHtml(values.eyebrow)}</span>` : ''}${values.title ? `<strong>${escapeHtml(values.title)}</strong>` : ''}${values.status ? `<span class="loga-toolbar__status">${escapeHtml(values.status)}</span>` : ''}</div>`;
+    if (!values.eyebrow && !values.status) return '';
+    return `<div class="loga-toolbar__context">${values.eyebrow ? `<span class="eyebrow">${escapeHtml(values.eyebrow)}</span>` : ''}${values.status ? `<span class="loga-toolbar__status">${escapeHtml(values.status)}</span>` : ''}</div>`;
   }
 
   function parseAttrs(raw = '') {
