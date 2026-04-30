@@ -206,3 +206,7 @@ implementation_item_id: 6e9756eb-f0cb-4793-91e3-5b1da03d1d19
 Consolidated upstream fixes:
 
 [AI Engine Upstream Fixes](ai-engine-upstream-fixes.md)
+
+Mental-model refactoring strategy:
+
+[Mental Model Refactoring](mental-model-refactoring.md)
