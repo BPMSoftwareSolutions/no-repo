@@ -921,6 +921,23 @@ body:has(main.projection-workspace) > main {
   background: transparent;
 }
 
+.tree-summary.is-current {
+  color: var(--text-strong);
+}
+
+.tree-summary.is-current .tree-label {
+  color: var(--accent-2);
+}
+
+.tree-summary.is-current::after {
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  border-radius: 999px;
+  background: var(--accent);
+  content: "";
+}
+
 .tree-leaf {
   font-weight: 500;
 }

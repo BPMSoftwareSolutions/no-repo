@@ -147,7 +147,7 @@ function renderTree(node, currentUrl) {
     const summary = document.createElement('summary');
     summary.className = 'tree-summary';
     summary.innerHTML = `
-      <span class="tree-arrow">▶</span>
+      <span class="tree-arrow">&#9654;</span>
       ${renderTreeLabel(node)}
     `;
     details.appendChild(summary);

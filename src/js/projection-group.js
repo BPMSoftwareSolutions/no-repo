@@ -1,4 +1,5 @@
 import { callAiEngine } from './api-client.js';
+import { renderProjectionTree } from './projection-tree.js';
 
 const SURFACE_CONFIG = {
   'operator.project_detail': {
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const config = SURFACE_CONFIG[surface] || SURFACE_CONFIG['operator.project_detail'];
   const list = document.getElementById('group-list');
   const attention = document.getElementById('group-attention');
+  const tree = document.getElementById('projection-tree');
 
   document.getElementById('group-title').textContent = config.title;
   document.getElementById('group-question').textContent = config.question;
@@ -28,6 +30,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const data = await callAiEngine('listProjects', { limit: 50 }).catch(() => ({ projects: [] }));
     const projects = data.projects?.length ? data.projects : [fallbackProject()];
+
+    renderProjectionTree(tree, { projects });
 
     list.innerHTML = '';
     projects.forEach((project, index) => {

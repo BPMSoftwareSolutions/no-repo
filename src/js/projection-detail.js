@@ -1,4 +1,5 @@
 import { callAiEngine, renderMarkdownProjection } from './api-client.js';
+import { renderProjectionTree } from './projection-tree.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -12,9 +13,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const titleEl = document.getElementById('detail-title');
   const questionEl = document.getElementById('detail-question');
   const container = document.getElementById('projection-content');
+  const tree = document.getElementById('projection-tree');
 
   titleEl.textContent = getSurfaceTitle(projType);
   questionEl.textContent = getSurfaceQuestion(projType);
+
+  renderPersistentTree(tree);
   
   try {
     const proj = await loadProjection({
@@ -32,6 +36,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     container.innerHTML = `<p style="color: var(--red)">Error loading projection: ${error.message}</p>`;
   }
 });
+
+async function renderPersistentTree(tree) {
+  try {
+    const data = await callAiEngine('listProjects', { limit: 50 }).catch(() => ({ projects: [] }));
+    renderProjectionTree(tree, { projects: data.projects || [] });
+  } catch (error) {
+    tree.innerHTML = `<p style="color: var(--red)">Error loading projection tree: ${error.message}</p>`;
+  }
+}
 
 function getSurfaceTitle(projType) {
   return {
