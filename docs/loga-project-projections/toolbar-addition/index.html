@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projection Workspace Toolbar Demo</title>
+  <link rel="stylesheet" href="workspace.css">
+</head>
+<body>
+  <div class="workspace-shell">
+    <header class="workspace-toolbar">
+      <div class="toolbar-row">
+        <div class="brand">
+          <span class="brand-kicker">Inspection Workspace</span>
+          <strong>Projection Graph</strong>
+        </div>
+
+        <form class="search-control" role="search">
+          <label for="global-search">Search</label>
+          <input id="global-search" type="search" placeholder="Search projects, tasks, evidence..." value="wrapper">
+        </form>
+
+        <div class="select-group">
+          <label for="scope">Scope</label>
+          <select id="scope">
+            <option>AI Engine</option>
+            <option>All Projects</option>
+            <option>Azure SQL Migration</option>
+            <option>Neon Auth</option>
+          </select>
+        </div>
+
+        <div class="select-group">
+          <label for="mode">Mode</label>
+          <select id="mode">
+            <option>Focus</option>
+            <option>Execution</option>
+            <option>Diagnostic</option>
+            <option>Evidence</option>
+            <option>Evolution</option>
+          </select>
+        </div>
+
+        <div class="runtime-pill">
+          <span class="pulse"></span>
+          <span>Agent active · Turn 3</span>
+        </div>
+      </div>
+
+      <div class="toolbar-row secondary">
+        <nav class="surface-chips" aria-label="Surface filters">
+          <button type="button" class="chip active">Roadmap</button>
+          <button type="button" class="chip active">Promotions</button>
+          <button type="button" class="chip active">Workflows</button>
+          <button type="button" class="chip">CI/CD</button>
+          <button type="button" class="chip active">Memory</button>
+          <button type="button" class="chip">Evidence</button>
+        </nav>
+
+        <div class="attention-controls">
+          <button type="button" class="ghost active">Needs Attention</button>
+          <button type="button" class="ghost">Blocked Only</button>
+          <button type="button" class="ghost">High Priority</button>
+        </div>
+
+        <div class="tree-controls">
+          <button type="button">Expand Focus</button>
+          <button type="button">Collapse</button>
+          <button type="button">Refresh Branch</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="workspace-body">
+      <aside class="tree-rail">
+        <div class="rail-heading">
+          <span>Knowledge Tree</span>
+          <small>lazy loaded</small>
+        </div>
+
+        <nav class="tree">
+          <details open>
+            <summary><span class="caret">▾</span><span>AI Engine Inspection</span></summary>
+
+            <details open>
+              <summary><span class="caret">▾</span><span>Projections</span></summary>
+
+              <details>
+                <summary><span class="dot"></span><span>Operator Home</span><small>1 projection</small></summary>
+              </details>
+
+              <details open>
+                <summary><span class="caret">▾</span><span>Project Surfaces</span><small>50 projects</small></summary>
+
+                <details open>
+                  <summary class="selected"><span class="caret">▾</span><span>AI Engine</span><small>project</small></summary>
+
+                  <a href="#"><span class="dot"></span><span>Project Detail</span></a>
+
+                  <details open>
+                    <summary><span class="caret">▾</span><span>Roadmap</span><small>in progress</small></summary>
+
+                    <details open>
+                      <summary><span class="caret">▾</span><span>Current Focus</span></summary>
+
+                      <details open>
+                        <summary><span class="caret">▾</span><span>Generic Wrapper Runtime</span><small>2 / 4 tasks</small></summary>
+                        <a href="#"><span class="dot"></span><span>Tasks</span></a>
+                        <a href="#"><span class="dot"></span><span>Evidence</span></a>
+                        <a href="#"><span class="dot"></span><span>Workflow Runs</span></a>
+                      </details>
+                    </details>
+
+                    <a href="#"><span class="dot"></span><span>Promotions</span></a>
+                    <a href="#"><span class="dot"></span><span>CI/CD Status</span></a>
+                    <a href="#"><span class="dot"></span><span>Agent Memory + DB Turns</span></a>
+                  </details>
+                </details>
+
+                <details>
+                  <summary><span class="caret">▸</span><span>Azure SQL Migration</span><small>complete</small></summary>
+                </details>
+
+                <details>
+                  <summary><span class="caret">▸</span><span>Neon Auth Identity Integration</span><small>chartered</small></summary>
+                </details>
+              </details>
+            </details>
+          </details>
+        </nav>
+      </aside>
+
+      <main class="projection-pane">
+        <div class="projection-meta">
+          <span>Home / Projects / AI Engine</span>
+          <span>source truth: SQL</span>
+        </div>
+
+        <article class="projection-doc">
+          <header class="doc-hero">
+            <p class="status">ACTIVE</p>
+            <h1>AI Engine</h1>
+            <p class="breadcrumb">Project Detail</p>
+          </header>
+
+          <section class="focus-block">
+            <p class="question">What is happening in this project?</p>
+            <p class="answer">PostgreSQL migration is complete. The system is now focused on governed refactor execution and SDK promotion observability.</p>
+          </section>
+
+          <section>
+            <h2>Current Focus</h2>
+            <div class="quiet-panel">
+              <h3>Governed Refactor System Rollout</h3>
+              <p>Move refactor execution from bespoke scripts into generic wrapper-driven proposals, evidence, and gates.</p>
+              <dl>
+                <dt>Status</dt>
+                <dd>in progress</dd>
+              </dl>
+            </div>
+          </section>
+
+          <section>
+            <h2>Open Lanes</h2>
+            <div class="lane-row">
+              <button>Roadmap</button>
+              <button>Promotions</button>
+              <button>Workflow Runs</button>
+              <button>Agent Memory and Turns</button>
+            </div>
+          </section>
+
+          <section>
+            <h2>Recent Attention</h2>
+            <ul class="attention-list">
+              <li>God-file candidates found: <strong>7</strong></li>
+              <li>Open anti-pattern findings: <strong>12</strong></li>
+              <li>Proposals awaiting review: <strong>3</strong></li>
+            </ul>
+          </section>
+        </article>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

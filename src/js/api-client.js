@@ -159,6 +159,39 @@ function renderAttributeDetails(attrs) {
   return `<dl>${entries.map(([key, value]) => `<dt>${escapeHtml(key.replaceAll('_', ' '))}</dt><dd>${renderInlineMarkdown(value)}</dd>`).join('')}</dl>`;
 }
 
+function currentSearchParams() {
+  if (!globalThis.window?.location) return new URLSearchParams();
+  return new URLSearchParams(globalThis.window.location.search);
+}
+
+function resolveLogaRecordHref(blockName, record) {
+  if (record.target || record.projection_type) {
+    return resolveProjectionHref(record.target || record.projection_type);
+  }
+
+  const params = currentSearchParams();
+  const projectId = params.get('projectId') || 'ai-engine';
+  const itemKey = params.get('itemKey') || 'generic-wrapper-runtime';
+
+  if (blockName === 'task_list' && record.key) {
+    return `projection-detail.html?type=operator.task_detail&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}&taskKey=${encodeURIComponent(record.key)}`;
+  }
+
+  if (blockName === 'promotion_list' && record.key) {
+    return `projection-detail.html?type=operator.promotions&projectId=${encodeURIComponent(projectId)}&promotionKey=${encodeURIComponent(record.key)}`;
+  }
+
+  if (blockName === 'run_list' && record.key) {
+    return `projection-detail.html?type=operator.workflow_run&workflowRunId=${encodeURIComponent(record.key)}`;
+  }
+
+  if (blockName === 'turn_list' && record.turn) {
+    return `projection-detail.html?type=operator.agent_session&projectId=${encodeURIComponent(projectId)}&turn=${encodeURIComponent(record.turn)}`;
+  }
+
+  return '';
+}
+
 function renderLogaBlock(blockName, lines, attrs = {}) {
   const name = blockName.toLowerCase();
   const entries = parseKeyValues(lines);
@@ -217,16 +250,20 @@ function renderLogaBlock(blockName, lines, attrs = {}) {
     return `<section class="loga-actions" aria-label="Next actions">${actions.map((action) => `<button type="button">${escapeHtml(action)}</button>`).join('')}</section>`;
   }
 
-  if (name === 'roadmap' || name === 'task_list' || name === 'run_list' || name === 'promotion_list' || name === 'cicd_list' || name === 'turn_list') {
+  if (name === 'roadmap' || name === 'task_list' || name === 'run_list' || name === 'promotion_list' || name === 'cicd_list' || name === 'turn_list' || name === 'memory' || name === 'checklist') {
     const records = parseLogaRecords(lines);
     return `<section class="loga-list loga-${escapeHtml(name)}">${records.map((record) => {
-      const href = resolveProjectionHref(record.target || record.projection_type || '#');
-      return `
-        <a class="loga-list-item" href="${escapeHtml(href)}">
-          <strong>${escapeHtml(record.title || record.label || record.key || 'Untitled')}</strong>
-          <span>${escapeHtml([record.status, record.priority, record.progress].filter(Boolean).join(' | '))}</span>
-        </a>
+      const href = resolveLogaRecordHref(name, record);
+      const title = record.title || record.label || record.text || record.reminder || record.key || (record.turn ? `Turn ${record.turn}` : 'Untitled');
+      const body = `
+          <strong>${escapeHtml(title)}</strong>
+          <span>${escapeHtml([record.status, record.priority, record.progress, record.stage, record.tier].filter(Boolean).join(' | '))}</span>
       `;
+      return href ? `
+        <a class="loga-list-item" href="${escapeHtml(href)}">
+          ${body}
+        </a>
+      ` : `<div class="loga-list-item">${body}</div>`;
     }).join('')}</section>`;
   }
 

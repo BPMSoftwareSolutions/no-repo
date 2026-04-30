@@ -226,11 +226,6 @@ async function buildLogaTreeChildren(nodeId) {
     };
   }
 
-  if (nodeId.startsWith('project-') && !nodeId.includes('-roadmap') && !nodeId.endsWith('-current-focus')) {
-    const projectId = nodeId.slice('project-'.length);
-    return buildProjectChildren(nodeId, projectId);
-  }
-
   if (nodeId.startsWith('project-') && nodeId.endsWith('-roadmap')) {
     const projectId = nodeId.slice('project-'.length, -'-roadmap'.length);
     return buildRoadmapChildren(nodeId, projectId);
@@ -246,8 +241,47 @@ async function buildLogaTreeChildren(nodeId) {
     return buildRoadmapItemsChildren(nodeId, projectId);
   }
 
+  if (nodeId.startsWith('project-') && nodeId.endsWith('-promotions')) {
+    const projectId = nodeId.slice('project-'.length, -'-promotions'.length);
+    return buildPromotionsChildren(nodeId, projectId);
+  }
+
+  if (nodeId.startsWith('project-') && nodeId.endsWith('-workflow-runs')) {
+    const scoped = parseRoadmapItemScopedNode(nodeId, 'workflow-runs');
+    const projectId = scoped?.projectId || nodeId.slice('project-'.length, -'-workflow-runs'.length);
+    return buildWorkflowRunsChildren(nodeId, projectId);
+  }
+
+  if (nodeId.startsWith('project-') && nodeId.endsWith('-agent-session')) {
+    const projectId = nodeId.slice('project-'.length, -'-agent-session'.length);
+    return buildAgentSessionChildren(nodeId, projectId);
+  }
+
+  if (nodeId.startsWith('project-') && nodeId.endsWith('-turns')) {
+    const projectId = nodeId.slice('project-'.length, -'-turns'.length);
+    return buildTurnsChildren(nodeId, projectId);
+  }
+
+  if (nodeId.startsWith('project-') && nodeId.endsWith('-memory')) {
+    return buildMemoryChildren(nodeId);
+  }
+
+  if (nodeId.startsWith('project-') && nodeId.endsWith('-tasks')) {
+    const scoped = parseRoadmapItemScopedNode(nodeId, 'tasks');
+    return buildTasksChildren(nodeId, scoped?.projectId || 'ai-engine');
+  }
+
+  if (nodeId.includes('-tasks-')) {
+    return buildSubtasksChildren(nodeId);
+  }
+
   if (nodeId.includes('-roadmap-item-')) {
     return buildRoadmapItemChildren(nodeId);
+  }
+
+  if (nodeId.startsWith('project-')) {
+    const projectId = nodeId.slice('project-'.length);
+    return buildProjectChildren(nodeId, projectId);
   }
 
   if (nodeId === 'workflow-surfaces') {
@@ -363,7 +397,15 @@ function buildProjectChildren(parentId, projectId) {
         id: `project-${projectId}-promotions`,
         label: 'Promotions',
         type: 'promotion_surface',
+        hasChildren: true,
         contentHref: `projection-detail.html?type=operator.promotions&projectId=${encodeURIComponent(projectId)}`,
+      }),
+      treeNode({
+        id: `project-${projectId}-workflow-runs`,
+        label: 'Workflow Runs',
+        type: 'runtime_surface',
+        hasChildren: true,
+        contentHref: `projection-detail.html?type=operator.workflow_runs&projectId=${encodeURIComponent(projectId)}`,
       }),
       treeNode({
         id: `project-${projectId}-cicd`,
@@ -375,6 +417,7 @@ function buildProjectChildren(parentId, projectId) {
         id: `project-${projectId}-agent-session`,
         label: 'Agent Memory + DB Turns',
         type: 'runtime_surface',
+        hasChildren: true,
         contentHref: `projection-detail.html?type=operator.agent_session&projectId=${encodeURIComponent(projectId)}`,
       }),
     ],
@@ -445,6 +488,7 @@ function buildRoadmapItemChildren(parentId) {
         id: `${parentId}-tasks`,
         label: 'Tasks',
         type: 'task_group',
+        hasChildren: true,
         contentHref: `projection-detail.html?type=operator.task_detail&projectId=${encodeURIComponent(projectId)}&taskKey=replace-hard-coded-scripts`,
       }),
       treeNode({
@@ -457,9 +501,180 @@ function buildRoadmapItemChildren(parentId) {
         id: `${parentId}-workflow-runs`,
         label: 'Workflow Runs',
         type: 'runtime_surface',
+        hasChildren: true,
         contentHref: `projection-detail.html?type=operator.workflow_runs&projectId=${encodeURIComponent(projectId)}`,
       }),
     ],
+  };
+}
+
+function buildPromotionsChildren(parentId, projectId) {
+  return {
+    parent_id: parentId,
+    nodes: [
+      promotionNode(parentId, projectId, 'startWork', 'startWork', 'promoted'),
+      promotionNode(parentId, projectId, 'completeTurn', 'completeTurn', 'promoted'),
+      promotionNode(parentId, projectId, 'runCharter', 'runCharter', 'promoted'),
+      promotionNode(parentId, projectId, 'createRefactorImplementationPlan', 'createRefactorImplementationPlan', 'needed'),
+      promotionNode(parentId, projectId, 'executeGovernedRefactorWrapper', 'executeGovernedRefactorWrapper', 'needed'),
+      promotionNode(parentId, projectId, 'getRefactorWrapperEvidence', 'getRefactorWrapperEvidence', 'needed'),
+    ],
+  };
+}
+
+function buildWorkflowRunsChildren(parentId, projectId) {
+  return {
+    parent_id: parentId,
+    nodes: [
+      treeNode({
+        id: `${parentId}-refactor-runtime`,
+        label: 'Generic Wrapper Runtime Refactor',
+        type: 'workflow_run',
+        status: 'running',
+        contentHref: 'projection-detail.html?type=operator.workflow_run&workflowRunId=refactor-runtime',
+      }),
+      treeNode({
+        id: `${parentId}-architecture-review`,
+        label: 'Architecture Integrity Review',
+        type: 'workflow_run',
+        status: 'waiting',
+        contentHref: 'projection-detail.html?type=operator.workflow_run&workflowRunId=architecture-review',
+      }),
+      treeNode({
+        id: `${parentId}-postgres-authority-transition`,
+        label: 'PostgreSQL Authority Transition',
+        type: 'workflow_run',
+        status: 'completed',
+        contentHref: `projection-detail.html?type=operator.workflow_runs&projectId=${encodeURIComponent(projectId)}`,
+      }),
+    ],
+  };
+}
+
+function buildAgentSessionChildren(parentId, projectId) {
+  return {
+    parent_id: parentId,
+    nodes: [
+      treeNode({
+        id: `project-${projectId}-memory`,
+        label: 'Memory',
+        type: 'memory_group',
+        hasChildren: true,
+        contentHref: `projection-detail.html?type=operator.agent_session&projectId=${encodeURIComponent(projectId)}`,
+      }),
+      treeNode({
+        id: `project-${projectId}-turns`,
+        label: 'DB Turns',
+        type: 'turn_group',
+        hasChildren: true,
+        contentHref: `projection-detail.html?type=operator.agent_session&projectId=${encodeURIComponent(projectId)}`,
+      }),
+    ],
+  };
+}
+
+function buildTurnsChildren(parentId, projectId) {
+  return {
+    parent_id: parentId,
+    nodes: [
+      turnNode(parentId, projectId, 1, 'startWork', 'persisted'),
+      turnNode(parentId, projectId, 2, 'analyze candidate', 'persisted'),
+      turnNode(parentId, projectId, 3, 'propose contract', 'pending'),
+    ],
+  };
+}
+
+function buildMemoryChildren(parentId) {
+  return {
+    parent_id: parentId,
+    nodes: [
+      treeNode({ id: `${parentId}-wrapper-authority`, label: 'Wrapper is the only mutation authority', type: 'memory', status: 'required' }),
+      treeNode({ id: `${parentId}-no-local-scripts`, label: 'No local scripts as authority', type: 'memory', status: 'required' }),
+      treeNode({ id: `${parentId}-sql-truth`, label: 'SQL is durable truth; markdown is projection', type: 'memory', status: 'required' }),
+    ],
+  };
+}
+
+function buildTasksChildren(parentId, projectId) {
+  return {
+    parent_id: parentId,
+    nodes: [
+      taskNode(parentId, projectId, 'define-contract-schema', 'Define wrapper contract schema', 'done'),
+      taskNode(parentId, projectId, 'implement-wrapper-operations', 'Implement reusable wrapper operations', 'in progress'),
+      taskNode(parentId, projectId, 'replace-hard-coded-scripts', 'Replace hard-coded wrapper scripts', 'blocked', true),
+      taskNode(parentId, projectId, 'validate-execution-evidence', 'Validate wrapper execution evidence', 'not started'),
+    ],
+  };
+}
+
+function buildSubtasksChildren(parentId) {
+  const scoped = parseRoadmapItemScopedNode(parentId, 'tasks-replace-hard-coded-scripts');
+  const projectId = scoped?.projectId || 'ai-engine';
+  const itemKey = scoped?.itemKey || 'generic-wrapper-runtime';
+  const taskKey = 'replace-hard-coded-scripts';
+
+  return {
+    parent_id: parentId,
+    nodes: [
+      subtaskNode(parentId, projectId, itemKey, taskKey, 'identify-hard-coded-paths', 'Identify hard-coded source and destination paths', 'done'),
+      subtaskNode(parentId, projectId, itemKey, taskKey, 'extract-operation-model', 'Extract reusable wrapper operation model', 'in progress'),
+      subtaskNode(parentId, projectId, itemKey, taskKey, 'bind-sql-evidence', 'Bind operation records to SQL-backed wrapper evidence', 'blocked'),
+      subtaskNode(parentId, projectId, itemKey, taskKey, 'replace-script-path', 'Replace script path with SDK-visible governed execution', 'not started'),
+    ],
+  };
+}
+
+function promotionNode(parentId, projectId, key, label, status) {
+  return treeNode({
+    id: `${parentId}-${key}`,
+    label,
+    type: 'promotion',
+    status,
+    contentHref: `projection-detail.html?type=operator.promotions&projectId=${encodeURIComponent(projectId)}&promotionKey=${encodeURIComponent(key)}`,
+  });
+}
+
+function turnNode(parentId, projectId, turn, action, status) {
+  return treeNode({
+    id: `${parentId}-${turn}`,
+    label: `Turn ${turn}: ${action}`,
+    type: 'turn',
+    status,
+    contentHref: `projection-detail.html?type=operator.agent_session&projectId=${encodeURIComponent(projectId)}&turn=${encodeURIComponent(turn)}`,
+  });
+}
+
+function taskNode(parentId, projectId, key, label, status, hasSubtasks = false) {
+  return treeNode({
+    id: `${parentId}-${key}`,
+    label,
+    type: 'task',
+    status,
+    hasChildren: hasSubtasks,
+    contentHref: `projection-detail.html?type=operator.task_detail&projectId=${encodeURIComponent(projectId)}&taskKey=${encodeURIComponent(key)}`,
+  });
+}
+
+function subtaskNode(parentId, projectId, itemKey, taskKey, subtaskKey, label, status) {
+  return treeNode({
+    id: `${parentId}-${subtaskKey}`,
+    label,
+    type: 'subtask',
+    status,
+    contentHref: `projection-detail.html?type=operator.subtask_detail&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}&taskKey=${encodeURIComponent(taskKey)}&subtaskKey=${encodeURIComponent(subtaskKey)}`,
+  });
+}
+
+function parseRoadmapItemScopedNode(nodeId, suffix) {
+  const scoped = nodeId
+    .replace(/^project-/, '')
+    .replace(new RegExp(`-${suffix}$`), '');
+  const marker = '-roadmap-item-';
+  const markerIndex = scoped.indexOf(marker);
+  if (markerIndex < 0) return null;
+  return {
+    projectId: scoped.slice(0, markerIndex),
+    itemKey: scoped.slice(markerIndex + marker.length),
   };
 }
 

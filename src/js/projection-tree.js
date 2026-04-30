@@ -1,7 +1,11 @@
 const childrenCache = new Map();
+let activeContainer = null;
+let activeCurrentNodeId = null;
 
 export function renderProjectionTree(container, { currentUrl = window.location.href } = {}) {
   const currentNodeId = getCurrentNodeId(currentUrl);
+  activeContainer = container;
+  activeCurrentNodeId = currentNodeId;
 
   container.innerHTML = '<p class="tree-loading">Loading root nodes...</p>';
   loadTreeRoot()
@@ -12,10 +16,51 @@ export function renderProjectionTree(container, { currentUrl = window.location.h
       payload.nodes.forEach((node) => root.appendChild(renderNode(node, { currentNodeId })));
       container.appendChild(root);
       expandCurrentPath(container, currentNodeId);
+      notifyTreeChanged(container);
     })
     .catch((error) => {
       container.innerHTML = `<p style="color: var(--red)">Error loading projection tree: ${escapeHtml(error.message)}</p>`;
     });
+}
+
+export function collapseProjectionTree(container = activeContainer) {
+  if (!container) return;
+  container.querySelectorAll('.tree-node[data-expanded="true"]').forEach((node) => setExpanded(node, false));
+  notifyTreeChanged(container);
+}
+
+export async function expandFocusPath(container = activeContainer) {
+  if (!container) return;
+  await expandPathToNode('project-ai-engine-roadmap-item-generic-wrapper-runtime', container);
+}
+
+export async function refreshSelectedBranch(container = activeContainer) {
+  if (!container) return;
+  const current = container.querySelector('.tree-summary.is-current')?.closest('.tree-node');
+  const branch = current?.querySelector(':scope > .tree-children')
+    ? current
+    : current?.parentElement?.closest('.tree-node');
+  if (!branch) return;
+  const node = getNodePayload(branch);
+  if (!node?.hasChildren) return;
+  await refreshBranch(branch, node, { currentNodeId: activeCurrentNodeId });
+  notifyTreeChanged(container);
+}
+
+export async function expandPathToNode(nodeId, container = activeContainer) {
+  if (!container) return;
+  const path = [...getAncestorPath(nodeId), nodeId];
+  for (const pathNodeId of path) {
+    const wrapper = container.querySelector(`[data-node-id="${cssEscape(pathNodeId)}"]`);
+    if (!wrapper) return;
+    const payloadNode = getNodePayload(wrapper);
+    if (!payloadNode) return;
+    if (payloadNode.hasChildren) {
+      await ensureChildren(wrapper, payloadNode, { currentNodeId: activeCurrentNodeId });
+      setExpanded(wrapper, true);
+    }
+  }
+  notifyTreeChanged(container);
 }
 
 async function loadTreeRoot() {
@@ -46,6 +91,16 @@ function renderNode(node, { currentNodeId }) {
   const row = document.createElement('div');
   row.className = getRowClassName(node, currentNodeId);
   row.setAttribute('role', 'treeitem');
+  row.dataset.label = node.label || '';
+  row.dataset.type = node.type || '';
+  row.dataset.status = node.status || node.meta || '';
+  row.dataset.searchText = [
+    node.label,
+    node.type,
+    node.status,
+    node.meta,
+    node.projectionType,
+  ].filter(Boolean).join(' ').toLowerCase();
   if (node.hasChildren) row.setAttribute('aria-expanded', 'false');
   if (node.id === currentNodeId) row.setAttribute('aria-current', 'page');
 
@@ -130,6 +185,7 @@ async function ensureChildren(wrapper, node, { currentNodeId, refresh = false })
       childContainer.appendChild(renderNode(child, { currentNodeId }));
     });
     wrapper.dataset.childrenLoaded = 'true';
+    notifyTreeChanged(activeContainer);
   } catch (error) {
     childContainer.innerHTML = `<p style="color: var(--red)">Error loading children: ${escapeHtml(error.message)}</p>`;
   }
@@ -183,12 +239,21 @@ function renderTreeLabel(node) {
   `;
 }
 
+function notifyTreeChanged(container) {
+  container?.dispatchEvent(new CustomEvent('projection-tree:changed', { bubbles: true }));
+}
+
 function getCurrentNodeId(currentUrl) {
   const url = new URL(currentUrl, window.location.href);
   const type = url.searchParams.get('type');
   const surface = url.searchParams.get('surface');
   const projectId = url.searchParams.get('projectId') || 'ai-engine';
   const itemKey = url.searchParams.get('itemKey') || 'generic-wrapper-runtime';
+  const taskKey = url.searchParams.get('taskKey');
+  const subtaskKey = url.searchParams.get('subtaskKey');
+  const promotionKey = url.searchParams.get('promotionKey');
+  const workflowRunId = url.searchParams.get('workflowRunId');
+  const turn = url.searchParams.get('turn');
 
   if (surface === 'operator.project_detail') return 'project-detail-group';
   if (surface === 'operator.project_roadmap') return 'project-roadmap-group';
@@ -197,12 +262,28 @@ function getCurrentNodeId(currentUrl) {
   if (type === 'operator.project_detail') return `project-${projectId}-detail`;
   if (type === 'operator.project_roadmap') return `project-${projectId}-roadmap`;
   if (type === 'operator.roadmap_item') return `project-${projectId}-roadmap-item-${itemKey}`;
-  if (type === 'operator.task_detail') return `project-${projectId}-roadmap-item-${itemKey}-tasks`;
+  if (type === 'operator.task_detail') {
+    return taskKey
+      ? `project-${projectId}-roadmap-item-${itemKey}-tasks-${taskKey}`
+      : `project-${projectId}-roadmap-item-${itemKey}-tasks`;
+  }
+  if (type === 'operator.subtask_detail') {
+    return `project-${projectId}-roadmap-item-${itemKey}-tasks-${taskKey || 'replace-hard-coded-scripts'}-${subtaskKey || ''}`;
+  }
   if (type === 'operator.evidence_packet') return `project-${projectId}-roadmap-item-${itemKey}-evidence`;
+  if (type === 'operator.workflow_run') return `project-${projectId}-workflow-runs-${workflowRunId || 'refactor-runtime'}`;
   if (type === 'operator.workflow_runs') return `project-${projectId}-workflow-runs`;
-  if (type === 'operator.promotions') return `project-${projectId}-promotions`;
+  if (type === 'operator.promotions') {
+    return promotionKey
+      ? `project-${projectId}-promotions-${promotionKey}`
+      : `project-${projectId}-promotions`;
+  }
   if (type === 'operator.cicd_status') return `project-${projectId}-cicd`;
-  if (type === 'operator.agent_session') return `project-${projectId}-agent-session`;
+  if (type === 'operator.agent_session') {
+    return turn
+      ? `project-${projectId}-turns-${turn}`
+      : `project-${projectId}-agent-session`;
+  }
   return 'projections';
 }
 
@@ -215,11 +296,27 @@ function getAncestorPath(nodeId) {
     return path;
   }
 
-  const projectMatch = nodeId.match(/^project-(.+?)(?:-(detail|roadmap|promotions|cicd|agent-session|workflow-runs)|$)/);
+  const projectMatch = nodeId.match(/^project-(.+?)(?:-(detail|roadmap|promotions|cicd|agent-session|workflow-runs|memory|turns)|$)/);
   if (!projectMatch) return path;
 
   const projectId = projectMatch[1];
   path.push('project-surfaces', `project-${projectId}`);
+
+  if (nodeId.startsWith(`project-${projectId}-promotions-`)) {
+    path.push(`project-${projectId}-promotions`);
+  }
+
+  if (nodeId.startsWith(`project-${projectId}-workflow-runs-`)) {
+    path.push(`project-${projectId}-workflow-runs`);
+  }
+
+  if (nodeId.startsWith(`project-${projectId}-memory-`)) {
+    path.push(`project-${projectId}-agent-session`, `project-${projectId}-memory`);
+  }
+
+  if (nodeId.startsWith(`project-${projectId}-turns-`)) {
+    path.push(`project-${projectId}-agent-session`, `project-${projectId}-turns`);
+  }
 
   if (nodeId.includes(`project-${projectId}-roadmap`)) {
     path.push(`project-${projectId}-roadmap`);
@@ -227,13 +324,33 @@ function getAncestorPath(nodeId) {
 
   if (nodeId.includes(`project-${projectId}-roadmap-item-`)) {
     path.push(`project-${projectId}-current-focus`);
-    const itemKey = nodeId
-      .replace(`project-${projectId}-roadmap-item-`, '')
-      .replace(/-(tasks|evidence|workflow-runs)$/, '');
+    const itemKey = getRoadmapItemKey(nodeId, projectId);
     path.push(`project-${projectId}-roadmap-item-${itemKey}`);
+
+    if (nodeId.includes(`project-${projectId}-roadmap-item-${itemKey}-tasks`)) {
+      path.push(`project-${projectId}-roadmap-item-${itemKey}-tasks`);
+      const taskKey = getTaskKey(nodeId, projectId, itemKey);
+      if (taskKey) path.push(`project-${projectId}-roadmap-item-${itemKey}-tasks-${taskKey}`);
+    }
+
+    if (nodeId.includes(`project-${projectId}-roadmap-item-${itemKey}-workflow-runs`)) {
+      path.push(`project-${projectId}-roadmap-item-${itemKey}-workflow-runs`);
+    }
   }
 
   return path;
+}
+
+function getRoadmapItemKey(nodeId, projectId) {
+  return nodeId
+    .replace(`project-${projectId}-roadmap-item-`, '')
+    .replace(/-(tasks|evidence|workflow-runs)(?:-.+)?$/, '');
+}
+
+function getTaskKey(nodeId, projectId, itemKey) {
+  const prefix = `project-${projectId}-roadmap-item-${itemKey}-tasks-`;
+  if (!nodeId.startsWith(prefix)) return '';
+  return nodeId.slice(prefix.length).replace(/-(identify-hard-coded-paths|extract-operation-model|bind-sql-evidence|replace-script-path)$/, '');
 }
 
 function cssEscape(value) {
