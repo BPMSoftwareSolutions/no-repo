@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       surfaceList.appendChild(renderSurface(surface, index + 1));
     });
 
-    renderProjectionTree(tree, { projects });
+    renderProjectionTree(tree);
 
     attentionList.innerHTML = '';
     buildAttention({ projects, surfaceGroups }).forEach((item) => {

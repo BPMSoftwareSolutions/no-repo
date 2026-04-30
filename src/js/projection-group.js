@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const data = await callAiEngine('listProjects', { limit: 50 }).catch(() => ({ projects: [] }));
     const projects = data.projects?.length ? data.projects : [fallbackProject()];
 
-    renderProjectionTree(tree, { projects });
+    renderProjectionTree(tree);
 
     list.innerHTML = '';
     projects.forEach((project, index) => {

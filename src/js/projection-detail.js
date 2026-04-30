@@ -39,8 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function renderPersistentTree(tree) {
   try {
-    const data = await callAiEngine('listProjects', { limit: 50 }).catch(() => ({ projects: [] }));
-    renderProjectionTree(tree, { projects: data.projects || [] });
+    renderProjectionTree(tree);
   } catch (error) {
     tree.innerHTML = `<p style="color: var(--red)">Error loading projection tree: ${error.message}</p>`;
   }

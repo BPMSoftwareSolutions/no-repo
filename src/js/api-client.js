@@ -143,10 +143,40 @@ function parseKeyValues(lines) {
   return entries;
 }
 
-function renderLogaBlock(blockName, lines) {
+function parseDirectiveAttributes(value = '') {
+  const attrs = {};
+  const pattern = /([a-zA-Z0-9_-]+)=("([^"]*)"|'([^']*)'|([^\s]+))/g;
+  let match;
+  while ((match = pattern.exec(value))) {
+    attrs[match[1]] = match[3] ?? match[4] ?? match[5] ?? '';
+  }
+  return attrs;
+}
+
+function renderAttributeDetails(attrs) {
+  const entries = Object.entries(attrs).filter(([, value]) => value);
+  if (!entries.length) return '';
+  return `<dl>${entries.map(([key, value]) => `<dt>${escapeHtml(key.replaceAll('_', ' '))}</dt><dd>${renderInlineMarkdown(value)}</dd>`).join('')}</dl>`;
+}
+
+function renderLogaBlock(blockName, lines, attrs = {}) {
   const name = blockName.toLowerCase();
   const entries = parseKeyValues(lines);
-  const value = (key) => entries.find(([entryKey]) => entryKey === key)?.[1] || '';
+  const value = (key) => entries.find(([entryKey]) => entryKey === key)?.[1] || attrs[key] || '';
+
+  if (name === 'surface') {
+    const type = value('type') || 'surface';
+    const priority = value('priority');
+    const summary = value('summary');
+    return `
+      <section class="loga-surface">
+        <p class="eyebrow">${escapeHtml([type.replaceAll('_', ' '), priority].filter(Boolean).join(' / '))}</p>
+        ${summary ? `<p class="lead">${renderInlineMarkdown(summary)}</p>` : ''}
+        ${renderAttributeDetails(Object.fromEntries(Object.entries(attrs).filter(([key]) => !['type', 'priority', 'summary'].includes(key))))}
+        ${entries.filter(([key]) => !key).map(([, entryValue]) => `<p>${renderInlineMarkdown(entryValue)}</p>`).join('')}
+      </section>
+    `;
+  }
 
   if (name === 'focus') {
     return `
@@ -204,7 +234,15 @@ function renderLogaBlock(blockName, lines) {
     return `<details><summary>Evidence Drawer</summary><pre><code>${escapeHtml(lines.join('\n'))}</code></pre></details>`;
   }
 
-  return `<details class="loga-primitive"><summary>${escapeHtml(blockName.replaceAll('_', ' '))}</summary><pre><code>${escapeHtml(lines.join('\n'))}</code></pre></details>`;
+  return `
+    <section class="loga-panel loga-primitive">
+      <h3>${escapeHtml(blockName.replaceAll('_', ' '))}</h3>
+      ${renderAttributeDetails(attrs)}
+      ${entries.filter(([key]) => key).length ? `<dl>${entries.filter(([key]) => key).map(([key, entryValue]) => `<dt>${escapeHtml(key.replaceAll('_', ' '))}</dt><dd>${renderInlineMarkdown(entryValue)}</dd>`).join('')}</dl>` : ''}
+      ${entries.filter(([key]) => !key).map(([, entryValue]) => `<p>${renderInlineMarkdown(entryValue)}</p>`).join('')}
+      ${!Object.keys(attrs).length && !entries.length && lines.some((line) => line.trim()) ? `<p>${renderInlineMarkdown(lines.join(' '))}</p>` : ''}
+    </section>
+  `;
 }
 
 export function renderMarkdownProjection(text) {
@@ -214,15 +252,15 @@ export function renderMarkdownProjection(text) {
 
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index];
-    const blockStart = line.trim().match(/^::([a-zA-Z0-9_]+)$/);
+    const blockStart = line.trim().match(/^:{2,3}([a-zA-Z0-9_]+)(?:\s+(.*))?$/);
     if (blockStart) {
       const blockLines = [];
       index++;
-      while (index < lines.length && lines[index].trim() !== '::') {
+      while (index < lines.length && !/^:{2,3}$/.test(lines[index].trim())) {
         blockLines.push(lines[index]);
         index++;
       }
-      html.push(renderLogaBlock(blockStart[1], blockLines));
+      html.push(renderLogaBlock(blockStart[1], blockLines, parseDirectiveAttributes(blockStart[2])));
       continue;
     }
 

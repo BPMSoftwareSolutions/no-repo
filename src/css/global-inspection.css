@@ -706,6 +706,19 @@ code { font-family: var(--mono); }
   border-bottom: 1px solid var(--line);
 }
 
+.loga-surface {
+  margin: 18px 0 24px;
+  padding: 18px 0 20px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.loga-surface .lead {
+  margin-bottom: 0;
+  max-width: 82ch;
+  color: var(--text);
+}
+
 .loga-focus h2 {
   margin: 0 0 10px;
   max-width: 820px;
@@ -905,15 +918,98 @@ body:has(main.projection-workspace) > main {
   content: "";
 }
 
+.tree-node:has(> .tree-branch)::before {
+  content: none;
+}
+
 .tree-summary {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   min-width: 0;
   min-height: 30px;
   padding: 4px 0;
   color: var(--text);
   cursor: pointer;
+}
+
+.tree-summary button + button {
+  margin-left: 0;
+}
+
+.tree-caret,
+.tree-label-action,
+.tree-refresh {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.tree-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 12px;
+  width: 12px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: color 140ms ease, transform 140ms ease;
+}
+
+.tree-caret:disabled {
+  cursor: default;
+  opacity: 0;
+}
+
+.tree-caret.is-expanded {
+  transform: rotate(90deg);
+}
+
+.tree-label-action {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  min-width: 0;
+  flex: 1 1 auto;
+  width: auto;
+  color: inherit;
+  font-weight: inherit;
+  text-align: left;
+}
+
+.tree-label-action:hover {
+  color: var(--accent-2);
+}
+
+.tree-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  opacity: 0;
+  white-space: nowrap;
+  transition: opacity 140ms ease, color 140ms ease;
+}
+
+.tree-summary:hover .tree-refresh,
+.tree-summary:focus-within .tree-refresh {
+  opacity: 1;
+}
+
+.tree-refresh:hover {
+  color: var(--accent-2);
 }
 
 .tree-summary:hover {
@@ -933,6 +1029,10 @@ body:has(main.projection-workspace) > main {
   color: var(--accent-2);
 }
 
+.tree-summary.is-active-branch .tree-caret {
+  color: var(--accent-2);
+}
+
 .tree-summary.is-current {
   color: var(--text-strong);
 }
@@ -948,7 +1048,7 @@ body:has(main.projection-workspace) > main {
 .tree-summary.is-current::after {
   width: 6px;
   height: 6px;
-  margin-left: auto;
+  margin-left: 0;
   border-radius: 999px;
   background: var(--accent);
   content: "";
@@ -956,6 +1056,14 @@ body:has(main.projection-workspace) > main {
 
 .tree-leaf {
   font-weight: 500;
+}
+
+.tree-copy {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  min-width: 0;
+  gap: 8px;
 }
 
 .tree-label {
@@ -986,6 +1094,13 @@ details[open] > .tree-summary .tree-arrow {
   margin-left: 14px;
   padding-left: 6px;
   border-left: 1px solid var(--line-soft);
+}
+
+.tree-loading {
+  margin: 4px 0 4px 20px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
 }
 
 .projection-tree details {
