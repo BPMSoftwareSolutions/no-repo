@@ -246,8 +246,8 @@ primary_question: "What should I care about right now?"
       return `<div class="loga-control"><label>${escapeHtml(value('label') || 'Select')}</label><select>${parseOptions(lines).map((option) => `<option${option === selected ? ' selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></div>`;
     }
     if (block === 'filter_group' || block === 'filters') return `<div class="loga-chip-group">${records.map((record) => `<span class="loga-chip">${escapeHtml(record.label || 'Filter')}</span>`).join('')}</div>`;
-    if (block === 'action_group' || block === 'actions') return `<div class="loga-action-group">${records.map((record) => `<button type="button">${escapeHtml(record.label || 'Action')}</button>`).join('')}</div>`;
-    if (block === 'nav') return `<nav class="loga-nav">${records.map((record) => `<a href="#">${escapeHtml(record.label || 'Open')}</a>`).join('')}</nav>`;
+    if (block === 'action_group' || block === 'actions') return `<div class="loga-action-group">${records.map((record) => `<button class="loga-action" type="button">${escapeHtml(record.label || 'Action')}</button>`).join('')}</div>`;
+    if (block === 'nav') return `<nav class="loga-nav">${records.map((record) => `<a class="loga-pill" href="#">${escapeHtml(record.label || 'Open')}</a>`).join('')}</nav>`;
     if (['roadmap', 'task_list', 'run_list', 'promotion_list', 'cicd_list', 'turn_list', 'memory', 'checklist'].includes(block)) {
       return `<section class="loga-list ${escapeHtml(block)}">${records.map((record) => {
         const title = record.title || record.label || record.text || record.reminder || record.key || (record.turn ? `Turn ${record.turn}` : 'Untitled');
@@ -338,8 +338,18 @@ primary_question: "What should I care about right now?"
 
   function renderToolbarZoneShell(zone, html) {
     const align = zone.attrs.align || 'left';
-    const name = zone.attrs.name || align;
-    return `<div class="loga-toolbar__zone loga-toolbar__zone--${escapeHtml(align)}" data-zone-name="${escapeHtml(name)}" data-align="${escapeHtml(align)}">${html}</div>`;
+    const name = inferZoneName(zone, html);
+    return `<div class="loga-toolbar__zone loga-toolbar__zone--${escapeHtml(align)}" data-zone-name="${escapeHtml(name)}" data-name="${escapeHtml(name)}" data-align="${escapeHtml(align)}">${html}</div>`;
+  }
+
+  function inferZoneName(zone, html) {
+    if (zone.attrs.name && !['left', 'center', 'right'].includes(zone.attrs.name)) return zone.attrs.name;
+    if (html.includes('loga-control--search')) return 'search';
+    if (html.includes('loga-nav')) return 'navigation';
+    if (html.includes('loga-chip-group')) return 'filters';
+    if (html.includes('loga-action-group')) return 'actions';
+    if (html.includes('loga-toolbar__context')) return 'context';
+    return zone.attrs.name || zone.attrs.align || 'zone';
   }
 
   function renderToolbarContext(values) {

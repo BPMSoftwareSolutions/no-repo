@@ -90,9 +90,11 @@ assert.equal(linearResult.diagnostics.fatal.length, 0, 'linear toolbar must not 
 assert.match(linearResult.html, /data-toolbar-variant="linear"/, 'linear toolbar must declare its layout mode');
 assert.match(linearResult.html, /<header class="loga-toolbar loga-toolbar--linear"/, 'linear toolbar must render inline toolbar shell');
 assert.doesNotMatch(linearResult.html, /<section class="loga-toolbar__zone/, 'linear toolbar zones must not render as section/card wrappers');
-assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--left"[^>]*data-align="left"/, 'linear left zones must render as fixed flex item divs');
-assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--center"[^>]*data-align="center"/, 'linear center zones must expose center alignment for flexible search');
-assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--right"[^>]*data-align="right"/, 'linear right zones must render as fixed flex item divs');
+assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--left"[^>]*data-name="navigation"[^>]*data-align="left"/, 'linear navigation zone must be named for compact sizing');
+assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--center"[^>]*data-name="search"[^>]*data-align="center"/, 'linear search zone must be named for flexible sizing');
+assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--right"[^>]*data-name="actions"[^>]*data-align="right"/, 'linear actions zone must be named for fixed sizing');
+assert.match(linearResult.html, /class="loga-pill"/, 'nav items must render as pills for responsive collapse');
+assert.match(linearResult.html, /class="loga-action"/, 'action buttons must render with action class for responsive collapse');
 assert.match(linearResult.html, /Roadmap/, 'linear toolbar must render nav content');
 assert.match(linearResult.html, /Refresh/, 'linear toolbar must render action content');
 
@@ -115,9 +117,10 @@ const browserRuntime = fs.readFileSync('./docs/loga-project-projections/markdown
 const labHtml = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab.html', 'utf8');
 
 assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?flex-wrap:\s*nowrap;/, 'linear toolbar CSS must prevent wrapping');
-assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-x:\s*auto;/, 'linear toolbar CSS must scroll horizontally when needed');
-assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="center"\]\s*{[\s\S]*?flex:\s*1 1 240px;/, 'linear center zone must be the flexible toolbar segment');
-assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="left"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="right"\]\s*{[\s\S]*?flex:\s*0 0 auto;/, 'linear left and right zones must stay fixed');
+assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-x:\s*auto;/, 'linear toolbar CSS must scroll horizontally instead of overlapping');
+assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-y:\s*hidden;/, 'linear toolbar CSS must prevent vertical overflow');
+assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="search"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="center"\]\s*{[\s\S]*?flex:\s*0 0 320px;/, 'linear search zone must have stable debug width');
+assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="context"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="actions"\]\s*{[\s\S]*?flex:\s*0 0 auto;/, 'linear context, filters, and actions zones must stay fixed');
 assert.match(labHtml, /\.loga-toolbar--linear \.loga-control--search\s*{[\s\S]*?width:\s*100%;/, 'linear search control must fill the flexible center zone');
 
 const elements = {};

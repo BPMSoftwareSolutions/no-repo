@@ -107,8 +107,18 @@ function renderToolbarZone(zone, renderBlock) {
 
 function renderToolbarZoneShell(zone, html, tagName) {
   const align = zone.attrs.align || 'left';
-  const name = zone.attrs.name || align;
-  return `<${tagName} class="loga-toolbar__zone loga-toolbar__zone--${escapeHtml(align)}" data-zone-name="${escapeHtml(name)}" data-align="${escapeHtml(align)}">${html}</${tagName}>`;
+  const name = inferZoneName(zone, html);
+  return `<${tagName} class="loga-toolbar__zone loga-toolbar__zone--${escapeHtml(align)}" data-zone-name="${escapeHtml(name)}" data-name="${escapeHtml(name)}" data-align="${escapeHtml(align)}">${html}</${tagName}>`;
+}
+
+function inferZoneName(zone, html) {
+  if (zone.attrs.name && !['left', 'center', 'right'].includes(zone.attrs.name)) return zone.attrs.name;
+  if (html.includes('loga-control--search')) return 'search';
+  if (html.includes('loga-nav')) return 'navigation';
+  if (html.includes('loga-chip-group')) return 'filters';
+  if (html.includes('loga-action-group')) return 'actions';
+  if (html.includes('loga-toolbar__context')) return 'context';
+  return zone.attrs.name || zone.attrs.align || 'zone';
 }
 
 function renderToolbarContext(values) {

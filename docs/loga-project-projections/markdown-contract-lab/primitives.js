@@ -31,7 +31,7 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
   }
 
   if (block === 'action_group' || block === 'actions') {
-    return `<div class="loga-action-group">${records.map((record) => `<button type="button">${escapeHtml(record.label || 'Action')}</button>`).join('')}</div>`;
+    return `<div class="loga-action-group">${records.map((record) => `<button class="loga-action" type="button">${escapeHtml(record.label || 'Action')}</button>`).join('')}</div>`;
   }
 
   if (block === 'status') {
@@ -69,7 +69,7 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
   }
 
   if (block === 'nav') {
-    return `<nav class="loga-nav">${records.map((record) => `<a href="#">${escapeHtml(record.label || 'Open')}</a>`).join('')}</nav>`;
+    return `<nav class="loga-nav">${records.map((record) => `<a class="loga-pill" href="#">${escapeHtml(record.label || 'Open')}</a>`).join('')}</nav>`;
   }
 
   if (block === 'next_actions') {

@@ -316,6 +316,7 @@
       gap: 10px;
       padding: 8px 10px;
       overflow-x: auto;
+      overflow-y: hidden;
       white-space: nowrap;
     }
 
@@ -357,14 +358,16 @@
       margin-left: auto;
     }
 
-    .loga-toolbar--linear .loga-toolbar__zone[data-align="center"] {
-      flex: 1 1 240px;
-      min-width: 180px;
+    .loga-toolbar--linear .loga-toolbar__zone[data-name="context"],
+    .loga-toolbar--linear .loga-toolbar__zone[data-name="filters"],
+    .loga-toolbar--linear .loga-toolbar__zone[data-name="actions"] {
+      flex: 0 0 auto;
     }
 
-    .loga-toolbar--linear .loga-toolbar__zone[data-align="left"],
-    .loga-toolbar--linear .loga-toolbar__zone[data-align="right"] {
-      flex: 0 0 auto;
+    .loga-toolbar--linear .loga-toolbar__zone[data-name="search"],
+    .loga-toolbar--linear .loga-toolbar__zone[data-align="center"] {
+      flex: 0 0 320px;
+      min-width: 220px;
     }
 
     .loga-toolbar__context {
@@ -431,8 +434,13 @@
 
     .loga-toolbar--linear .loga-control--search {
       width: 100%;
-      min-width: 180px;
-      flex: 1 1 auto;
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+
+    .loga-toolbar--linear .loga-control--search input {
+      width: 100%;
+      min-width: 0;
     }
 
     .loga-chip-group,
@@ -449,6 +457,7 @@
     .loga-toolbar--linear .loga-nav {
       flex: 0 0 auto;
       flex-wrap: nowrap;
+      min-width: 0;
     }
 
     .loga-chip,
@@ -464,6 +473,26 @@
       color: var(--strong);
       font-size: 12px;
       font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 1100px) {
+      .loga-toolbar--linear .loga-toolbar__zone[data-name="actions"] .loga-action:not(:first-child) {
+        display: none;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .loga-toolbar--linear .loga-toolbar__zone[data-name="filters"] {
+        display: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .loga-toolbar--linear .loga-toolbar__context .eyebrow,
+      .loga-toolbar--linear .loga-toolbar__zone[data-name="navigation"] .loga-pill:nth-child(n+4) {
+        display: none;
+      }
     }
 
     .loga-list {
