@@ -90,15 +90,49 @@ Markdown AST
 
 ## 1. Markdown contract
 
-```yaml
-toolbar:
-  zones:
-    - context
-    - navigation
-    - search
-    - filters
-    - actions
-    - status
+```markdown
+::toolbar id="projection-graph-toolbar"
+
+  ::toolbar_zone name="context" align="left"
+  eyebrow: "Inspection Workspace"
+  title: "Projection Graph"
+  status: "Agent active · Turn 3"
+  ::
+
+  ::toolbar_zone name="navigation" align="left"
+  ::nav variant="pills"
+  - Roadmap
+  - Promotions
+  - Workflows
+  - CI/CD
+  - Memory
+  - Evidence
+  ::
+  ::
+
+  ::toolbar_zone name="search" align="center"
+  ::search
+  placeholder: "Search projects, tasks, evidence..."
+  ::
+  ::
+
+  ::toolbar_zone name="filters" align="right"
+  ::filter_group variant="chips"
+  - Needs Attention
+  - Blocked Only
+  - High Priority
+  ::
+  ::
+
+  ::toolbar_zone name="actions" align="right"
+  ::action_group
+  - Expand Focus
+  - Collapse All
+  - Refresh Branch
+  ::
+  ::
+
+::
 ```
 
 ---
@@ -184,8 +218,8 @@ Do it in 3 steps:
 
 Detect:
 
-```yaml
-toolbar:
+```markdown
+::toolbar
 ```
 
 or

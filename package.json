@@ -14,7 +14,7 @@
     "ping": "node ./scripts/ping.mjs",
     "start": "node server.mjs",
     "smoke": "npm run ping",
-    "test": "npm run check && npm run check:experiment"
+    "test": "npm run check && npm run check:experiment && node ./scripts/test-markdown-contract-lab.mjs"
   },
   "keywords": [],
   "author": "",

@@ -200,6 +200,13 @@
     .diagnostics .warn { color: var(--amber); }
     .diagnostics .fail { color: var(--red); }
 
+    .grammar-note {
+      flex-basis: 100%;
+      margin: 0;
+      color: var(--muted);
+      font: 12px/1.45 var(--mono);
+    }
+
     .preview-pane {
       overflow: auto;
     }
@@ -542,6 +549,46 @@
       text-align: center;
     }
 
+    .contract-errors {
+      display: grid;
+      gap: 14px;
+      margin: 18px 0 28px;
+    }
+
+    .contract-error {
+      padding: 18px;
+      border: 1px solid rgba(248, 113, 113, 0.36);
+      border-left: 3px solid var(--red);
+      border-radius: 16px;
+      background: rgba(248, 113, 113, 0.08);
+    }
+
+    .contract-error h3 {
+      margin: 0 0 8px;
+      color: var(--strong);
+      font-size: 18px;
+    }
+
+    .contract-error p {
+      margin: 0 0 10px;
+      color: var(--ink);
+    }
+
+    .contract-error .repair-label {
+      margin-top: 14px;
+      color: var(--red);
+      font: 11px/1.4 var(--mono);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .contract-error pre {
+      margin-top: 8px;
+      border: 1px solid rgba(248, 113, 113, 0.24);
+      border-radius: 12px;
+      background: rgba(3, 7, 18, 0.72);
+    }
+
     @media (max-width: 980px) {
       .lab-header,
       .lab-grid,
@@ -594,6 +641,7 @@
             Auto render
           </label>
           <ul id="diagnostics" class="diagnostics" aria-label="Contract diagnostics"></ul>
+          <p class="grammar-note">Supported layout grammar: child UI blocks must be nested as blocks inside <code>::toolbar_zone</code>. YAML fields are only simple properties.</p>
         </div>
       </section>
 
@@ -627,11 +675,11 @@ source_truth: "sql"
 primary_question: "What should I care about right now?"
 ---
 
-::toolbar id="projection-graph-toolbar"
+::toolbar id="projection-toolbar"
 
   ::toolbar_zone name="context" align="left"
   eyebrow: "Inspection Workspace"
-  title: "Projection Graph"
+  title: "Current Work"
   status: "Agent active · Turn 3"
   ::
 
@@ -683,7 +731,7 @@ primary_question: "What should I care about right now?"
   ::action_group
   - Expand Focus
   - Collapse All
-  - Refresh Branch
+  - Refresh
   ::
   ::
 
@@ -744,11 +792,12 @@ primary_question: "What should I care about right now?"
         const markdown = input.value;
         updateCounts();
         const parsed = parseMarkdown(markdown);
+        const validation = validateContract(markdown, parsed);
         meta.innerHTML = renderMeta(parsed.frontmatter);
-        diagnostics.innerHTML = renderDiagnostics(markdown, parsed).join('');
-        blockCount.textContent = `${parsed.blocks.length} block${parsed.blocks.length === 1 ? '' : 's'} · rendered ${new Date().toLocaleTimeString()}`;
+        diagnostics.innerHTML = renderDiagnostics(markdown, parsed, validation).join('');
+        blockCount.textContent = `${parsed.blocks.length} block${parsed.blocks.length === 1 ? '' : 's'} - rendered ${new Date().toLocaleTimeString()}`;
         output.innerHTML = markdown.trim()
-          ? renderMarkdown(parsed.body)
+          ? renderQuestionFirst(parsed) + (validation.fatal.length ? renderContractErrors(validation.fatal) : renderMarkdown(parsed.body))
           : '<div class="empty-state"><div><strong>Paste markdown to begin.</strong><p>The renderer will convert LOGA primitives into UI blocks.</p></div></div>';
       } catch (error) {
         diagnostics.innerHTML = `<li class="fail">Render error: ${escapeHtml(error.message)}</li>`;
@@ -778,29 +827,113 @@ primary_question: "What should I care about right now?"
     function renderMeta(frontmatter) {
       const entries = [
         ['contract', frontmatter.loga_contract],
-        ['projection', frontmatter.projection_type],
         ['truth', frontmatter.source_truth],
-        ['question', frontmatter.primary_question],
       ].filter(([, value]) => value);
 
       return entries.map(([key, value]) => `<span>${escapeHtml(key)}: ${escapeHtml(value)}</span>`).join('');
     }
 
-    function renderDiagnostics(markdown, parsed) {
+    function renderQuestionFirst(parsed) {
+      const question = parsed.frontmatter.primary_question || 'What should I care about right now?';
+      const answer = findContractAnswer(parsed.body) || findToolbarStatus(parsed.body) || '';
+      return `
+        <section class="question-first">
+          <p class="label">Primary question</p>
+          <h2>${inline(question)}</h2>
+          ${answer ? `<p class="answer">${inline(answer)}</p>` : ''}
+        </section>
+      `;
+    }
+
+    function findContractAnswer(body) {
+      const focusMatch = body.match(/::focus[\s\S]*?answer:\s*"([^"]+)"/);
+      if (focusMatch) return focusMatch[1];
+      const surfaceMatch = body.match(/::surface[^\n]*summary="([^"]+)"/);
+      if (surfaceMatch) return surfaceMatch[1];
+      return '';
+    }
+
+    function findToolbarStatus(body) {
+      const statusMatch = body.match(/status:\s*"([^"]+)"/);
+      return statusMatch?.[1] || '';
+    }
+
+    function validateContract(markdown, parsed) {
+      const fatal = [];
+      if (!markdown.trim()) return { fatal };
+
+      const hasToolbar = parsed.blocks.includes('toolbar');
+      const hasToolbarZones = markdown.includes('::toolbar_zone');
+      const hasYamlZones = usesYamlNestedZones(markdown);
+
+      if (hasToolbar && !hasToolbarZones && !hasYamlZones) {
+        fatal.push({
+          title: 'Toolbar has no renderable zones',
+          detail: 'The toolbar block exists, but there are no ::toolbar_zone children for the interpreter to place in the experience.',
+          repair: 'Add at least one ::toolbar_zone block inside ::toolbar.',
+          example: [
+            '::toolbar id="projection-graph-toolbar"',
+            '  ::toolbar_zone name="context" align="left"',
+            '  eyebrow: "Inspection Workspace"',
+            '  title: "Projection Graph"',
+            '  status: "Agent active - Turn 3"',
+            '  ::',
+            '::',
+          ].join('\n'),
+        });
+      }
+
+      return { fatal };
+    }
+
+    function renderDiagnostics(markdown, parsed, validation = { fatal: [] }) {
+      const hasToolbar = parsed.blocks.includes('toolbar');
+      const hasYamlZones = usesYamlNestedZones(markdown);
+      const hasToolbarZones = markdown.includes('::toolbar_zone');
+      const hasAnyToolbarZones = hasToolbarZones || hasYamlZones;
+      const hasActions = parsed.blocks.includes('next_actions')
+        || markdown.includes('::action_group')
+        || markdown.includes('::actions');
+      const isPartialToolbarContract = hasToolbar;
       const checks = [
-        ['contract', Boolean(parsed.frontmatter.loga_contract), 'Missing loga_contract'],
-        ['ux contract', Boolean(parsed.frontmatter.ux_contract), 'Missing ux_contract'],
-        ['source truth', parsed.frontmatter.source_truth === 'sql', 'source_truth is not sql'],
-        ['toolbar', parsed.blocks.includes('toolbar'), 'Missing ::toolbar'],
-        ['zones', markdown.includes('::toolbar_zone'), 'Missing ::toolbar_zone'],
-        ['actions', parsed.blocks.includes('next_actions') || markdown.includes('::action_group'), 'Missing actions block'],
+        ['contract', Boolean(parsed.frontmatter.loga_contract) || isPartialToolbarContract, isPartialToolbarContract ? 'partial toolbar contract' : 'Missing loga_contract'],
+        ['ux contract', Boolean(parsed.frontmatter.ux_contract) || isPartialToolbarContract, isPartialToolbarContract ? 'partial toolbar contract' : 'Missing ux_contract'],
+        ['source truth', parsed.frontmatter.source_truth === 'sql' || isPartialToolbarContract, isPartialToolbarContract ? 'source truth omitted for toolbar-only preview' : 'source_truth is not sql'],
+        ['toolbar', hasToolbar, 'Missing ::toolbar'],
+        ['zones', hasAnyToolbarZones, 'Missing toolbar zones'],
+        ['zone grammar', true, hasYamlZones ? 'YAML zones normalized into toolbar zones' : 'toolbar zone grammar'],
+        ['actions', hasActions, 'Missing actions block'],
         ['raw leak', !/::[a-zA-Z0-9_]+[^\n]*\n[\s\S]*?\n(?!:{2,3})$/.test(markdown), 'Possible unclosed primitive'],
       ];
 
-      return checks.map(([label, pass, fail]) => {
+      const renderedChecks = checks.map(([label, pass, fail]) => {
         const cls = pass ? 'pass' : 'warn';
         return `<li class="${cls}">${escapeHtml(pass ? label : fail)}</li>`;
       });
+
+      return [
+        ...validation.fatal.map((error) => `<li class="fail">${escapeHtml(error.title)}</li>`),
+        ...renderedChecks,
+      ];
+    }
+
+    function usesYamlNestedZones(markdown) {
+      return /::toolbar[^\n]*\n[\s\S]*?\nzones:\s*\n/.test(markdown);
+    }
+
+    function renderContractErrors(errors) {
+      return `
+        <section class="contract-errors" aria-label="Contract errors">
+          ${errors.map((error) => `
+            <article class="contract-error">
+              <h3>${escapeHtml(error.title)}</h3>
+              <p>${escapeHtml(error.detail)}</p>
+              ${error.repair ? `<p><strong>Repair:</strong> ${escapeHtml(error.repair)}</p>` : ''}
+              ${error.example ? `<p class="repair-label">Supported shape</p><pre><code>${escapeHtml(error.example)}</code></pre>` : ''}
+            </article>
+          `).join('')}
+        </section>
+      `;
     }
 
     function renderMarkdown(markdown) {
@@ -817,6 +950,7 @@ primary_question: "What should I care about right now?"
           continue;
         }
 
+        if (/^:{2,3}$/.test(line.trim())) continue;
         if (/^###\s+/.test(line)) html.push(`<h3>${inline(line.replace(/^###\s+/, ''))}</h3>`);
         else if (/^##\s+/.test(line)) html.push(`<h2>${inline(line.replace(/^##\s+/, ''))}</h2>`);
         else if (/^#\s+/.test(line)) html.push(`<h1>${inline(line.replace(/^#\s+/, ''))}</h1>`);
@@ -874,6 +1008,58 @@ primary_question: "What should I care about right now?"
       return blocks;
     }
 
+    function collectToolbarZones(lines) {
+      const blockZones = collectChildBlocks(lines)
+        .filter((child) => child.name.toLowerCase() === 'toolbar_zone');
+      return [
+        ...blockZones,
+        ...collectYamlToolbarZones(lines),
+      ];
+    }
+
+    function collectYamlToolbarZones(lines) {
+      const zones = [];
+      let inZones = false;
+      let current = null;
+
+      const finishCurrent = () => {
+        if (current && current.lines.some((line) => line.trim())) zones.push(current);
+        current = null;
+      };
+
+      lines.forEach((line) => {
+        if (!inZones) {
+          if (/^\s*zones:\s*$/.test(line)) inZones = true;
+          return;
+        }
+
+        const zoneMatch = line.match(/^\s+(left|center|right):\s*$/);
+        if (zoneMatch) {
+          finishCurrent();
+          current = {
+            name: 'toolbar_zone',
+            attrs: { name: zoneMatch[1], align: zoneMatch[1] },
+            lines: [],
+          };
+          return;
+        }
+
+        if (current) current.lines.push(line);
+      });
+
+      finishCurrent();
+      return zones;
+    }
+
+    function parseDirectToolbarKeyValues(lines) {
+      const values = {};
+      lines.forEach((raw) => {
+        const match = raw.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
+        if (match && !['type', 'zones'].includes(match[1])) values[match[1]] = match[2];
+      });
+      return values;
+    }
+
     function renderBlock(name, lines, attrs) {
       const block = name.toLowerCase();
       const records = parseRecords(lines);
@@ -881,15 +1067,30 @@ primary_question: "What should I care about right now?"
       const value = (key) => keyValues[key] || attrs[key] || '';
 
       if (block === 'toolbar') {
-        const zones = collectChildBlocks(lines).filter((child) => child.name.toLowerCase() === 'toolbar_zone');
+        const zones = collectToolbarZones(lines);
+        if (!zones.length) {
+          return renderContractErrors([{
+            title: 'Toolbar has no renderable zones',
+            detail: 'The toolbar rendered no experience because it had no ::toolbar_zone children.',
+            repair: 'Add explicit zone blocks for context, navigation, search, filters, or actions.',
+            example: [
+              '::toolbar_zone name="context" align="left"',
+              'title: "Projection Graph"',
+              'status: "Agent active - Turn 3"',
+              '::',
+            ].join('\n'),
+          }]);
+        }
+
+        const toolbarContext = renderToolbarContext(parseDirectToolbarKeyValues(lines));
         const grouped = {
           left: zones.filter((zone) => (zone.attrs.align || 'left') === 'left'),
           center: zones.filter((zone) => zone.attrs.align === 'center'),
           right: zones.filter((zone) => zone.attrs.align === 'right'),
         };
         return `
-          <header class="loga-toolbar" data-toolbar-id="${escapeHtml(attrs.id || '')}">
-            <section class="loga-toolbar__zone loga-toolbar__zone--left">${grouped.left.map(renderToolbarZone).join('')}</section>
+          <header class="loga-toolbar">
+            <section class="loga-toolbar__zone loga-toolbar__zone--left">${toolbarContext}${grouped.left.map(renderToolbarZone).join('')}</section>
             <section class="loga-toolbar__zone loga-toolbar__zone--center">${grouped.center.map(renderToolbarZone).join('')}</section>
             <section class="loga-toolbar__zone loga-toolbar__zone--right">${grouped.right.map(renderToolbarZone).join('')}</section>
           </header>
@@ -897,7 +1098,7 @@ primary_question: "What should I care about right now?"
       }
 
       if (block === 'toolbar_zone') {
-        return `<section class="loga-toolbar__zone loga-toolbar__zone--${escapeHtml(attrs.align || 'left')}">${renderToolbarZone({ lines, attrs })}</section>`;
+        return renderToolbarZone({ lines, attrs });
       }
 
       if (block === 'search') {
@@ -915,11 +1116,11 @@ primary_question: "What should I care about right now?"
         `;
       }
 
-      if (block === 'filter_group') {
+      if (block === 'filter_group' || block === 'filters') {
         return `<div class="loga-chip-group">${records.map((record) => `<span class="loga-chip">${escapeHtml(record.label || 'Filter')}</span>`).join('')}</div>`;
       }
 
-      if (block === 'action_group') {
+      if (block === 'action_group' || block === 'actions') {
         return `<div class="loga-action-group">${records.map((record) => `<button type="button">${escapeHtml(record.label || 'Action')}</button>`).join('')}</div>`;
       }
 
@@ -958,7 +1159,7 @@ primary_question: "What should I care about right now?"
       }
 
       if (block === 'nav') {
-        return `<nav class="loga-nav">${records.map((record) => `<a href="#">${escapeHtml(record.label || record.projection_type || 'Open')}</a>`).join('')}</nav>`;
+        return `<nav class="loga-nav">${records.map((record) => `<a href="#">${escapeHtml(record.label || 'Open')}</a>`).join('')}</nav>`;
       }
 
       if (block === 'next_actions') {
@@ -967,6 +1168,10 @@ primary_question: "What should I care about right now?"
 
       if (block === 'evidence_drawer') {
         return `<details><summary>Evidence Drawer</summary><pre><code>${escapeHtml(lines.join('\n'))}</code></pre></details>`;
+      }
+
+      if (['toolbar', 'toolbar_zone', 'search', 'select', 'filter_group', 'action_group'].includes(block)) {
+        return '';
       }
 
       return `<section class="loga-panel primitive"><h3>${escapeHtml(name.replaceAll('_', ' '))}</h3>${renderDl(attrs)}${lines.some((line) => line.trim()) ? `<p>${inline(lines.join(' '))}</p>` : ''}</section>`;
@@ -985,19 +1190,24 @@ primary_question: "What should I care about right now?"
       const children = collectChildBlocks(zone.lines);
       const context = [];
       if (values.eyebrow || values.title || values.status) {
-        context.push(`
-          <div class="loga-toolbar__context">
-            ${values.eyebrow ? `<span class="eyebrow">${escapeHtml(values.eyebrow)}</span>` : ''}
-            ${values.title ? `<strong>${escapeHtml(values.title)}</strong>` : ''}
-            ${values.status ? `<span class="loga-toolbar__status">${escapeHtml(values.status)}</span>` : ''}
-          </div>
-        `);
+        context.push(renderToolbarContext(values));
       }
 
       return [
         ...context,
         ...children.map((child) => renderBlock(child.name, child.lines, child.attrs)),
       ].join('');
+    }
+
+    function renderToolbarContext(values) {
+      if (!values.eyebrow && !values.title && !values.status) return '';
+      return `
+        <div class="loga-toolbar__context">
+          ${values.eyebrow ? `<span class="eyebrow">${escapeHtml(values.eyebrow)}</span>` : ''}
+          ${values.title ? `<strong>${escapeHtml(values.title)}</strong>` : ''}
+          ${values.status ? `<span class="loga-toolbar__status">${escapeHtml(values.status)}</span>` : ''}
+        </div>
+      `;
     }
 
     function parseOptions(lines) {
