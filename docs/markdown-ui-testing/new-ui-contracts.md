@@ -91,7 +91,7 @@ Markdown AST
 ## 1. Markdown contract
 
 ```markdown
-::toolbar id="projection-graph-toolbar"
+::toolbar id="projection-graph-toolbar" variant="linear"
 
   ::toolbar_zone name="context" align="left"
   eyebrow: "Inspection Workspace"
@@ -273,7 +273,7 @@ surface_type: "operator.projection_graph"
 primary_question: "What should I care about right now?"
 ---
 
-::toolbar id="projection-graph-toolbar"
+::toolbar id="projection-graph-toolbar" variant="linear"
 
   ::toolbar_zone name="context" align="left"
   eyebrow: "Inspection Workspace"

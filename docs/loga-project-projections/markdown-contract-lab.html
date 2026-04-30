@@ -9,7 +9,6 @@
       color-scheme: dark;
       --bg: #090d14;
       --panel: #0f1724;
-      --panel-2: #121c2b;
       --ink: #e6edf7;
       --strong: #f8fbff;
       --muted: #8b98aa;
@@ -38,6 +37,23 @@
     button,
     textarea {
       font: inherit;
+    }
+
+    button {
+      min-height: 34px;
+      padding: 6px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(17, 28, 43, 0.72);
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    button:hover,
+    button.primary {
+      border-color: rgba(124, 156, 255, 0.6);
+      background: var(--accent-soft);
+      color: var(--strong);
     }
 
     .lab-shell {
@@ -84,23 +100,6 @@
       flex-wrap: wrap;
       justify-content: flex-end;
       gap: 8px;
-    }
-
-    button {
-      min-height: 34px;
-      padding: 6px 12px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(17, 28, 43, 0.72);
-      color: var(--ink);
-      cursor: pointer;
-    }
-
-    button:hover,
-    button.primary {
-      border-color: rgba(124, 156, 255, 0.6);
-      background: var(--accent-soft);
-      color: var(--strong);
     }
 
     .lab-grid {
@@ -212,7 +211,7 @@
     }
 
     .preview-frame {
-      max-width: 1040px;
+      max-width: 1120px;
       margin-inline: auto;
     }
 
@@ -294,57 +293,79 @@
       text-decoration: none;
     }
 
-    .loga-breadcrumb {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin: 8px 0 20px;
-      color: var(--muted);
-      font: 12px/1.4 var(--mono);
-    }
-
-    .loga-breadcrumb a::after {
-      margin-left: 6px;
-      color: var(--muted);
-      content: "/";
-    }
-
     .loga-toolbar {
-      display: grid;
-      grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1.2fr) minmax(260px, 0.9fr);
-      gap: 14px;
-      align-items: start;
       margin: 18px 0 30px;
-      padding: 14px;
       border: 1px solid var(--line);
       border-radius: 18px;
       background: rgba(15, 23, 36, 0.72);
     }
 
+    .loga-toolbar--stacked {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1.2fr) minmax(260px, 0.9fr);
+      gap: 14px;
+      align-items: start;
+      padding: 14px;
+    }
+
+    .loga-toolbar--linear {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .loga-toolbar__group,
     .loga-toolbar__zone {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       gap: 8px;
       min-width: 0;
     }
 
+    .loga-toolbar--stacked .loga-toolbar__group,
+    .loga-toolbar--stacked .loga-toolbar__zone {
+      flex-wrap: wrap;
+    }
+
+    .loga-toolbar--linear .loga-toolbar__zone {
+      flex: 0 0 auto;
+      flex-wrap: nowrap;
+    }
+
+    .loga-toolbar__group--left,
     .loga-toolbar__zone--left {
       justify-content: flex-start;
     }
 
+    .loga-toolbar__group--center,
     .loga-toolbar__zone--center {
       justify-content: center;
     }
 
+    .loga-toolbar__group--right,
     .loga-toolbar__zone--right {
       justify-content: flex-end;
+    }
+
+    .loga-toolbar__zone--right {
+      margin-left: auto;
+    }
+
+    .loga-toolbar--linear .loga-toolbar__zone--right ~ .loga-toolbar__zone--right {
+      margin-left: 0;
     }
 
     .loga-toolbar__context {
       display: grid;
       gap: 2px;
       min-width: 180px;
+    }
+
+    .loga-toolbar--linear .loga-toolbar__context {
+      min-width: max-content;
     }
 
     .loga-toolbar__context strong {
@@ -372,6 +393,10 @@
       min-width: 180px;
     }
 
+    .loga-toolbar--linear .loga-control {
+      min-width: 180px;
+    }
+
     .loga-control label {
       color: var(--muted);
       font: 11px/1.3 var(--mono);
@@ -395,14 +420,29 @@
       flex: 1 1 320px;
     }
 
+    .loga-toolbar--linear .loga-control--search {
+      width: clamp(220px, 24vw, 340px);
+      flex: 0 0 auto;
+    }
+
     .loga-chip-group,
-    .loga-action-group {
+    .loga-action-group,
+    .loga-nav,
+    .loga-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
     }
 
-    .loga-chip {
+    .loga-toolbar--linear .loga-chip-group,
+    .loga-toolbar--linear .loga-action-group,
+    .loga-toolbar--linear .loga-nav {
+      flex-wrap: nowrap;
+    }
+
+    .loga-chip,
+    .loga-nav a,
+    .loga-actions button {
       display: inline-flex;
       align-items: center;
       min-height: 30px;
@@ -413,6 +453,30 @@
       color: var(--strong);
       font-size: 12px;
       font-weight: 700;
+    }
+
+    .loga-list {
+      display: grid;
+      gap: 8px;
+      margin: 18px 0 28px;
+    }
+
+    .loga-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(17, 28, 43, 0.32);
+      color: var(--ink);
+    }
+
+    .loga-list-item span {
+      color: var(--muted);
+      font: 12px/1.4 var(--mono);
     }
 
     .loga-focus,
@@ -443,45 +507,6 @@
       margin: 18px 0 24px;
       padding-left: 18px;
       border-left: 2px solid var(--accent);
-    }
-
-    .loga-nav,
-    .loga-actions,
-    .loga-list {
-      display: grid;
-      gap: 8px;
-      margin: 18px 0 28px;
-    }
-
-    .loga-nav,
-    .loga-actions {
-      display: flex;
-      flex-wrap: wrap;
-    }
-
-    .loga-list-item,
-    .loga-nav a,
-    .loga-actions button {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      min-height: 38px;
-      padding: 8px 12px;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: rgba(17, 28, 43, 0.32);
-      color: var(--ink);
-    }
-
-    .loga-nav a,
-    .loga-actions button {
-      border-radius: 999px;
-    }
-
-    .loga-list-item span {
-      color: var(--muted);
-      font: 12px/1.4 var(--mono);
     }
 
     dl {
@@ -592,12 +617,12 @@
     @media (max-width: 980px) {
       .lab-header,
       .lab-grid,
-      .loga-toolbar {
+      .loga-toolbar--stacked {
         grid-template-columns: 1fr;
       }
 
-      .loga-toolbar__zone {
-        justify-content: flex-start;
+      .loga-toolbar--linear {
+        align-items: flex-start;
       }
 
       .header-actions {
@@ -641,7 +666,7 @@
             Auto render
           </label>
           <ul id="diagnostics" class="diagnostics" aria-label="Contract diagnostics"></ul>
-          <p class="grammar-note">Supported layout grammar: child UI blocks must be nested as blocks inside <code>::toolbar_zone</code>. YAML fields are only simple properties.</p>
+          <p class="grammar-note">Toolbar variants: <code>linear</code> renders zones inline as flex items; <code>stacked</code> renders grouped zones.</p>
         </div>
       </section>
 
@@ -665,623 +690,6 @@
     </main>
   </div>
 
-  <script>
-    const SAMPLE = `---
-loga_contract: "ai-engine-ui/v1"
-ux_contract: "loga-ux/v1"
-surface_type: "operator.projection_graph"
-projection_type: "operator.project_roadmap"
-source_truth: "sql"
-primary_question: "What should I care about right now?"
----
-
-::toolbar id="projection-toolbar"
-
-  ::toolbar_zone name="context" align="left"
-  eyebrow: "Inspection Workspace"
-  title: "Current Work"
-  status: "Agent active · Turn 3"
-  ::
-
-  ::toolbar_zone name="navigation" align="left"
-  ::nav variant="pills"
-  - Roadmap
-  - Promotions
-  - Workflows
-  - CI/CD
-  - Memory
-  - Evidence
-  ::
-  ::
-
-  ::toolbar_zone name="search" align="center"
-  ::search
-  placeholder: "Search projects, tasks, evidence..."
-  ::
-  ::
-
-  ::toolbar_zone name="scope" align="center"
-  ::select label="Scope"
-  value: "AI Engine"
-  options:
-    - AI Engine
-    - LOGA
-    - All Workspaces
-  ::
-
-  ::select label="Mode"
-  value: "Focus"
-  options:
-    - Focus
-    - Review
-    - Diagnostic
-    - Evidence
-  ::
-  ::
-
-  ::toolbar_zone name="filters" align="right"
-  ::filter_group variant="chips"
-  - Needs Attention
-  - Blocked Only
-  - High Priority
-  ::
-  ::
-
-  ::toolbar_zone name="actions" align="right"
-  ::action_group
-  - Expand Focus
-  - Collapse All
-  - Refresh
-  ::
-  ::
-
-::
-
-# Projection Graph
-
-::roadmap
-- key: "generic-wrapper-runtime"
-  title: "Establish Generic Wrapper Runtime"
-  status: "in progress"
-  priority: "high"
-  progress: "2 / 4 tasks complete"
-
-- key: "sdk-refactor-surfaces"
-  title: "Promote Refactor SDK Surfaces"
-  status: "not started"
-  priority: "high"
-  progress: "0 / 5 tasks complete"
-::
-
-::next_actions
-- Open current roadmap item
-- Review refactor candidate
-- Approve decomposition contract
-::`;
-
-    const input = document.getElementById('markdown-input');
-    const output = document.getElementById('rendered-output');
-    const meta = document.getElementById('projection-meta');
-    const diagnostics = document.getElementById('diagnostics');
-    const inputCount = document.getElementById('input-count');
-    const blockCount = document.getElementById('block-count');
-    const autoRender = document.getElementById('auto-render');
-
-    document.getElementById('load-sample').addEventListener('click', () => {
-      input.value = SAMPLE;
-      render();
-    });
-
-    document.getElementById('clear-input').addEventListener('click', () => {
-      input.value = '';
-      render();
-      input.focus();
-    });
-
-    document.getElementById('render-now').addEventListener('click', render);
-    input.addEventListener('input', () => {
-      updateCounts();
-      if (autoRender.checked) render();
-    });
-
-    input.value = SAMPLE;
-    render();
-
-    function render() {
-      try {
-        const markdown = input.value;
-        updateCounts();
-        const parsed = parseMarkdown(markdown);
-        const validation = validateContract(markdown, parsed);
-        meta.innerHTML = renderMeta(parsed.frontmatter);
-        diagnostics.innerHTML = renderDiagnostics(markdown, parsed, validation).join('');
-        blockCount.textContent = `${parsed.blocks.length} block${parsed.blocks.length === 1 ? '' : 's'} - rendered ${new Date().toLocaleTimeString()}`;
-        output.innerHTML = markdown.trim()
-          ? renderQuestionFirst(parsed) + (validation.fatal.length ? renderContractErrors(validation.fatal) : renderMarkdown(parsed.body))
-          : '<div class="empty-state"><div><strong>Paste markdown to begin.</strong><p>The renderer will convert LOGA primitives into UI blocks.</p></div></div>';
-      } catch (error) {
-        diagnostics.innerHTML = `<li class="fail">Render error: ${escapeHtml(error.message)}</li>`;
-        output.innerHTML = `<div class="empty-state"><div><strong>Render failed.</strong><p>${escapeHtml(error.message)}</p></div></div>`;
-      }
-    }
-
-    function updateCounts() {
-      inputCount.textContent = `${input.value.length} chars`;
-    }
-
-    function parseMarkdown(markdown) {
-      const frontmatterMatch = markdown.match(/^---\n([\s\S]*?)\n---\n?/);
-      const frontmatter = {};
-      let body = markdown;
-      if (frontmatterMatch) {
-        body = markdown.slice(frontmatterMatch[0].length);
-        frontmatterMatch[1].split(/\r?\n/).forEach((line) => {
-          const match = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
-          if (match) frontmatter[match[1]] = match[2];
-        });
-      }
-      const blocks = [...body.matchAll(/^:{2,3}([a-zA-Z0-9_]+)(?:\s+[^\n]*)?$/gm)].map((match) => match[1]);
-      return { frontmatter, body, blocks };
-    }
-
-    function renderMeta(frontmatter) {
-      const entries = [
-        ['contract', frontmatter.loga_contract],
-        ['truth', frontmatter.source_truth],
-      ].filter(([, value]) => value);
-
-      return entries.map(([key, value]) => `<span>${escapeHtml(key)}: ${escapeHtml(value)}</span>`).join('');
-    }
-
-    function renderQuestionFirst(parsed) {
-      const question = parsed.frontmatter.primary_question || 'What should I care about right now?';
-      const answer = findContractAnswer(parsed.body) || findToolbarStatus(parsed.body) || '';
-      return `
-        <section class="question-first">
-          <p class="label">Primary question</p>
-          <h2>${inline(question)}</h2>
-          ${answer ? `<p class="answer">${inline(answer)}</p>` : ''}
-        </section>
-      `;
-    }
-
-    function findContractAnswer(body) {
-      const focusMatch = body.match(/::focus[\s\S]*?answer:\s*"([^"]+)"/);
-      if (focusMatch) return focusMatch[1];
-      const surfaceMatch = body.match(/::surface[^\n]*summary="([^"]+)"/);
-      if (surfaceMatch) return surfaceMatch[1];
-      return '';
-    }
-
-    function findToolbarStatus(body) {
-      const statusMatch = body.match(/status:\s*"([^"]+)"/);
-      return statusMatch?.[1] || '';
-    }
-
-    function validateContract(markdown, parsed) {
-      const fatal = [];
-      if (!markdown.trim()) return { fatal };
-
-      const hasToolbar = parsed.blocks.includes('toolbar');
-      const hasToolbarZones = markdown.includes('::toolbar_zone');
-      const hasYamlZones = usesYamlNestedZones(markdown);
-
-      if (hasToolbar && !hasToolbarZones && !hasYamlZones) {
-        fatal.push({
-          title: 'Toolbar has no renderable zones',
-          detail: 'The toolbar block exists, but there are no ::toolbar_zone children for the interpreter to place in the experience.',
-          repair: 'Add at least one ::toolbar_zone block inside ::toolbar.',
-          example: [
-            '::toolbar id="projection-graph-toolbar"',
-            '  ::toolbar_zone name="context" align="left"',
-            '  eyebrow: "Inspection Workspace"',
-            '  title: "Projection Graph"',
-            '  status: "Agent active - Turn 3"',
-            '  ::',
-            '::',
-          ].join('\n'),
-        });
-      }
-
-      return { fatal };
-    }
-
-    function renderDiagnostics(markdown, parsed, validation = { fatal: [] }) {
-      const hasToolbar = parsed.blocks.includes('toolbar');
-      const hasYamlZones = usesYamlNestedZones(markdown);
-      const hasToolbarZones = markdown.includes('::toolbar_zone');
-      const hasAnyToolbarZones = hasToolbarZones || hasYamlZones;
-      const hasActions = parsed.blocks.includes('next_actions')
-        || markdown.includes('::action_group')
-        || markdown.includes('::actions');
-      const isPartialToolbarContract = hasToolbar;
-      const checks = [
-        ['contract', Boolean(parsed.frontmatter.loga_contract) || isPartialToolbarContract, isPartialToolbarContract ? 'partial toolbar contract' : 'Missing loga_contract'],
-        ['ux contract', Boolean(parsed.frontmatter.ux_contract) || isPartialToolbarContract, isPartialToolbarContract ? 'partial toolbar contract' : 'Missing ux_contract'],
-        ['source truth', parsed.frontmatter.source_truth === 'sql' || isPartialToolbarContract, isPartialToolbarContract ? 'source truth omitted for toolbar-only preview' : 'source_truth is not sql'],
-        ['toolbar', hasToolbar, 'Missing ::toolbar'],
-        ['zones', hasAnyToolbarZones, 'Missing toolbar zones'],
-        ['zone grammar', true, hasYamlZones ? 'YAML zones normalized into toolbar zones' : 'toolbar zone grammar'],
-        ['actions', hasActions, 'Missing actions block'],
-        ['raw leak', !/::[a-zA-Z0-9_]+[^\n]*\n[\s\S]*?\n(?!:{2,3})$/.test(markdown), 'Possible unclosed primitive'],
-      ];
-
-      const renderedChecks = checks.map(([label, pass, fail]) => {
-        const cls = pass ? 'pass' : 'warn';
-        return `<li class="${cls}">${escapeHtml(pass ? label : fail)}</li>`;
-      });
-
-      return [
-        ...validation.fatal.map((error) => `<li class="fail">${escapeHtml(error.title)}</li>`),
-        ...renderedChecks,
-      ];
-    }
-
-    function usesYamlNestedZones(markdown) {
-      return /::toolbar[^\n]*\n[\s\S]*?\nzones:\s*\n/.test(markdown);
-    }
-
-    function renderContractErrors(errors) {
-      return `
-        <section class="contract-errors" aria-label="Contract errors">
-          ${errors.map((error) => `
-            <article class="contract-error">
-              <h3>${escapeHtml(error.title)}</h3>
-              <p>${escapeHtml(error.detail)}</p>
-              ${error.repair ? `<p><strong>Repair:</strong> ${escapeHtml(error.repair)}</p>` : ''}
-              ${error.example ? `<p class="repair-label">Supported shape</p><pre><code>${escapeHtml(error.example)}</code></pre>` : ''}
-            </article>
-          `).join('')}
-        </section>
-      `;
-    }
-
-    function renderMarkdown(markdown) {
-      const lines = markdown.split(/\r?\n/);
-      const html = [];
-
-      for (let index = 0; index < lines.length; index++) {
-        const line = lines[index];
-        const directive = line.trim().match(/^:{2,3}([a-zA-Z0-9_]+)(?:\s+(.*))?$/);
-        if (directive) {
-          const collected = collectBlock(lines, index);
-          html.push(renderBlock(directive[1], collected.lines, parseAttrs(directive[2])));
-          index = collected.endIndex;
-          continue;
-        }
-
-        if (/^:{2,3}$/.test(line.trim())) continue;
-        if (/^###\s+/.test(line)) html.push(`<h3>${inline(line.replace(/^###\s+/, ''))}</h3>`);
-        else if (/^##\s+/.test(line)) html.push(`<h2>${inline(line.replace(/^##\s+/, ''))}</h2>`);
-        else if (/^#\s+/.test(line)) html.push(`<h1>${inline(line.replace(/^#\s+/, ''))}</h1>`);
-        else if (/^>\s+/.test(line)) html.push(`<blockquote>${inline(line.replace(/^>\s+/, ''))}</blockquote>`);
-        else if (!line.trim()) html.push('');
-        else html.push(`<p>${inline(line)}</p>`);
-      }
-
-      return html.join('');
-    }
-
-    function collectBlock(lines, startIndex) {
-      const blockLines = [];
-      let depth = 1;
-      let index = startIndex + 1;
-
-      for (; index < lines.length; index++) {
-        const current = lines[index] || '';
-        const trimmed = current.trim();
-        const isStart = /^:{2,3}[a-zA-Z0-9_]+(?:\s+.*)?$/.test(trimmed);
-        const isEnd = /^:{2,3}$/.test(trimmed);
-
-        if (isStart) {
-          depth++;
-          blockLines.push(current);
-          continue;
-        }
-
-        if (isEnd) {
-          depth--;
-          if (depth === 0) break;
-          blockLines.push(current);
-          continue;
-        }
-
-        blockLines.push(current);
-      }
-
-      return { lines: blockLines, endIndex: index };
-    }
-
-    function collectChildBlocks(lines) {
-      const blocks = [];
-      for (let index = 0; index < lines.length; index++) {
-        const directive = (lines[index] || '').trim().match(/^:{2,3}([a-zA-Z0-9_]+)(?:\s+(.*))?$/);
-        if (!directive) continue;
-        const collected = collectBlock(lines, index);
-        blocks.push({
-          name: directive[1],
-          attrs: parseAttrs(directive[2]),
-          lines: collected.lines,
-        });
-        index = collected.endIndex;
-      }
-      return blocks;
-    }
-
-    function collectToolbarZones(lines) {
-      const blockZones = collectChildBlocks(lines)
-        .filter((child) => child.name.toLowerCase() === 'toolbar_zone');
-      return [
-        ...blockZones,
-        ...collectYamlToolbarZones(lines),
-      ];
-    }
-
-    function collectYamlToolbarZones(lines) {
-      const zones = [];
-      let inZones = false;
-      let current = null;
-
-      const finishCurrent = () => {
-        if (current && current.lines.some((line) => line.trim())) zones.push(current);
-        current = null;
-      };
-
-      lines.forEach((line) => {
-        if (!inZones) {
-          if (/^\s*zones:\s*$/.test(line)) inZones = true;
-          return;
-        }
-
-        const zoneMatch = line.match(/^\s+(left|center|right):\s*$/);
-        if (zoneMatch) {
-          finishCurrent();
-          current = {
-            name: 'toolbar_zone',
-            attrs: { name: zoneMatch[1], align: zoneMatch[1] },
-            lines: [],
-          };
-          return;
-        }
-
-        if (current) current.lines.push(line);
-      });
-
-      finishCurrent();
-      return zones;
-    }
-
-    function parseDirectToolbarKeyValues(lines) {
-      const values = {};
-      lines.forEach((raw) => {
-        const match = raw.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
-        if (match && !['type', 'zones'].includes(match[1])) values[match[1]] = match[2];
-      });
-      return values;
-    }
-
-    function renderBlock(name, lines, attrs) {
-      const block = name.toLowerCase();
-      const records = parseRecords(lines);
-      const keyValues = parseKeyValues(lines);
-      const value = (key) => keyValues[key] || attrs[key] || '';
-
-      if (block === 'toolbar') {
-        const zones = collectToolbarZones(lines);
-        if (!zones.length) {
-          return renderContractErrors([{
-            title: 'Toolbar has no renderable zones',
-            detail: 'The toolbar rendered no experience because it had no ::toolbar_zone children.',
-            repair: 'Add explicit zone blocks for context, navigation, search, filters, or actions.',
-            example: [
-              '::toolbar_zone name="context" align="left"',
-              'title: "Projection Graph"',
-              'status: "Agent active - Turn 3"',
-              '::',
-            ].join('\n'),
-          }]);
-        }
-
-        const toolbarContext = renderToolbarContext(parseDirectToolbarKeyValues(lines));
-        const grouped = {
-          left: zones.filter((zone) => (zone.attrs.align || 'left') === 'left'),
-          center: zones.filter((zone) => zone.attrs.align === 'center'),
-          right: zones.filter((zone) => zone.attrs.align === 'right'),
-        };
-        return `
-          <header class="loga-toolbar">
-            <section class="loga-toolbar__zone loga-toolbar__zone--left">${toolbarContext}${grouped.left.map(renderToolbarZone).join('')}</section>
-            <section class="loga-toolbar__zone loga-toolbar__zone--center">${grouped.center.map(renderToolbarZone).join('')}</section>
-            <section class="loga-toolbar__zone loga-toolbar__zone--right">${grouped.right.map(renderToolbarZone).join('')}</section>
-          </header>
-        `;
-      }
-
-      if (block === 'toolbar_zone') {
-        return renderToolbarZone({ lines, attrs });
-      }
-
-      if (block === 'search') {
-        return `<div class="loga-control loga-control--search"><label>Search</label><input type="search" value="" placeholder="${escapeHtml(value('placeholder') || 'Search...')}"></div>`;
-      }
-
-      if (block === 'select') {
-        const options = parseOptions(lines);
-        const selected = value('value');
-        return `
-          <div class="loga-control">
-            <label>${escapeHtml(value('label') || 'Select')}</label>
-            <select>${options.map((option) => `<option${option === selected ? ' selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select>
-          </div>
-        `;
-      }
-
-      if (block === 'filter_group' || block === 'filters') {
-        return `<div class="loga-chip-group">${records.map((record) => `<span class="loga-chip">${escapeHtml(record.label || 'Filter')}</span>`).join('')}</div>`;
-      }
-
-      if (block === 'action_group' || block === 'actions') {
-        return `<div class="loga-action-group">${records.map((record) => `<button type="button">${escapeHtml(record.label || 'Action')}</button>`).join('')}</div>`;
-      }
-
-      if (block === 'status') {
-        return `<span class="loga-toolbar__status">${escapeHtml(value('label') || value('status') || lines.join(' ').trim())}</span>`;
-      }
-
-      if (block === 'breadcrumb') {
-        return `<nav class="loga-breadcrumb" aria-label="Projection path">${records.map((record) => `<a href="#">${escapeHtml(record.label || record.projection_type || 'Open')}</a>`).join('')}</nav>`;
-      }
-
-      if (block === 'surface') {
-        const type = value('type') || 'surface';
-        const priority = value('priority');
-        const summary = value('summary');
-        return `<section class="loga-surface"><p class="eyebrow">${escapeHtml([type.replaceAll('_', ' '), priority].filter(Boolean).join(' / '))}</p>${summary ? `<p class="answer">${inline(summary)}</p>` : ''}</section>`;
-      }
-
-      if (block === 'focus') {
-        return `<section class="loga-focus"><p class="eyebrow">${escapeHtml(value('status') || 'focus')}</p><p class="question">${inline(value('question') || 'What matters?')}</p><p class="answer">${inline(value('answer'))}</p></section>`;
-      }
-
-      if (block === 'panel') {
-        const title = value('title');
-        const summary = value('summary');
-        const detailEntries = Object.entries(keyValues).filter(([key]) => !['title', 'summary'].includes(key));
-        return `<section class="loga-panel">${title ? `<h3>${inline(title)}</h3>` : ''}${summary ? `<p>${inline(summary)}</p>` : ''}${detailEntries.length ? renderDl(Object.fromEntries(detailEntries)) : ''}</section>`;
-      }
-
-      if (['roadmap', 'task_list', 'run_list', 'promotion_list', 'cicd_list', 'turn_list', 'memory', 'checklist'].includes(block)) {
-        return `<section class="loga-list ${escapeHtml(block)}">${records.map((record) => {
-          const title = record.title || record.label || record.text || record.reminder || record.key || (record.turn ? `Turn ${record.turn}` : 'Untitled');
-          const status = [record.status, record.priority, record.progress, record.stage, record.tier].filter(Boolean).join(' | ');
-          return `<a class="loga-list-item" href="#"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(status)}</span></a>`;
-        }).join('')}</section>`;
-      }
-
-      if (block === 'nav') {
-        return `<nav class="loga-nav">${records.map((record) => `<a href="#">${escapeHtml(record.label || 'Open')}</a>`).join('')}</nav>`;
-      }
-
-      if (block === 'next_actions') {
-        return `<section class="loga-actions">${lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => `<button type="button">${escapeHtml(line.slice(2))}</button>`).join('')}</section>`;
-      }
-
-      if (block === 'evidence_drawer') {
-        return `<details><summary>Evidence Drawer</summary><pre><code>${escapeHtml(lines.join('\n'))}</code></pre></details>`;
-      }
-
-      if (['toolbar', 'toolbar_zone', 'search', 'select', 'filter_group', 'action_group'].includes(block)) {
-        return '';
-      }
-
-      return `<section class="loga-panel primitive"><h3>${escapeHtml(name.replaceAll('_', ' '))}</h3>${renderDl(attrs)}${lines.some((line) => line.trim()) ? `<p>${inline(lines.join(' '))}</p>` : ''}</section>`;
-    }
-
-    function parseAttrs(raw = '') {
-      const attrs = {};
-      const pattern = /([a-zA-Z0-9_-]+)=("([^"]*)"|'([^']*)'|([^\s]+))/g;
-      let match;
-      while ((match = pattern.exec(raw))) attrs[match[1]] = match[3] ?? match[4] ?? match[5] ?? '';
-      return attrs;
-    }
-
-    function renderToolbarZone(zone) {
-      const values = parseKeyValues(zone.lines);
-      const children = collectChildBlocks(zone.lines);
-      const context = [];
-      if (values.eyebrow || values.title || values.status) {
-        context.push(renderToolbarContext(values));
-      }
-
-      return [
-        ...context,
-        ...children.map((child) => renderBlock(child.name, child.lines, child.attrs)),
-      ].join('');
-    }
-
-    function renderToolbarContext(values) {
-      if (!values.eyebrow && !values.title && !values.status) return '';
-      return `
-        <div class="loga-toolbar__context">
-          ${values.eyebrow ? `<span class="eyebrow">${escapeHtml(values.eyebrow)}</span>` : ''}
-          ${values.title ? `<strong>${escapeHtml(values.title)}</strong>` : ''}
-          ${values.status ? `<span class="loga-toolbar__status">${escapeHtml(values.status)}</span>` : ''}
-        </div>
-      `;
-    }
-
-    function parseOptions(lines) {
-      const options = [];
-      let inOptions = false;
-      lines.forEach((raw) => {
-        const line = raw.trim();
-        if (/^options:\s*$/.test(line)) {
-          inOptions = true;
-          return;
-        }
-        if (inOptions && line.startsWith('- ')) {
-          options.push(line.slice(2).replace(/^"|"$/g, ''));
-          return;
-        }
-        if (inOptions && line && !line.startsWith('- ')) inOptions = false;
-      });
-      return options.length ? options : ['Option'];
-    }
-
-    function parseKeyValues(lines) {
-      const values = {};
-      lines.forEach((raw) => {
-        const line = raw.trim();
-        const match = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
-        if (match) values[match[1]] = match[2];
-      });
-      return values;
-    }
-
-    function parseRecords(lines) {
-      const records = [];
-      let current = null;
-      lines.forEach((raw) => {
-        const line = raw.trim();
-        if (line.startsWith('- ')) {
-          if (current) records.push(current);
-          current = {};
-          const inlineValue = line.slice(2);
-          const pair = inlineValue.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
-          if (pair) current[pair[1]] = pair[2];
-          else current.label = inlineValue;
-          return;
-        }
-        const pair = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
-        if (pair) {
-          if (!current) current = {};
-          current[pair[1]] = pair[2];
-        }
-      });
-      if (current) records.push(current);
-      return records;
-    }
-
-    function renderDl(values) {
-      const entries = Object.entries(values).filter(([, value]) => value);
-      if (!entries.length) return '';
-      return `<dl>${entries.map(([key, value]) => `<dt>${escapeHtml(key.replaceAll('_', ' '))}</dt><dd>${inline(value)}</dd>`).join('')}</dl>`;
-    }
-
-    function inline(value) {
-      return escapeHtml(value)
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="#">$1</a>')
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    }
-
-    function escapeHtml(value) {
-      return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-  </script>
+  <script src="./markdown-contract-lab/browser.js"></script>
 </body>
 </html>

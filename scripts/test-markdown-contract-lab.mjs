@@ -1,42 +1,18 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const labPath = './docs/loga-project-projections/markdown-contract-lab.html';
-const html = fs.readFileSync(labPath, 'utf8');
-const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/);
+import { validateContract } from '../docs/loga-project-projections/markdown-contract-lab/contract.js';
+import { parseMarkdown } from '../docs/loga-project-projections/markdown-contract-lab/parser.js';
+import { renderMarkdown, renderQuestionFirst } from '../docs/loga-project-projections/markdown-contract-lab/renderer.js';
 
-assert.ok(scriptMatch, 'markdown contract lab must include an inline script');
-
-const elements = {};
-const documentStub = {
-  getElementById(id) {
-    if (!elements[id]) {
-      elements[id] = {
-        checked: true,
-        handlers: {},
-        id,
-        innerHTML: '',
-        textContent: '',
-        value: '',
-        addEventListener(event, handler) {
-          this.handlers[event] = handler;
-        },
-        focus() {},
-      };
-    }
-
-    return elements[id];
-  },
-};
-
-new Function('document', scriptMatch[1])(documentStub);
-
-const input = elements['markdown-input'];
-const renderButton = elements['render-now'];
-const diagnostics = elements.diagnostics;
-const output = elements['rendered-output'];
-
-assert.equal(typeof renderButton.handlers.click, 'function', 'render button must register a click handler');
+function renderContract(markdown) {
+  const parsed = parseMarkdown(markdown);
+  const validation = validateContract(markdown, parsed);
+  return {
+    diagnostics: validation,
+    html: renderQuestionFirst(parsed) + (validation.fatal.length ? '' : renderMarkdown(parsed.body)),
+  };
+}
 
 const yamlZonesToolbar = `::toolbar
 type: "projection"
@@ -74,23 +50,49 @@ zones:
     ::
 ::`;
 
-input.value = yamlZonesToolbar;
-renderButton.handlers.click();
+const yamlResult = renderContract(yamlZonesToolbar);
 
-assert.doesNotMatch(
-  output.innerHTML,
-  /contract-error/,
-  'YAML zones toolbar must not render a contract error',
-);
-assert.match(
-  output.innerHTML,
-  /<header class="loga-toolbar">/,
-  'YAML zones toolbar must render the toolbar',
-);
-assert.match(output.innerHTML, /Roadmap/, 'YAML zones toolbar must render nav labels');
-assert.match(output.innerHTML, /Search projects, tasks, evidence/, 'YAML zones toolbar must render search');
-assert.match(output.innerHTML, /Needs Attention/, 'YAML zones toolbar must render filters');
-assert.match(output.innerHTML, /Expand Focus/, 'YAML zones toolbar must render actions');
+assert.equal(yamlResult.diagnostics.fatal.length, 0, 'YAML zones toolbar must not produce fatal validation errors');
+assert.doesNotMatch(yamlResult.html, /contract-error/, 'YAML zones toolbar must not render a contract error');
+assert.match(yamlResult.html, /<header class="loga-toolbar loga-toolbar--stacked"/, 'YAML zones toolbar defaults to stacked layout');
+assert.match(yamlResult.html, /loga-toolbar__group loga-toolbar__group--left/, 'stacked toolbar may group zones by alignment');
+assert.match(yamlResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--left"/, 'stacked toolbar zones still render as flex item divs');
+assert.match(yamlResult.html, /Roadmap/, 'YAML zones toolbar must render nav labels');
+assert.match(yamlResult.html, /Search projects, tasks, evidence/, 'YAML zones toolbar must render search');
+assert.match(yamlResult.html, /Needs Attention/, 'YAML zones toolbar must render filters');
+assert.match(yamlResult.html, /Expand Focus/, 'YAML zones toolbar must render actions');
+
+const linearToolbar = `::toolbar variant="linear"
+eyebrow: "Inspection Workspace"
+status: "Agent active · Turn 3"
+
+zones:
+  left:
+    ::nav variant="pills"
+    - label: "Roadmap"
+    - label: "Promotions"
+    ::
+
+  center:
+    ::search
+    placeholder: "Search projects, tasks, evidence..."
+    ::
+
+  right:
+    ::actions
+    - label: "Refresh"
+    ::
+::`;
+
+const linearResult = renderContract(linearToolbar);
+
+assert.equal(linearResult.diagnostics.fatal.length, 0, 'linear toolbar must not produce fatal validation errors');
+assert.match(linearResult.html, /data-toolbar-variant="linear"/, 'linear toolbar must declare its layout mode');
+assert.match(linearResult.html, /<header class="loga-toolbar loga-toolbar--linear"/, 'linear toolbar must render inline toolbar shell');
+assert.doesNotMatch(linearResult.html, /<section class="loga-toolbar__zone/, 'linear toolbar zones must not render as section/card wrappers');
+assert.match(linearResult.html, /<div class="loga-toolbar__zone loga-toolbar__zone--left"/, 'linear toolbar zones must render as flex item divs');
+assert.match(linearResult.html, /Roadmap/, 'linear toolbar must render nav content');
+assert.match(linearResult.html, /Refresh/, 'linear toolbar must render action content');
 
 const supportedBlockNestedToolbar = `::toolbar
   ::toolbar_zone name="navigation" align="left"
@@ -101,19 +103,46 @@ const supportedBlockNestedToolbar = `::toolbar
   ::
 ::`;
 
-input.value = supportedBlockNestedToolbar;
-renderButton.handlers.click();
+const blockResult = renderContract(supportedBlockNestedToolbar);
 
-assert.doesNotMatch(
-  output.innerHTML,
-  /contract-error/,
-  'supported toolbar_zone grammar must not render a contract error',
-);
-assert.match(
-  output.innerHTML,
-  /<header class="loga-toolbar">/,
-  'supported toolbar_zone grammar must render the toolbar',
-);
-assert.match(output.innerHTML, /Roadmap/, 'supported toolbar must render nav labels');
+assert.equal(blockResult.diagnostics.fatal.length, 0, 'supported toolbar_zone grammar must not produce fatal validation errors');
+assert.match(blockResult.html, /<header class="loga-toolbar loga-toolbar--stacked"/, 'supported toolbar_zone grammar must render the toolbar');
+assert.match(blockResult.html, /Roadmap/, 'supported toolbar must render nav labels');
+
+const browserRuntime = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/browser.js', 'utf8');
+const elements = {};
+const documentStub = {
+  getElementById(id) {
+    if (!elements[id]) {
+      elements[id] = {
+        checked: true,
+        handlers: {},
+        id,
+        innerHTML: '',
+        textContent: '',
+        value: '',
+        addEventListener(event, handler) {
+          this.handlers[event] = handler;
+        },
+        focus() {},
+      };
+    }
+    return elements[id];
+  },
+};
+const windowStub = {};
+new Function('document', 'window', browserRuntime)(documentStub, windowStub);
+
+assert.ok(windowStub.MarkdownContractLab, 'browser runtime must expose the lab API for diagnostics');
+assert.match(elements['rendered-output'].innerHTML, /loga-toolbar--linear/, 'browser runtime must render the initial sample');
+assert.match(elements['markdown-input'].value, /variant="linear"/, 'browser runtime must load the sample into the editor');
+
+elements['markdown-input'].value = '';
+elements['clear-input'].handlers.click();
+assert.equal(elements['markdown-input'].value, '', 'clear button must empty the editor');
+
+elements['load-sample'].handlers.click();
+assert.match(elements['markdown-input'].value, /Projection Graph/, 'load sample button must restore sample markdown');
+assert.match(elements['rendered-output'].innerHTML, /Projection Graph/, 'load sample button must render sample output');
 
 console.log('Markdown contract lab regression tests passed.');
