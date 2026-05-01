@@ -1,5 +1,7 @@
 import { collectBlock, collectChildBlocks, parseAttrs, parseOptions, parseKeyValues, parseRecords } from './parser.js';
-import { escapeHtml, inline, renderDl } from './html.js';
+import { escapeHtml, inline, renderDl, renderWarning } from './html.js';
+import { ELEMENT_REGISTRY } from './element-registry.js';
+import { renderRegisteredElement } from './registry-renderer.js';
 
 export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock }) {
   const records = parseRecords(lines);
@@ -15,36 +17,33 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     const columns = Number.parseInt(attrs.columns || value('columns') || '2', 10);
     const safeColumns = Number.isFinite(columns) ? Math.min(Math.max(columns, 1), 6) : 2;
     const children = collectChildBlocks(lines);
-    return `<section class="loga-grid" style="--columns: ${safeColumns}">${children.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
+    const gap = normalizeGap(attrs.gap || value('gap'));
+    return `<section class="loga-grid" style="--loga-grid-columns: ${safeColumns}; --loga-grid-gap: ${gap}">${children.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
   }
 
   if (block === 'split') {
     const [left = '2', right = '1'] = String(attrs.ratio || value('ratio') || '2:1').split(':');
     const panes = splitIntoPanes(lines);
-    return `<section class="loga-split" style="--left: ${escapeHtml(left)}fr; --right: ${escapeHtml(right)}fr">${panes.slice(0, 2).map((pane) => `<div class="loga-split__pane">${renderFlowLines(pane, renderBlock)}</div>`).join('')}</section>`;
+    return `<section class="loga-split" style="--loga-split-left: ${escapeHtml(left)}fr; --loga-split-right: ${escapeHtml(right)}fr">${panes.slice(0, 2).map((pane) => `<div class="loga-split__pane">${renderFlowLines(pane, renderBlock)}</div>`).join('')}</section>`;
   }
 
-  if (block === 'focus_strip') {
-    const model = parseFocusStrip(lines);
-    return `
-      <section class="loga-focus-strip">
-        <div>
-          <p class="eyebrow">Primary question</p>
-          <h2>${inline(model.question || 'What should I care about right now?')}</h2>
-          ${model.answer ? `<p>${inline(model.answer)}</p>` : ''}
-        </div>
-        ${model.secondary.length ? `<ul>${model.secondary.map((item) => `<li>${inline(item)}</li>`).join('')}</ul>` : ''}
-        ${model.status ? `<span class="loga-toolbar__status">${escapeHtml(model.status)}</span>` : ''}
-      </section>
-    `;
+  if (block === 'stack') {
+    const gap = normalizeGap(attrs.gap || value('gap'));
+    const children = collectChildBlocks(lines);
+    return `<section class="loga-stack" style="--loga-stack-gap: ${gap}">${children.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
   }
 
-  if (block === 'metric_row') {
-    return `<section class="loga-metric-row">${records.map((record) => `<article class="loga-metric"><span>${escapeHtml(record.label || 'Metric')}</span><strong>${escapeHtml(record.value || '-')}</strong></article>`).join('')}</section>`;
+  if (block === 'rail') {
+    const side = attrs.side || value('side') || 'right';
+    const children = collectChildBlocks(lines);
+    return `<aside class="loga-rail loga-rail--${escapeHtml(side)}" data-side="${escapeHtml(side)}">${children.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</aside>`;
   }
 
-  if (block === 'timeline') {
-    return `<ol class="loga-timeline">${records.map((record) => `<li data-status="${escapeHtml(record.status || 'pending')}"><strong>${escapeHtml(record.step || record.label || 'Step')}</strong><span>${escapeHtml(record.status || 'pending')}</span></li>`).join('')}</ol>`;
+  if (ELEMENT_REGISTRY[block]) {
+    return renderRegisteredElement(
+      ELEMENT_REGISTRY[block],
+      createRegistryModel({ block, lines, attrs, records, keyValues, value, renderBlock }),
+    );
   }
 
   if (block === 'decision_panel') {
@@ -61,11 +60,6 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
 
   if (block === 'tree') {
     return `<nav class="loga-tree" aria-label="Workspace tree">${renderTree(lines)}</nav>`;
-  }
-
-  if (block === 'action_rail') {
-    const actions = lines.map((line) => line.trim()).filter((line) => line.startsWith('- '));
-    return `<aside class="loga-action-rail">${actions.map((line) => `<button class="loga-action" type="button">${escapeHtml(line.slice(2))}</button>`).join('')}</aside>`;
   }
 
   if (block === 'search') {
@@ -110,25 +104,6 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     return `<section class="loga-focus"><p class="eyebrow">${escapeHtml(value('status') || 'focus')}</p><p class="question">${inline(value('question') || 'What matters?')}</p><p class="answer">${inline(value('answer'))}</p></section>`;
   }
 
-  if (block === 'panel') {
-    const title = value('title');
-    const summary = value('summary');
-    const variant = attrs.variant || value('variant') || 'default';
-    if (variant === 'comparison') return renderComparisonPanel(lines, title);
-    const detailEntries = Object.entries(keyValues).filter(([key]) => !['title', 'summary'].includes(key));
-    const listItems = lines.map((line) => line.trim()).filter((line) => line.startsWith('- '));
-    const childBlocks = collectChildBlocks(lines);
-    return `
-      <section class="loga-panel loga-panel--${escapeHtml(variant)}">
-        ${title ? `<h3>${inline(title)}</h3>` : ''}
-        ${summary ? `<p>${inline(summary)}</p>` : ''}
-        ${listItems.length ? `<ul>${listItems.map((line) => `<li>${inline(line.slice(2))}</li>`).join('')}</ul>` : ''}
-        ${detailEntries.length ? renderDl(Object.fromEntries(detailEntries)) : ''}
-        ${childBlocks.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}
-      </section>
-    `;
-  }
-
   if (['roadmap', 'task_list', 'run_list', 'promotion_list', 'cicd_list', 'turn_list', 'memory', 'checklist'].includes(block)) {
     return `<section class="loga-list ${escapeHtml(block)}">${records.map((record) => {
       const title = record.title || record.label || record.text || record.reminder || record.key || (record.turn ? `Turn ${record.turn}` : 'Untitled');
@@ -153,7 +128,64 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     return '';
   }
 
-  return `<section class="loga-panel primitive"><h3>${escapeHtml(name.replaceAll('_', ' '))}</h3>${renderDl(attrs)}${lines.some((line) => line.trim()) ? `<p>${inline(lines.join(' '))}</p>` : ''}</section>`;
+  return renderWarning({
+    title: 'Unsupported block',
+    detail: `No renderer contract exists for directive "${name}".`,
+    code: [`::${name}`, ...lines, '::'].join('\n'),
+  });
+}
+
+function normalizeGap(gap) {
+  const gaps = { sm: '8px', md: '16px', lg: '24px' };
+  if (!gap) return gaps.md;
+  return gaps[gap] || gap;
+}
+
+function createRegistryModel({ block, lines, attrs, records, keyValues, value, renderBlock }) {
+  if (block === 'action_rail') {
+    return {
+      items: lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => ({ label: line.slice(2) })),
+    };
+  }
+
+  if (block === 'status_badge') {
+    return {
+      fields: {
+        label: value('label') || value('status') || lines.join(' ').trim(),
+      },
+    };
+  }
+
+  if (block === 'focus_strip') {
+    return parseFocusStrip(lines);
+  }
+
+  if (block === 'panel') {
+    const variant = attrs.variant || value('variant') || 'default';
+    const childBlocks = collectChildBlocks(lines);
+    const detailEntries = Object.entries(keyValues).filter(([key]) => !['title', 'summary', 'status', 'content', 'variant'].includes(key));
+    const childHtml = variant === 'comparison'
+      ? renderComparisonContent(lines)
+      : [
+        detailEntries.length ? renderDl(Object.fromEntries(detailEntries)) : '',
+        childBlocks.map((child) => renderBlock(child.name, child.lines, child.attrs)).join(''),
+      ].join('');
+
+    return {
+      variant,
+      fields: {
+        title: value('title'),
+        status: value('status'),
+        summary: value('summary'),
+      },
+      listItems: variant === 'comparison'
+        ? []
+        : lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => line.slice(2)),
+      childrenHtml: childHtml,
+    };
+  }
+
+  return { items: records, fields: keyValues };
 }
 
 function renderFlowLines(lines, renderBlock) {
@@ -190,7 +222,7 @@ function splitIntoPanes(lines) {
 }
 
 function parseFocusStrip(lines) {
-  const model = { question: '', answer: '', secondary: [], status: '' };
+  const model = { fields: { primary: {} }, secondary: [] };
   let section = '';
   lines.forEach((raw) => {
     const line = raw.trim();
@@ -199,14 +231,14 @@ function parseFocusStrip(lines) {
       return;
     }
     const pair = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
-    if (pair && section === 'primary') model[pair[1]] = pair[2];
-    else if (pair && pair[1] === 'status') model.status = pair[2];
-    else if (section === 'secondary' && line.startsWith('- ')) model.secondary.push(line.slice(2).replace(/^"|"$/g, ''));
+    if (pair && section === 'primary') model.fields.primary[pair[1]] = pair[2];
+    else if (pair && pair[1] === 'status') model.fields.status = pair[2];
+    else if (section === 'secondary' && line.startsWith('- ')) model.secondary.push({ label: line.slice(2).replace(/^"|"$/g, '') });
   });
   return model;
 }
 
-function renderComparisonPanel(lines, fallbackTitle) {
+function renderComparisonContent(lines) {
   const sides = { left: { title: 'Left', items: [] }, right: { title: 'Right', items: [] } };
   let side = '';
   lines.forEach((raw) => {
@@ -220,14 +252,7 @@ function renderComparisonPanel(lines, fallbackTitle) {
     if (title) sides[side].title = title[1];
     if (line.startsWith('- ')) sides[side].items.push(line.slice(2));
   });
-  return `
-    <section class="loga-panel loga-panel--comparison">
-      ${fallbackTitle ? `<h3>${inline(fallbackTitle)}</h3>` : ''}
-      <div class="loga-comparison">
-        ${['left', 'right'].map((key) => `<article><h4>${inline(sides[key].title)}</h4><ul>${sides[key].items.map((item) => `<li>${inline(item)}</li>`).join('')}</ul></article>`).join('')}
-      </div>
-    </section>
-  `;
+  return `<div class="loga-comparison">${['left', 'right'].map((key) => `<article><h4>${inline(sides[key].title)}</h4><ul>${sides[key].items.map((item) => `<li>${inline(item)}</li>`).join('')}</ul></article>`).join('')}</div>`;
 }
 
 function renderTree(lines) {

@@ -1,4 +1,8 @@
 (() => {
+  const SCRIPT_BASE_URL = document.currentScript?.src
+    ? new URL('.', document.currentScript.src).href
+    : './markdown-contract-lab/';
+
   const SAMPLE = `---
 loga_contract: "ai-engine-ui/v1"
 ux_contract: "loga-ux/v1"
@@ -60,6 +64,8 @@ primary_question: "What should I care about right now?"
   progress: "2 / 4 tasks complete"
 ::`;
 
+  let activeElementRegistry = null;
+
   function createMarkdownContractLab(documentRef = document) {
     const input = documentRef.getElementById('markdown-input');
     const output = documentRef.getElementById('rendered-output');
@@ -108,10 +114,27 @@ primary_question: "What should I care about right now?"
       inputCount.textContent = `${input.value.length} chars`;
     }
 
-    input.value = SAMPLE;
-    render();
+    loadExternalElementRegistry().then((registry) => {
+      activeElementRegistry = registry;
+      input.value = SAMPLE;
+      render();
+    }).catch((error) => {
+      diagnostics.innerHTML = `<li class="fail">Renderer blocked: markdown-ui-elements.json could not be loaded.</li>`;
+      output.innerHTML = `<div class="empty-state"><div><strong>Renderer blocked.</strong><p>${escapeHtml(error.message)}</p></div></div>`;
+    });
 
     return { render, elements: { input, output, diagnostics } };
+  }
+
+  async function loadExternalElementRegistry() {
+    const fetcher = window.fetch;
+    if (typeof fetcher !== 'function') throw new Error('window.fetch is required to load markdown-ui-elements.json');
+    const registryUrl = SCRIPT_BASE_URL.startsWith('http')
+      ? new URL('markdown-ui-elements.json', SCRIPT_BASE_URL).href
+      : `${SCRIPT_BASE_URL}markdown-ui-elements.json`;
+    const response = await fetcher(registryUrl, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Registry load failed: ${response.status} ${response.statusText || ''}`.trim());
+    return response.json();
   }
 
   function parseMarkdown(markdown) {
@@ -224,11 +247,15 @@ primary_question: "What should I care about right now?"
       return renderContractErrors([{ title: 'Toolbar has no renderable zones', detail: 'The toolbar rendered no experience because it had no toolbar zones.' }]);
     }
     const toolbarValues = parseDirectToolbarKeyValues(lines);
-    const variant = (attrs.variant || toolbarValues.variant) === 'linear' ? 'linear' : 'stacked';
+    const rawVariant = attrs.variant || toolbarValues.variant || 'stacked';
+    const variant = rawVariant === 'linear' || rawVariant === 'stacked' ? rawVariant : '';
     const toolbarContext = renderToolbarContext(toolbarValues);
     const zoneHtml = zones.map((zone) => renderToolbarZone(zone));
+    const variantWarning = variant
+      ? ''
+      : renderContractErrors([{ title: 'Invalid toolbar variant', detail: `Toolbar variant "${rawVariant}" is not supported. Use "linear" or "stacked".` }]);
     if (variant === 'linear') {
-      return `<header class="loga-toolbar loga-toolbar--linear" data-toolbar-variant="linear">${toolbarContext ? `<div class="loga-toolbar__zone loga-toolbar__zone--context loga-toolbar__zone--left">${toolbarContext}</div>` : ''}${zones.map((zone, index) => renderToolbarZoneShell(zone, zoneHtml[index])).join('')}</header>`;
+      return `${variantWarning}<header class="loga-toolbar loga-toolbar--linear" data-toolbar-variant="linear">${toolbarContext ? `<div class="loga-toolbar__zone loga-toolbar__zone--context loga-toolbar__zone--left">${toolbarContext}</div>` : ''}${zones.map((zone, index) => renderToolbarZoneShell(zone, zoneHtml[index])).join('')}</header>`;
     }
     const zonePairs = zones.map((zone, index) => ({ zone, html: zoneHtml[index] }));
     const grouped = {
@@ -236,7 +263,7 @@ primary_question: "What should I care about right now?"
       center: zonePairs.filter(({ zone }) => zone.attrs.align === 'center'),
       right: zonePairs.filter(({ zone }) => zone.attrs.align === 'right'),
     };
-    return `<header class="loga-toolbar loga-toolbar--stacked" data-toolbar-variant="stacked"><div class="loga-toolbar__group loga-toolbar__group--left">${toolbarContext}${grouped.left.map(({ zone, html }) => renderToolbarZoneShell(zone, html)).join('')}</div><div class="loga-toolbar__group loga-toolbar__group--center">${grouped.center.map(({ zone, html }) => renderToolbarZoneShell(zone, html)).join('')}</div><div class="loga-toolbar__group loga-toolbar__group--right">${grouped.right.map(({ zone, html }) => renderToolbarZoneShell(zone, html)).join('')}</div></header>`;
+    return `${variantWarning}<header class="loga-toolbar loga-toolbar--stacked" data-toolbar-variant="stacked"><div class="loga-toolbar__group loga-toolbar__group--left">${toolbarContext}${grouped.left.map(({ zone, html }) => renderToolbarZoneShell(zone, html)).join('')}</div><div class="loga-toolbar__group loga-toolbar__group--center">${grouped.center.map(({ zone, html }) => renderToolbarZoneShell(zone, html)).join('')}</div><div class="loga-toolbar__group loga-toolbar__group--right">${grouped.right.map(({ zone, html }) => renderToolbarZoneShell(zone, html)).join('')}</div></header>`;
   }
 
   function renderPrimitiveBlock(block, name, lines, attrs) {
@@ -247,23 +274,29 @@ primary_question: "What should I care about right now?"
     if (block === 'grid') {
       const columns = Number.parseInt(attrs.columns || value('columns') || '2', 10);
       const safeColumns = Number.isFinite(columns) ? Math.min(Math.max(columns, 1), 6) : 2;
-      return `<section class="loga-grid" style="--columns: ${safeColumns}">${collectChildBlocks(lines).map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
+      const gap = normalizeGap(attrs.gap || value('gap'));
+      return `<section class="loga-grid" style="--loga-grid-columns: ${safeColumns}; --loga-grid-gap: ${gap}">${collectChildBlocks(lines).map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
     }
     if (block === 'split') {
       const [left = '2', right = '1'] = String(attrs.ratio || value('ratio') || '2:1').split(':');
-      return `<section class="loga-split" style="--left: ${escapeHtml(left)}fr; --right: ${escapeHtml(right)}fr">${splitIntoPanes(lines).slice(0, 2).map((pane) => `<div class="loga-split__pane">${renderFlowLines(pane)}</div>`).join('')}</section>`;
+      return `<section class="loga-split" style="--loga-split-left: ${escapeHtml(left)}fr; --loga-split-right: ${escapeHtml(right)}fr">${splitIntoPanes(lines).slice(0, 2).map((pane) => `<div class="loga-split__pane">${renderFlowLines(pane)}</div>`).join('')}</section>`;
+    }
+    if (block === 'stack') {
+      const gap = normalizeGap(attrs.gap || value('gap'));
+      return `<section class="loga-stack" style="--loga-stack-gap: ${gap}">${collectChildBlocks(lines).map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
+    }
+    if (block === 'rail') {
+      const side = attrs.side || value('side') || 'right';
+      return `<aside class="loga-rail loga-rail--${escapeHtml(side)}" data-side="${escapeHtml(side)}">${collectChildBlocks(lines).map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</aside>`;
     }
     if (block === 'focus_strip') {
-      const model = parseFocusStrip(lines);
-      return `<section class="loga-focus-strip"><div><p class="eyebrow">Primary question</p><h2>${inline(model.question || 'What should I care about right now?')}</h2>${model.answer ? `<p>${inline(model.answer)}</p>` : ''}</div>${model.secondary.length ? `<ul>${model.secondary.map((item) => `<li>${inline(item)}</li>`).join('')}</ul>` : ''}${model.status ? `<span class="loga-toolbar__status">${escapeHtml(model.status)}</span>` : ''}</section>`;
+      return renderRegisteredBlock(block, lines, attrs, records, keyValues, value);
     }
-    if (block === 'metric_row') return `<section class="loga-metric-row">${records.map((record) => `<article class="loga-metric"><span>${escapeHtml(record.label || 'Metric')}</span><strong>${escapeHtml(record.value || '-')}</strong></article>`).join('')}</section>`;
-    if (block === 'timeline') return `<ol class="loga-timeline">${records.map((record) => `<li data-status="${escapeHtml(record.status || 'pending')}"><strong>${escapeHtml(record.step || record.label || 'Step')}</strong><span>${escapeHtml(record.status || 'pending')}</span></li>`).join('')}</ol>`;
+    if (activeElementRegistry?.[block]) return renderRegisteredBlock(block, lines, attrs, records, keyValues, value);
     if (block === 'decision_panel') {
       return `<section class="loga-decision-panel"><p class="eyebrow">Decision Required</p><h3>${inline(value('question') || 'What should happen next?')}</h3><div class="loga-action-group">${parseOptions(lines).map((option) => `<button class="loga-action" type="button">${escapeHtml(option)}</button>`).join('')}</div>${value('confidence') ? `<p class="loga-confidence">Confidence: <strong>${escapeHtml(value('confidence'))}</strong></p>` : ''}</section>`;
     }
     if (block === 'tree') return `<nav class="loga-tree" aria-label="Workspace tree">${renderTree(lines)}</nav>`;
-    if (block === 'action_rail') return `<aside class="loga-action-rail">${lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => `<button class="loga-action" type="button">${escapeHtml(line.slice(2))}</button>`).join('')}</aside>`;
     if (block === 'search') return `<div class="loga-control loga-control--search"><label>Search</label><input type="search" value="" placeholder="${escapeHtml(value('placeholder') || 'Search...')}"></div>`;
     if (block === 'select') {
       const selected = value('value');
@@ -281,14 +314,145 @@ primary_question: "What should I care about right now?"
     }
     if (block === 'next_actions') return `<section class="loga-actions">${lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => `<button type="button">${escapeHtml(line.slice(2))}</button>`).join('')}</section>`;
     if (block === 'focus') return `<section class="loga-focus"><p class="eyebrow">${escapeHtml(value('status') || 'focus')}</p><p class="question">${inline(value('question') || 'What matters?')}</p><p class="answer">${inline(value('answer'))}</p></section>`;
-    if (block === 'panel') {
-      const listItems = lines.map((line) => line.trim()).filter((line) => line.startsWith('- '));
-      const childBlocks = collectChildBlocks(lines);
-      const variant = attrs.variant || value('variant') || 'default';
-      if (variant === 'comparison') return renderComparisonPanel(lines, value('title'));
-      return `<section class="loga-panel loga-panel--${escapeHtml(variant)}">${value('title') ? `<h3>${inline(value('title'))}</h3>` : ''}${value('summary') ? `<p>${inline(value('summary'))}</p>` : ''}${listItems.length ? `<ul>${listItems.map((line) => `<li>${inline(line.slice(2))}</li>`).join('')}</ul>` : ''}${childBlocks.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
+    return renderWarning({
+      title: 'Unsupported block',
+      detail: `No renderer contract exists for directive "${name}".`,
+      code: [`::${name}`, ...lines, '::'].join('\n'),
+    });
+  }
+
+  function normalizeGap(gap) {
+    const gaps = { sm: '8px', md: '16px', lg: '24px' };
+    if (!gap) return gaps.md;
+    return gaps[gap] || gap;
+  }
+
+  function renderRegisteredBlock(block, lines, attrs, records, keyValues, value) {
+    if (!activeElementRegistry) throw new Error('Element registry has not loaded');
+    if (!activeElementRegistry[block]) throw new Error(`No renderer contract for directive "${block}"`);
+    return renderRegisteredElement(
+      activeElementRegistry[block],
+      createRegistryModel({ block, lines, attrs, records, keyValues, value }),
+    );
+  }
+
+  function createRegistryModel({ block, lines, attrs, records, keyValues, value }) {
+    if (block === 'action_rail') {
+      return { items: lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => ({ label: line.slice(2) })) };
     }
-    return `<section class="loga-panel primitive"><h3>${escapeHtml(name.replaceAll('_', ' '))}</h3>${lines.some((line) => line.trim()) ? `<p>${inline(lines.join(' '))}</p>` : ''}</section>`;
+    if (block === 'status_badge') {
+      return { fields: { label: value('label') || value('status') || lines.join(' ').trim() } };
+    }
+    if (block === 'focus_strip') return parseFocusStrip(lines);
+    if (block === 'panel') {
+      const variant = attrs.variant || value('variant') || 'default';
+      const childBlocks = collectChildBlocks(lines);
+      const childHtml = variant === 'comparison'
+        ? renderComparisonContent(lines)
+        : childBlocks.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('');
+      return {
+        variant,
+        fields: { title: value('title'), status: value('status'), summary: value('summary') },
+        listItems: variant === 'comparison' ? [] : lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => line.slice(2)),
+        childrenHtml: childHtml,
+      };
+    }
+    return { items: records, fields: keyValues };
+  }
+
+  function renderRegisteredElement(definition, model = {}) {
+    const normalized = Array.isArray(model) ? { items: model } : model;
+    const attrs = renderRegistryAttributes(definition, normalized);
+    const content = definition.slots
+      ? definition.slots.map((slot) => renderSlot(slot, normalized)).join('')
+      : [
+        renderRegistryFields(definition.fields, normalized.fields || {}),
+        renderRegistryList(definition.list, normalized.listItems || []),
+        renderRegistryItems(definition, normalized[definition.itemSource || 'items'] || normalized.items || []),
+        definition.contentField ? renderContentField(definition, normalized) : '',
+        definition.children ? normalized.childrenHtml || '' : '',
+      ].filter(Boolean).join('');
+    return `<${definition.element}${attrs}>${content}</${definition.element}>`;
+  }
+
+  function renderRegistryAttributes(definition, model) {
+    const classes = [definition.className];
+    if (definition.variantPrefix && model.variant) classes.push(`${definition.variantPrefix}${model.variant}`);
+    return classes.filter(Boolean).length ? ` class="${escapeHtml(classes.filter(Boolean).join(' '))}"` : '';
+  }
+
+  function renderRegistryFields(fields = {}, values = {}) {
+    return Object.entries(fields).map(([name, field]) => {
+      const value = field.literal || readValue({ fields: values }, field.source || name) || readValue({ fields: values }, field.alias);
+      if (field.required && !value) return renderMissingFieldWarning(field.source || name);
+      if (!value) return '';
+      const attrs = field.className ? ` class="${escapeHtml(field.className)}"` : '';
+      return `<${field.element}${attrs}>${escapeHtml(value)}</${field.element}>`;
+    }).join('');
+  }
+
+  function renderRegistryList(list, items) {
+    if (!list || !items.length) return '';
+    const attrs = list.className ? ` class="${escapeHtml(list.className)}"` : '';
+    return `<${list.element}${attrs}>${items.map((item) => `<${list.itemElement}>${escapeHtml(item)}</${list.itemElement}>`).join('')}</${list.element}>`;
+  }
+
+  function renderRegistryItems(definition, records) {
+    const item = definition.repeatedItem || definition.item;
+    if (!item) return '';
+    if (!records.length && definition.requiredItems) {
+      return renderWarning({
+        title: 'Missing required items',
+        detail: `Block "${definition.className || definition.element}" requires at least one list item.`,
+      });
+    }
+    if (!records.length) return '';
+    return records.map((record) => renderRegistryItem(item, record)).join('');
+  }
+
+  function renderRegistryItem(item, record) {
+    const attrs = [];
+    if (item.className) attrs.push(`class="${escapeHtml(item.className)}"`);
+    if (item.type) attrs.push(`type="${escapeHtml(item.type)}"`);
+    Object.entries(item.data || {}).forEach(([name, config]) => {
+      if (config.required && !record[config.field]) return renderMissingFieldWarning(config.field);
+      attrs.push(`data-${escapeHtml(name)}="${escapeHtml(record[config.field] || '')}"`);
+    });
+    const content = item.fields
+      ? renderRegistryFields(item.fields, record)
+      : renderItemField(item, record);
+    return `<${item.element}${attrs.length ? ` ${attrs.join(' ')}` : ''}>${content}</${item.element}>`;
+  }
+
+  function renderSlot(slot, model) {
+    const content = [
+      renderRegistryFields(slot.fields, model.fields || {}),
+      slot.itemSource ? renderRegistryItems(slot, model[slot.itemSource] || []) : '',
+      slot.field ? renderContentField(slot, model) : '',
+    ].filter(Boolean).join('');
+    if (!content) return '';
+    const attrs = slot.className ? ` class="${escapeHtml(slot.className)}"` : '';
+    return `<${slot.element}${attrs}>${content}</${slot.element}>`;
+  }
+
+  function renderContentField(definition, model) {
+    const fieldName = definition.contentField || definition.field;
+    const value = readValue(model, fieldName);
+    if (definition.required && !value) return renderMissingFieldWarning(fieldName);
+    return value ? escapeHtml(value) : '';
+  }
+
+  function renderItemField(item, record) {
+    const value = record[item.field];
+    if (item.required && !value) return renderMissingFieldWarning(item.field);
+    return value ? escapeHtml(value) : '';
+  }
+
+  function renderMissingFieldWarning(fieldName) {
+    return renderWarning({
+      title: 'Missing required field',
+      detail: `Required field "${fieldName}" was not provided by the markdown contract.`,
+    });
   }
 
   function collectBlock(lines, startIndex) {
@@ -355,7 +519,7 @@ primary_question: "What should I care about right now?"
   }
 
   function parseFocusStrip(lines) {
-    const model = { question: '', answer: '', secondary: [], status: '' };
+    const model = { fields: { primary: {} }, secondary: [] };
     let section = '';
     lines.forEach((raw) => {
       const line = raw.trim();
@@ -364,14 +528,14 @@ primary_question: "What should I care about right now?"
         return;
       }
       const pair = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
-      if (pair && section === 'primary') model[pair[1]] = pair[2];
-      else if (pair && pair[1] === 'status') model.status = pair[2];
-      else if (section === 'secondary' && line.startsWith('- ')) model.secondary.push(line.slice(2).replace(/^"|"$/g, ''));
+      if (pair && section === 'primary') model.fields.primary[pair[1]] = pair[2];
+      else if (pair && pair[1] === 'status') model.fields.status = pair[2];
+      else if (section === 'secondary' && line.startsWith('- ')) model.secondary.push({ label: line.slice(2).replace(/^"|"$/g, '') });
     });
     return model;
   }
 
-  function renderComparisonPanel(lines, fallbackTitle) {
+  function renderComparisonContent(lines) {
     const sides = { left: { title: 'Left', items: [] }, right: { title: 'Right', items: [] } };
     let side = '';
     lines.forEach((raw) => {
@@ -385,7 +549,7 @@ primary_question: "What should I care about right now?"
       if (title) sides[side].title = title[1];
       if (line.startsWith('- ')) sides[side].items.push(line.slice(2));
     });
-    return `<section class="loga-panel loga-panel--comparison">${fallbackTitle ? `<h3>${inline(fallbackTitle)}</h3>` : ''}<div class="loga-comparison">${['left', 'right'].map((key) => `<article><h4>${inline(sides[key].title)}</h4><ul>${sides[key].items.map((item) => `<li>${inline(item)}</li>`).join('')}</ul></article>`).join('')}</div></section>`;
+    return `<div class="loga-comparison">${['left', 'right'].map((key) => `<article><h4>${inline(sides[key].title)}</h4><ul>${sides[key].items.map((item) => `<li>${inline(item)}</li>`).join('')}</ul></article>`).join('')}</div>`;
   }
 
   function renderTree(lines) {
@@ -554,6 +718,26 @@ primary_question: "What should I care about right now?"
     return escapeHtml(value)
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="#">$1</a>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function renderDl(values) {
+    const entries = Object.entries(values || {});
+    if (!entries.length) return '';
+    return `<dl>${entries.map(([key, value]) => `<dt>${escapeHtml(key)}</dt><dd>${escapeHtml(value)}</dd>`).join('')}</dl>`;
+  }
+
+  function renderWarning({ title, detail, code }) {
+    return `<section class="loga-render-warning"><h3>${escapeHtml(title)}</h3>${detail ? `<p>${escapeHtml(detail)}</p>` : ''}${code ? `<pre><code>${escapeHtml(code)}</code></pre>` : ''}</section>`;
+  }
+
+  function readValue(model, path) {
+    if (!path) return '';
+    const fields = model.fields || model;
+    if (Object.prototype.hasOwnProperty.call(fields, path)) return fields[path];
+    return String(path).split('.').reduce((value, key) => {
+      if (value && typeof value === 'object') return value[key];
+      return undefined;
+    }, fields) || '';
   }
 
   function escapeHtml(value) {

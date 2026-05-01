@@ -1,0 +1,134 @@
+{
+  "panel": {
+    "category": "content",
+    "element": "section",
+    "className": "loga-panel",
+    "variantPrefix": "loga-panel--",
+    "fields": {
+      "title": {
+        "element": "h3",
+        "className": "loga-panel__title"
+      },
+      "status": {
+        "element": "span",
+        "className": "loga-panel__status"
+      },
+      "summary": {
+        "element": "p",
+        "className": "loga-panel__summary"
+      }
+    },
+    "list": {
+      "element": "ul",
+      "itemElement": "li",
+      "className": "loga-panel__content"
+    },
+    "children": true
+  },
+  "metric_row": {
+    "category": "component",
+    "element": "section",
+    "className": "loga-metric-row",
+    "itemSource": "items",
+    "requiredItems": true,
+    "repeatedItem": {
+      "element": "article",
+      "className": "loga-metric",
+      "fields": {
+        "label": {
+          "element": "div",
+          "className": "loga-metric__label",
+          "required": true
+        },
+        "value": {
+          "element": "div",
+          "className": "loga-metric__value",
+          "required": true
+        }
+      }
+    }
+  },
+  "timeline": {
+    "category": "component",
+    "element": "ol",
+    "className": "loga-timeline",
+    "itemSource": "items",
+    "requiredItems": true,
+    "repeatedItem": {
+      "element": "li",
+      "className": "",
+      "data": {
+        "status": { "field": "status", "required": true }
+      },
+      "fields": {
+        "step": {
+          "alias": "label",
+          "element": "strong",
+          "required": true
+        },
+        "status": {
+          "element": "span",
+          "required": true
+        }
+      }
+    }
+  },
+  "action_rail": {
+    "category": "interaction",
+    "element": "aside",
+    "className": "loga-action-rail",
+    "itemSource": "items",
+    "requiredItems": true,
+    "repeatedItem": {
+      "element": "button",
+      "className": "loga-action",
+      "type": "button",
+      "field": "label",
+      "required": true
+    }
+  },
+  "status_badge": {
+    "category": "component",
+    "element": "span",
+    "className": "loga-status-badge",
+    "contentField": "label",
+    "required": true
+  },
+  "focus_strip": {
+    "category": "component",
+    "element": "section",
+    "className": "loga-focus-strip",
+    "slots": [
+      {
+        "element": "div",
+        "fields": {
+          "primaryLabel": {
+            "element": "p",
+            "className": "eyebrow",
+            "literal": "Primary question"
+          },
+          "primary.question": {
+            "element": "h2",
+            "required": true
+          },
+          "primary.answer": {
+            "element": "p"
+          }
+        }
+      },
+      {
+        "element": "ul",
+        "itemSource": "secondary",
+        "repeatedItem": {
+          "element": "li",
+          "field": "label"
+        }
+      },
+      {
+        "element": "span",
+        "className": "loga-toolbar__status",
+        "field": "status"
+      }
+    ]
+  }
+}

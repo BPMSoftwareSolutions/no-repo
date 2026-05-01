@@ -20,12 +20,20 @@ export function renderToolbar({ lines, attrs, renderBlock, renderContractErrors 
   }
 
   const toolbarValues = parseDirectToolbarKeyValues(lines);
-  const variant = normalizeToolbarVariant(attrs.variant || toolbarValues.variant);
+  const rawVariant = attrs.variant || toolbarValues.variant || 'stacked';
+  const variant = normalizeToolbarVariant(rawVariant);
   const toolbarContext = renderToolbarContext(toolbarValues);
   const zoneHtml = zones.map((zone) => renderToolbarZone(zone, renderBlock));
+  const variantWarning = variant
+    ? ''
+    : renderContractErrors([{
+      title: 'Invalid toolbar variant',
+      detail: `Toolbar variant "${rawVariant}" is not supported. Use "linear" or "stacked".`,
+    }]);
 
   if (variant === 'linear') {
     return `
+      ${variantWarning}
       <header class="loga-toolbar loga-toolbar--linear" data-toolbar-variant="linear">
         ${toolbarContext ? `<div class="loga-toolbar__zone loga-toolbar__zone--context loga-toolbar__zone--left">${toolbarContext}</div>` : ''}
         ${zones.map((zone, index) => renderToolbarZoneShell(zone, zoneHtml[index], 'div')).join('')}
@@ -40,6 +48,7 @@ export function renderToolbar({ lines, attrs, renderBlock, renderContractErrors 
   };
 
   return `
+    ${variantWarning}
     <header class="loga-toolbar loga-toolbar--stacked" data-toolbar-variant="stacked">
       <div class="loga-toolbar__group loga-toolbar__group--left">${toolbarContext}${grouped.left.map(({ zone, html }) => renderToolbarZoneShell(zone, html, 'div')).join('')}</div>
       <div class="loga-toolbar__group loga-toolbar__group--center">${grouped.center.map(({ zone, html }) => renderToolbarZoneShell(zone, html, 'div')).join('')}</div>
@@ -141,5 +150,6 @@ function parseDirectToolbarKeyValues(lines) {
 }
 
 function normalizeToolbarVariant(variant) {
-  return variant === 'linear' ? 'linear' : 'stacked';
+  if (variant === 'linear' || variant === 'stacked') return variant;
+  return '';
 }

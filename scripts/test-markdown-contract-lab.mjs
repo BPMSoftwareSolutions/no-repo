@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
+import { ELEMENT_REGISTRY } from '../docs/loga-project-projections/markdown-contract-lab/element-registry.js';
 import { renderDiagnostics, validateContract } from '../docs/loga-project-projections/markdown-contract-lab/contract.js';
 import { parseMarkdown } from '../docs/loga-project-projections/markdown-contract-lab/parser.js';
 import { renderMarkdown, renderQuestionFirst } from '../docs/loga-project-projections/markdown-contract-lab/renderer.js';
@@ -151,7 +152,7 @@ const gridHtml = renderMarkdown(gridParsed.body);
 
 assert.equal(gridValidation.fatal.length, 0, 'grid-only layout experiment must not produce fatal validation errors');
 assert.doesNotMatch(gridDiagnostics, /Missing loga_contract|Missing ux_contract|source_truth is not sql|Missing ::toolbar|Missing toolbar zones/, 'grid-only experiments must not show full projection or toolbar diagnostics');
-assert.match(gridHtml, /<section class="loga-grid" style="--columns: 3">/, 'grid contract must render a grid layout');
+assert.match(gridHtml, /<section class="loga-grid" style="--loga-grid-columns: 3; --loga-grid-gap: 16px">/, 'grid contract must render a grid layout with spec variables');
 assert.match(gridHtml, /Current Focus/, 'grid panels must render titles');
 assert.match(gridHtml, /Establish Generic Wrapper Runtime/, 'grid panels must render list content');
 assert.match(gridHtml, /Resume Work/, 'grid panels must render nested action groups');
@@ -237,6 +238,23 @@ right:
   - Renderer
 ::
 
+::stack gap="lg"
+  ::metric_row
+  - label: "Tasks"
+    value: "2 / 4"
+  - label: "Blockers"
+    value: "0"
+  ::
+::
+
+::rail side="right"
+  ::action_group
+  - Open Current Item
+  - Review Evidence
+  - Refresh
+  ::
+::
+
 ::action_rail
 - Open Current Item
 - Review Candidate
@@ -244,15 +262,23 @@ right:
 ::`;
 
 const operatorHtml = renderMarkdown(parseMarkdown(operatorLanguageFixture).body);
+const elementRegistryJson = JSON.parse(fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/markdown-ui-elements.json', 'utf8'));
+
+['panel', 'metric_row', 'timeline', 'action_rail', 'status_badge'].forEach((blockName) => {
+  assert.deepEqual(ELEMENT_REGISTRY[blockName], elementRegistryJson[blockName], `${blockName} module registry must match JSON element mapping`);
+});
 
 assert.match(operatorHtml, /loga-focus-strip/, 'focus_strip must render a focus strip');
 assert.match(operatorHtml, /Wrapper runtime is mid-execution and unblocked/, 'focus_strip must render primary answer');
 assert.match(operatorHtml, /loga-metric-row/, 'metric_row must render metric row');
+assert.match(operatorHtml, /<section class="loga-metric-row"><article class="loga-metric"><div class="loga-metric__label">Tasks Complete<\/div><div class="loga-metric__value">2 \/ 4<\/div><\/article>/, 'metric_row must render through registry-defined section/article/div mapping');
 assert.match(operatorHtml, /Tasks Complete/, 'metric_row must render metrics');
 assert.match(operatorHtml, /loga-split/, 'split must render split layout');
+assert.match(operatorHtml, /--loga-split-left: 2fr; --loga-split-right: 1fr/, 'split must use layout spec CSS variables');
 assert.match(operatorHtml, /Current Work/, 'split must preserve pane headings');
 assert.match(operatorHtml, /Wrapper execution logs/, 'split must render evidence content');
 assert.match(operatorHtml, /loga-timeline/, 'timeline must render timeline');
+assert.match(operatorHtml, /<ol class="loga-timeline"><li data-status="complete"><strong>Plan Approved<\/strong><span>complete<\/span><\/li>/, 'timeline must render through registry-defined ordered-list mapping');
 assert.match(operatorHtml, /data-status="in progress"/, 'timeline must expose status');
 assert.match(operatorHtml, /loga-decision-panel/, 'decision_panel must render decision surface');
 assert.match(operatorHtml, /Approve/, 'decision_panel must render options');
@@ -260,8 +286,49 @@ assert.match(operatorHtml, /loga-panel--comparison/, 'comparison panel must rend
 assert.match(operatorHtml, /Modular services/, 'comparison panel must render right-side items');
 assert.match(operatorHtml, /loga-tree/, 'tree must render workspace tree');
 assert.match(operatorHtml, /UI Contracts/, 'tree must render nested nodes');
+assert.match(operatorHtml, /<section class="loga-stack" style="--loga-stack-gap: 24px">/, 'stack must render vertical layout with gap token');
+assert.match(operatorHtml, /<aside class="loga-rail loga-rail--right" data-side="right">/, 'rail must render sticky side layout');
 assert.match(operatorHtml, /loga-action-rail/, 'action_rail must render floating action rail');
+assert.match(operatorHtml, /<aside class="loga-action-rail"><button class="loga-action" type="button">Open Current Item<\/button>/, 'action_rail must render through registry-defined aside/button mapping');
 assert.match(operatorHtml, /Approve Contract/, 'action_rail must render actions');
+
+const registryDrivenFixture = `::panel variant="focus"
+title: "Current Focus"
+status: "in progress"
+summary: "Wrapper runtime is active."
+- Establish Generic Wrapper Runtime
+::
+
+::status_badge
+label: "Healthy"
+::`;
+
+const registryDrivenHtml = renderMarkdown(parseMarkdown(registryDrivenFixture).body);
+
+assert.match(registryDrivenHtml, /<section class="loga-panel loga-panel--focus">/, 'panel must render through the registry shell');
+assert.match(registryDrivenHtml, /<h3 class="loga-panel__title">Current Focus<\/h3>/, 'panel title must render through registry fields');
+assert.match(registryDrivenHtml, /<span class="loga-panel__status">in progress<\/span>/, 'panel status must render through registry fields');
+assert.match(registryDrivenHtml, /<ul class="loga-panel__content"><li>Establish Generic Wrapper Runtime<\/li><\/ul>/, 'panel list content must render through registry list mapping');
+assert.match(registryDrivenHtml, /<span class="loga-status-badge">Healthy<\/span>/, 'status_badge must render through registry content mapping');
+const unsupportedBlockHtml = renderMarkdown(parseMarkdown('::experimental_widget level="idea"\npayload: "visible warning"\n::').body);
+assert.match(unsupportedBlockHtml, /loga-render-warning/, 'unknown blocks must render visible warnings');
+assert.match(unsupportedBlockHtml, /Unsupported block/, 'unknown block warning must identify unsupported blocks');
+
+const missingRequiredHtml = renderMarkdown(parseMarkdown('::metric_row\n- label: "Tasks"\n::').body);
+assert.match(missingRequiredHtml, /Missing required field/, 'missing required fields must render visible validation warnings');
+
+const missingItemsHtml = renderMarkdown(parseMarkdown('::metric_row\nregistry says section.loga-metric-row\n::').body);
+assert.match(missingItemsHtml, /Missing required items/, 'repeated components with no records must render visible validation warnings');
+
+const invalidToolbarHtml = renderContract(`::toolbar variant="floating"
+  ::toolbar_zone name="actions" align="right"
+  ::action_group
+  - Refresh
+  ::
+  ::
+::`).html;
+assert.match(invalidToolbarHtml, /Invalid toolbar variant/, 'invalid layout variants must render warnings');
+assert.match(invalidToolbarHtml, /loga-toolbar--stacked/, 'invalid toolbar variant still renders explicit stacked warning surface');
 
 const standaloneFocusStrip = `::focus_strip
 
@@ -316,6 +383,7 @@ assert.match(contractCss, /\.loga-tree/, 'portable CSS must support navigation t
 assert.match(contractCss, /\.loga-action-rail/, 'portable CSS must support action rails');
 
 const elements = {};
+const fetchCalls = [];
 const documentStub = {
   getElementById(id) {
     if (!elements[id]) {
@@ -335,10 +403,28 @@ const documentStub = {
     return elements[id];
   },
 };
-const windowStub = {};
+const windowStub = {
+  location: {
+    protocol: 'http:',
+  },
+  fetch: async (url) => {
+    fetchCalls.push(url);
+    return {
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      async json() {
+        return elementRegistryJson;
+      },
+    };
+  },
+};
 new Function('document', 'window', browserRuntime)(documentStub, windowStub);
+await new Promise((resolve) => setTimeout(resolve, 0));
 
 assert.ok(windowStub.MarkdownContractLab, 'browser runtime must expose the lab API for diagnostics');
+assert.deepEqual(fetchCalls, ['./markdown-contract-lab/markdown-ui-elements.json'], 'browser runtime must load the JSON contract registry');
+assert.doesNotMatch(browserRuntime, /const ELEMENT_REGISTRY\s*=/, 'browser runtime must not embed a substitute element registry');
 assert.match(elements['rendered-output'].innerHTML, /loga-toolbar--linear/, 'browser runtime must render the initial sample');
 assert.match(elements['markdown-input'].value, /variant="linear"/, 'browser runtime must load the sample into the editor');
 
@@ -349,5 +435,38 @@ assert.equal(elements['markdown-input'].value, '', 'clear button must empty the 
 elements['load-sample'].handlers.click();
 assert.match(elements['markdown-input'].value, /Projection Graph/, 'load sample button must restore sample markdown');
 assert.match(elements['rendered-output'].innerHTML, /Projection Graph/, 'load sample button must render sample output');
+
+const fileProtocolElements = {};
+const fileProtocolDocumentStub = {
+  getElementById(id) {
+    if (!fileProtocolElements[id]) {
+      fileProtocolElements[id] = {
+        checked: true,
+        handlers: {},
+        id,
+        innerHTML: '',
+        textContent: '',
+        value: '',
+        addEventListener(event, handler) {
+          this.handlers[event] = handler;
+        },
+        focus() {},
+      };
+    }
+    return fileProtocolElements[id];
+  },
+};
+new Function('document', 'window', browserRuntime)(fileProtocolDocumentStub, {
+  location: {
+    protocol: 'file:',
+  },
+  fetch: async () => {
+    throw new Error('fetch should not be called for file protocol');
+  },
+});
+await new Promise((resolve) => setTimeout(resolve, 0));
+
+assert.match(fileProtocolElements.diagnostics.innerHTML, /Renderer blocked: markdown-ui-elements\.json could not be loaded/, 'registry load failure must block rendering');
+assert.match(fileProtocolElements['rendered-output'].innerHTML, /fetch should not be called for file protocol/, 'registry load failure must expose the underlying loader error');
 
 console.log('Markdown contract lab regression tests passed.');
