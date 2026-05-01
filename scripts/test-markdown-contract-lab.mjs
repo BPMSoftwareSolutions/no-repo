@@ -263,6 +263,29 @@ assert.match(operatorHtml, /UI Contracts/, 'tree must render nested nodes');
 assert.match(operatorHtml, /loga-action-rail/, 'action_rail must render floating action rail');
 assert.match(operatorHtml, /Approve Contract/, 'action_rail must render actions');
 
+const standaloneFocusStrip = `::focus_strip
+
+primary:
+  question: "What should I care about right now?"
+  answer: "Wrapper runtime is mid-execution and unblocked"
+
+secondary:
+  - "Next step: validate ownership mapping"
+  - "No blockers present"
+
+status: "in progress"
+
+::`;
+
+const focusParsed = parseMarkdown(standaloneFocusStrip);
+const focusValidation = validateContract(standaloneFocusStrip, focusParsed);
+const focusDiagnostics = renderDiagnostics(standaloneFocusStrip, focusParsed, focusValidation).join('');
+
+assert.equal(focusValidation.fatal.length, 0, 'standalone focus_strip experiment must not produce fatal validation errors');
+assert.doesNotMatch(focusDiagnostics, /Missing loga_contract|Missing ux_contract|source_truth is not sql|Missing ::toolbar|Missing toolbar zones|Missing actions block/, 'standalone focus_strip must not show full projection, toolbar, zone, or action diagnostics');
+assert.match(focusDiagnostics, /<li class="pass">contract<\/li>/, 'standalone focus_strip must pass contract diagnostics as an experiment');
+assert.match(focusDiagnostics, /<li class="pass">zones<\/li>/, 'standalone focus_strip must pass flow diagnostics as a component-owned experiment');
+
 const browserRuntime = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/browser.js', 'utf8');
 const labHtml = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab.html', 'utf8');
 const labShellCss = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/lab-shell.css', 'utf8');

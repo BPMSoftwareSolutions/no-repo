@@ -149,18 +149,21 @@ primary_question: "What should I care about right now?"
     const hasToolbar = parsed.blocks.includes('toolbar');
     const hasGrid = parsed.blocks.includes('grid');
     const hasSplit = parsed.blocks.includes('split');
+    const experimentBlocks = new Set(['action_rail', 'decision_panel', 'focus_strip', 'metric_row', 'panel', 'timeline', 'tree']);
+    const hasLayoutBlock = hasToolbar || hasGrid || hasSplit;
+    const hasComponentBlock = parsed.blocks.some((block) => experimentBlocks.has(block));
     const hasYamlZones = /::toolbar[^\n]*\n[\s\S]*?\nzones:\s*\n/.test(markdown);
     const hasToolbarZones = markdown.includes('::toolbar_zone');
     const hasActions = parsed.blocks.includes('next_actions') || markdown.includes('::action_group') || markdown.includes('::actions');
-    const isExperimentalContract = hasToolbar || hasGrid || hasSplit;
+    const isExperimentalContract = hasLayoutBlock || hasComponentBlock;
     const checks = [
       ['contract', Boolean(parsed.frontmatter.loga_contract) || isExperimentalContract, isExperimentalContract ? 'experimental contract' : 'Missing loga_contract'],
       ['ux contract', Boolean(parsed.frontmatter.ux_contract) || isExperimentalContract, isExperimentalContract ? 'experimental contract' : 'Missing ux_contract'],
       ['source truth', parsed.frontmatter.source_truth === 'sql' || isExperimentalContract, isExperimentalContract ? 'source truth omitted for experiment' : 'source_truth is not sql'],
-      ['toolbar', hasToolbar || hasGrid || hasSplit, hasGrid || hasSplit ? 'layout-only experiment' : 'Missing ::toolbar'],
-      ['zones', hasToolbarZones || hasYamlZones || hasGrid || hasSplit, hasGrid || hasSplit ? 'layout block owns flow' : 'Missing toolbar zones'],
+      ['toolbar', hasToolbar || hasGrid || hasSplit || hasComponentBlock, hasLayoutBlock || hasComponentBlock ? 'toolbar not required for experiment' : 'Missing ::toolbar'],
+      ['zones', hasToolbarZones || hasYamlZones || hasGrid || hasSplit || hasComponentBlock, hasLayoutBlock ? 'layout block owns flow' : hasComponentBlock ? 'component owns flow' : 'Missing toolbar zones'],
       ['zone grammar', true, hasYamlZones ? 'YAML zones normalized into toolbar zones' : 'toolbar zone grammar'],
-      ['actions', hasActions, 'Missing actions block'],
+      ['actions', hasActions || hasComponentBlock, hasComponentBlock ? 'actions optional for component experiment' : 'Missing actions block'],
     ];
     return [
       ...validation.fatal.map((error) => `<li class="fail">${escapeHtml(error.title)}</li>`),

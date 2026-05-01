@@ -31,21 +31,23 @@ export function renderDiagnostics(markdown, parsed, validation = { fatal: [] }) 
   const hasToolbar = parsed.blocks.includes('toolbar');
   const hasGrid = parsed.blocks.includes('grid');
   const hasSplit = parsed.blocks.includes('split');
+  const hasLayoutBlock = hasToolbar || hasGrid || hasSplit;
+  const hasComponentBlock = parsed.blocks.some((block) => SUPPORTED_EXPERIMENT_BLOCKS.has(block));
   const hasYamlZones = usesYamlNestedZones(markdown);
   const hasToolbarZones = markdown.includes('::toolbar_zone');
   const hasAnyToolbarZones = hasToolbarZones || hasYamlZones;
   const hasActions = parsed.blocks.includes('next_actions')
     || markdown.includes('::action_group')
     || markdown.includes('::actions');
-  const isExperimentalContract = hasToolbar || hasGrid || hasSplit;
+  const isExperimentalContract = hasLayoutBlock || hasComponentBlock;
   const checks = [
     ['contract', Boolean(parsed.frontmatter.loga_contract) || isExperimentalContract, isExperimentalContract ? 'experimental contract' : 'Missing loga_contract'],
     ['ux contract', Boolean(parsed.frontmatter.ux_contract) || isExperimentalContract, isExperimentalContract ? 'experimental contract' : 'Missing ux_contract'],
     ['source truth', parsed.frontmatter.source_truth === 'sql' || isExperimentalContract, isExperimentalContract ? 'source truth omitted for experiment' : 'source_truth is not sql'],
-    ['toolbar', hasToolbar || hasGrid || hasSplit, hasGrid || hasSplit ? 'layout-only experiment' : 'Missing ::toolbar'],
-    ['zones', hasAnyToolbarZones || hasGrid || hasSplit, hasGrid || hasSplit ? 'layout block owns flow' : 'Missing toolbar zones'],
+    ['toolbar', hasToolbar || hasGrid || hasSplit || hasComponentBlock, hasLayoutBlock || hasComponentBlock ? 'toolbar not required for experiment' : 'Missing ::toolbar'],
+    ['zones', hasAnyToolbarZones || hasGrid || hasSplit || hasComponentBlock, hasLayoutBlock ? 'layout block owns flow' : hasComponentBlock ? 'component owns flow' : 'Missing toolbar zones'],
     ['zone grammar', true, hasYamlZones ? 'YAML zones normalized into toolbar zones' : 'toolbar zone grammar'],
-    ['actions', hasActions, 'Missing actions block'],
+    ['actions', hasActions || hasComponentBlock, hasComponentBlock ? 'actions optional for component experiment' : 'Missing actions block'],
     ['raw leak', !/::[a-zA-Z0-9_]+[^\n]*\n[\s\S]*?\n(?!:{2,3})$/.test(markdown), 'Possible unclosed primitive'],
   ];
 
@@ -63,3 +65,13 @@ export function renderDiagnostics(markdown, parsed, validation = { fatal: [] }) 
 export function usesYamlNestedZones(markdown) {
   return /::toolbar[^\n]*\n[\s\S]*?\nzones:\s*\n/.test(markdown);
 }
+
+const SUPPORTED_EXPERIMENT_BLOCKS = new Set([
+  'action_rail',
+  'decision_panel',
+  'focus_strip',
+  'metric_row',
+  'panel',
+  'timeline',
+  'tree',
+]);
