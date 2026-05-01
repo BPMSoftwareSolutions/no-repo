@@ -265,24 +265,32 @@ assert.match(operatorHtml, /Approve Contract/, 'action_rail must render actions'
 
 const browserRuntime = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/browser.js', 'utf8');
 const labHtml = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab.html', 'utf8');
+const labShellCss = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/lab-shell.css', 'utf8');
+const contractCss = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/markdown-ui-contract.css', 'utf8');
 
-assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?flex-wrap:\s*nowrap;/, 'linear toolbar CSS must prevent wrapping');
-assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?align-items:\s*flex-end;/, 'linear toolbar must bottom-align zones');
-assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-x:\s*auto;/, 'linear toolbar CSS must scroll horizontally instead of overlapping');
-assert.match(labHtml, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-y:\s*hidden;/, 'linear toolbar CSS must prevent vertical overflow');
-assert.match(labHtml, /\.loga-toolbar__zone\s*{[\s\S]*?align-items:\s*flex-end;/, 'toolbar zones must bottom-align children by default');
-assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="context"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="search"\]\s*{[\s\S]*?flex-direction:\s*column;[\s\S]*?align-items:\s*flex-start;[\s\S]*?justify-content:\s*flex-end;/, 'label-bearing linear zones must stack vertically and bottom justify');
-assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="navigation"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="actions"\]\s*{[\s\S]*?align-self:\s*flex-end;/, 'control-only linear zones must sit on the bottom edge');
-assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="search"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="center"\]\s*{[\s\S]*?flex:\s*0 0 320px;/, 'linear search zone must have stable debug width');
-assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="context"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="actions"\]\s*{[\s\S]*?flex:\s*0 0 auto;/, 'linear context, filters, and actions zones must stay fixed');
-assert.match(labHtml, /\.loga-toolbar--linear \.loga-control--search\s*{[\s\S]*?width:\s*100%;/, 'linear search control must fill the flexible center zone');
-assert.match(labHtml, /\.loga-focus-strip/, 'lab CSS must support focus strips');
-assert.match(labHtml, /\.loga-metric-row/, 'lab CSS must support metric rows');
-assert.match(labHtml, /\.loga-timeline/, 'lab CSS must support timelines');
-assert.match(labHtml, /\.loga-decision-panel/, 'lab CSS must support decision panels');
-assert.match(labHtml, /\.loga-comparison/, 'lab CSS must support comparison panels');
-assert.match(labHtml, /\.loga-tree/, 'lab CSS must support navigation trees');
-assert.match(labHtml, /\.loga-action-rail/, 'lab CSS must support action rails');
+assert.doesNotMatch(labHtml, /<style>/, 'lab HTML must not own inline CSS');
+assert.match(labHtml, /lab-shell\.css/, 'lab HTML must link host-shell CSS');
+assert.match(labHtml, /markdown-ui-contract\.css/, 'lab HTML must link portable markdown UI contract CSS');
+assert.doesNotMatch(labShellCss, /\.loga-toolbar|\.loga-grid|\.loga-focus-strip/, 'lab-shell CSS must not own rendered LOGA surface styles');
+assert.doesNotMatch(contractCss, /\.lab-|\.editor-pane|\.preview-pane|\.header-actions/, 'portable markdown UI contract CSS must not own lab host styles');
+
+assert.match(contractCss, /\.loga-toolbar--linear\s*{[\s\S]*?flex-wrap:\s*nowrap;/, 'linear toolbar CSS must prevent wrapping');
+assert.match(contractCss, /\.loga-toolbar--linear\s*{[\s\S]*?align-items:\s*flex-end;/, 'linear toolbar must bottom-align zones');
+assert.match(contractCss, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-x:\s*auto;/, 'linear toolbar CSS must scroll horizontally instead of overlapping');
+assert.match(contractCss, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-y:\s*hidden;/, 'linear toolbar CSS must prevent vertical overflow');
+assert.match(contractCss, /\.loga-toolbar__zone\s*{[\s\S]*?align-items:\s*flex-end;/, 'toolbar zones must bottom-align children by default');
+assert.match(contractCss, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="context"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="search"\]\s*{[\s\S]*?flex-direction:\s*column;[\s\S]*?align-items:\s*flex-start;[\s\S]*?justify-content:\s*flex-end;/, 'label-bearing linear zones must stack vertically and bottom justify');
+assert.match(contractCss, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="navigation"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="actions"\]\s*{[\s\S]*?align-self:\s*flex-end;/, 'control-only linear zones must sit on the bottom edge');
+assert.match(contractCss, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="search"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="center"\]\s*{[\s\S]*?flex:\s*0 0 320px;/, 'linear search zone must have stable debug width');
+assert.match(contractCss, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="context"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="actions"\]\s*{[\s\S]*?flex:\s*0 0 auto;/, 'linear context, filters, and actions zones must stay fixed');
+assert.match(contractCss, /\.loga-toolbar--linear \.loga-control--search\s*{[\s\S]*?width:\s*100%;/, 'linear search control must fill the flexible center zone');
+assert.match(contractCss, /\.loga-focus-strip/, 'portable CSS must support focus strips');
+assert.match(contractCss, /\.loga-metric-row/, 'portable CSS must support metric rows');
+assert.match(contractCss, /\.loga-timeline/, 'portable CSS must support timelines');
+assert.match(contractCss, /\.loga-decision-panel/, 'portable CSS must support decision panels');
+assert.match(contractCss, /\.loga-comparison/, 'portable CSS must support comparison panels');
+assert.match(contractCss, /\.loga-tree/, 'portable CSS must support navigation trees');
+assert.match(contractCss, /\.loga-action-rail/, 'portable CSS must support action rails');
 
 const elements = {};
 const documentStub = {
