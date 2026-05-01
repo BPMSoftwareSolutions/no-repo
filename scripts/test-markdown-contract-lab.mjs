@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-import { validateContract } from '../docs/loga-project-projections/markdown-contract-lab/contract.js';
+import { renderDiagnostics, validateContract } from '../docs/loga-project-projections/markdown-contract-lab/contract.js';
 import { parseMarkdown } from '../docs/loga-project-projections/markdown-contract-lab/parser.js';
 import { renderMarkdown, renderQuestionFirst } from '../docs/loga-project-projections/markdown-contract-lab/renderer.js';
 
@@ -114,6 +114,47 @@ const blockResult = renderContract(supportedBlockNestedToolbar);
 assert.equal(blockResult.diagnostics.fatal.length, 0, 'supported toolbar_zone grammar must not produce fatal validation errors');
 assert.match(blockResult.html, /<header class="loga-toolbar loga-toolbar--stacked"/, 'supported toolbar_zone grammar must render the toolbar');
 assert.match(blockResult.html, /Roadmap/, 'supported toolbar must render nav labels');
+
+const commandCenterGrid = `# Command Center
+
+::grid columns="3"
+
+  ::panel variant="focus"
+  title: "Current Focus"
+  status: "in progress"
+  content:
+  - Establish Generic Wrapper Runtime
+  - 2 / 4 tasks complete
+  ::
+
+  ::panel variant="alerts"
+  title: "Needs Attention"
+  - Blocked: SDK Refactor Surfaces
+  - Drift: SQL access violations
+  ::
+
+  ::panel variant="actions"
+  title: "Quick Actions"
+  ::action_group
+  - Resume Work
+  - Open Roadmap
+  - Review Evidence
+  ::
+  ::
+
+::`;
+
+const gridParsed = parseMarkdown(commandCenterGrid);
+const gridValidation = validateContract(commandCenterGrid, gridParsed);
+const gridDiagnostics = renderDiagnostics(commandCenterGrid, gridParsed, gridValidation).join('');
+const gridHtml = renderMarkdown(gridParsed.body);
+
+assert.equal(gridValidation.fatal.length, 0, 'grid-only layout experiment must not produce fatal validation errors');
+assert.doesNotMatch(gridDiagnostics, /Missing loga_contract|Missing ux_contract|source_truth is not sql|Missing ::toolbar|Missing toolbar zones/, 'grid-only experiments must not show full projection or toolbar diagnostics');
+assert.match(gridHtml, /<section class="loga-grid" style="--columns: 3">/, 'grid contract must render a grid layout');
+assert.match(gridHtml, /Current Focus/, 'grid panels must render titles');
+assert.match(gridHtml, /Establish Generic Wrapper Runtime/, 'grid panels must render list content');
+assert.match(gridHtml, /Resume Work/, 'grid panels must render nested action groups');
 
 const browserRuntime = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/browser.js', 'utf8');
 const labHtml = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab.html', 'utf8');

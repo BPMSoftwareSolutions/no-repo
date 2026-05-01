@@ -147,16 +147,18 @@ primary_question: "What should I care about right now?"
 
   function renderDiagnostics(markdown, parsed, validation = { fatal: [] }) {
     const hasToolbar = parsed.blocks.includes('toolbar');
+    const hasGrid = parsed.blocks.includes('grid');
+    const hasSplit = parsed.blocks.includes('split');
     const hasYamlZones = /::toolbar[^\n]*\n[\s\S]*?\nzones:\s*\n/.test(markdown);
     const hasToolbarZones = markdown.includes('::toolbar_zone');
     const hasActions = parsed.blocks.includes('next_actions') || markdown.includes('::action_group') || markdown.includes('::actions');
-    const isPartialToolbarContract = hasToolbar;
+    const isExperimentalContract = hasToolbar || hasGrid || hasSplit;
     const checks = [
-      ['contract', Boolean(parsed.frontmatter.loga_contract) || isPartialToolbarContract, isPartialToolbarContract ? 'partial toolbar contract' : 'Missing loga_contract'],
-      ['ux contract', Boolean(parsed.frontmatter.ux_contract) || isPartialToolbarContract, isPartialToolbarContract ? 'partial toolbar contract' : 'Missing ux_contract'],
-      ['source truth', parsed.frontmatter.source_truth === 'sql' || isPartialToolbarContract, isPartialToolbarContract ? 'source truth omitted for toolbar-only preview' : 'source_truth is not sql'],
-      ['toolbar', hasToolbar, 'Missing ::toolbar'],
-      ['zones', hasToolbarZones || hasYamlZones, 'Missing toolbar zones'],
+      ['contract', Boolean(parsed.frontmatter.loga_contract) || isExperimentalContract, isExperimentalContract ? 'experimental contract' : 'Missing loga_contract'],
+      ['ux contract', Boolean(parsed.frontmatter.ux_contract) || isExperimentalContract, isExperimentalContract ? 'experimental contract' : 'Missing ux_contract'],
+      ['source truth', parsed.frontmatter.source_truth === 'sql' || isExperimentalContract, isExperimentalContract ? 'source truth omitted for experiment' : 'source_truth is not sql'],
+      ['toolbar', hasToolbar || hasGrid || hasSplit, hasGrid || hasSplit ? 'layout-only experiment' : 'Missing ::toolbar'],
+      ['zones', hasToolbarZones || hasYamlZones || hasGrid || hasSplit, hasGrid || hasSplit ? 'layout block owns flow' : 'Missing toolbar zones'],
       ['zone grammar', true, hasYamlZones ? 'YAML zones normalized into toolbar zones' : 'toolbar zone grammar'],
       ['actions', hasActions, 'Missing actions block'],
     ];
@@ -239,6 +241,15 @@ primary_question: "What should I care about right now?"
     const keyValues = parseKeyValues(lines);
     const value = (key) => keyValues[key] || attrs[key] || '';
     if (block === 'toolbar_zone') return collectChildBlocks(lines).map((child) => renderBlock(child.name, child.lines, child.attrs)).join('');
+    if (block === 'grid') {
+      const columns = Number.parseInt(attrs.columns || value('columns') || '2', 10);
+      const safeColumns = Number.isFinite(columns) ? Math.min(Math.max(columns, 1), 6) : 2;
+      return `<section class="loga-grid" style="--columns: ${safeColumns}">${collectChildBlocks(lines).map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
+    }
+    if (block === 'split') {
+      const [left = '2', right = '1'] = String(attrs.ratio || value('ratio') || '2:1').split(':');
+      return `<section class="loga-split" style="--left: ${escapeHtml(left)}fr; --right: ${escapeHtml(right)}fr">${collectChildBlocks(lines).slice(0, 2).map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
+    }
     if (block === 'search') return `<div class="loga-control loga-control--search"><label>Search</label><input type="search" value="" placeholder="${escapeHtml(value('placeholder') || 'Search...')}"></div>`;
     if (block === 'select') {
       const selected = value('value');
@@ -256,7 +267,11 @@ primary_question: "What should I care about right now?"
     }
     if (block === 'next_actions') return `<section class="loga-actions">${lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => `<button type="button">${escapeHtml(line.slice(2))}</button>`).join('')}</section>`;
     if (block === 'focus') return `<section class="loga-focus"><p class="eyebrow">${escapeHtml(value('status') || 'focus')}</p><p class="question">${inline(value('question') || 'What matters?')}</p><p class="answer">${inline(value('answer'))}</p></section>`;
-    if (block === 'panel') return `<section class="loga-panel">${value('title') ? `<h3>${inline(value('title'))}</h3>` : ''}${value('summary') ? `<p>${inline(value('summary'))}</p>` : ''}</section>`;
+    if (block === 'panel') {
+      const listItems = lines.map((line) => line.trim()).filter((line) => line.startsWith('- '));
+      const childBlocks = collectChildBlocks(lines);
+      return `<section class="loga-panel loga-panel--${escapeHtml(attrs.variant || value('variant') || 'default')}">${value('title') ? `<h3>${inline(value('title'))}</h3>` : ''}${value('summary') ? `<p>${inline(value('summary'))}</p>` : ''}${listItems.length ? `<ul>${listItems.map((line) => `<li>${inline(line.slice(2))}</li>`).join('')}</ul>` : ''}${childBlocks.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
+    }
     return `<section class="loga-panel primitive"><h3>${escapeHtml(name.replaceAll('_', ' '))}</h3>${lines.some((line) => line.trim()) ? `<p>${inline(lines.join(' '))}</p>` : ''}</section>`;
   }
 

@@ -29,19 +29,21 @@ export function validateContract(markdown, parsed) {
 
 export function renderDiagnostics(markdown, parsed, validation = { fatal: [] }) {
   const hasToolbar = parsed.blocks.includes('toolbar');
+  const hasGrid = parsed.blocks.includes('grid');
+  const hasSplit = parsed.blocks.includes('split');
   const hasYamlZones = usesYamlNestedZones(markdown);
   const hasToolbarZones = markdown.includes('::toolbar_zone');
   const hasAnyToolbarZones = hasToolbarZones || hasYamlZones;
   const hasActions = parsed.blocks.includes('next_actions')
     || markdown.includes('::action_group')
     || markdown.includes('::actions');
-  const isPartialToolbarContract = hasToolbar;
+  const isExperimentalContract = hasToolbar || hasGrid || hasSplit;
   const checks = [
-    ['contract', Boolean(parsed.frontmatter.loga_contract) || isPartialToolbarContract, isPartialToolbarContract ? 'partial toolbar contract' : 'Missing loga_contract'],
-    ['ux contract', Boolean(parsed.frontmatter.ux_contract) || isPartialToolbarContract, isPartialToolbarContract ? 'partial toolbar contract' : 'Missing ux_contract'],
-    ['source truth', parsed.frontmatter.source_truth === 'sql' || isPartialToolbarContract, isPartialToolbarContract ? 'source truth omitted for toolbar-only preview' : 'source_truth is not sql'],
-    ['toolbar', hasToolbar, 'Missing ::toolbar'],
-    ['zones', hasAnyToolbarZones, 'Missing toolbar zones'],
+    ['contract', Boolean(parsed.frontmatter.loga_contract) || isExperimentalContract, isExperimentalContract ? 'experimental contract' : 'Missing loga_contract'],
+    ['ux contract', Boolean(parsed.frontmatter.ux_contract) || isExperimentalContract, isExperimentalContract ? 'experimental contract' : 'Missing ux_contract'],
+    ['source truth', parsed.frontmatter.source_truth === 'sql' || isExperimentalContract, isExperimentalContract ? 'source truth omitted for experiment' : 'source_truth is not sql'],
+    ['toolbar', hasToolbar || hasGrid || hasSplit, hasGrid || hasSplit ? 'layout-only experiment' : 'Missing ::toolbar'],
+    ['zones', hasAnyToolbarZones || hasGrid || hasSplit, hasGrid || hasSplit ? 'layout block owns flow' : 'Missing toolbar zones'],
     ['zone grammar', true, hasYamlZones ? 'YAML zones normalized into toolbar zones' : 'toolbar zone grammar'],
     ['actions', hasActions, 'Missing actions block'],
     ['raw leak', !/::[a-zA-Z0-9_]+[^\n]*\n[\s\S]*?\n(?!:{2,3})$/.test(markdown), 'Possible unclosed primitive'],

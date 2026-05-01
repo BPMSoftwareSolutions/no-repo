@@ -11,6 +11,19 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     return children.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('');
   }
 
+  if (block === 'grid') {
+    const columns = Number.parseInt(attrs.columns || value('columns') || '2', 10);
+    const safeColumns = Number.isFinite(columns) ? Math.min(Math.max(columns, 1), 6) : 2;
+    const children = collectChildBlocks(lines);
+    return `<section class="loga-grid" style="--columns: ${safeColumns}">${children.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
+  }
+
+  if (block === 'split') {
+    const [left = '2', right = '1'] = String(attrs.ratio || value('ratio') || '2:1').split(':');
+    const children = collectChildBlocks(lines).slice(0, 2);
+    return `<section class="loga-split" style="--left: ${escapeHtml(left)}fr; --right: ${escapeHtml(right)}fr">${children.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</section>`;
+  }
+
   if (block === 'search') {
     return `<div class="loga-control loga-control--search"><label>Search</label><input type="search" value="" placeholder="${escapeHtml(value('placeholder') || 'Search...')}"></div>`;
   }
@@ -57,7 +70,17 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     const title = value('title');
     const summary = value('summary');
     const detailEntries = Object.entries(keyValues).filter(([key]) => !['title', 'summary'].includes(key));
-    return `<section class="loga-panel">${title ? `<h3>${inline(title)}</h3>` : ''}${summary ? `<p>${inline(summary)}</p>` : ''}${detailEntries.length ? renderDl(Object.fromEntries(detailEntries)) : ''}</section>`;
+    const listItems = lines.map((line) => line.trim()).filter((line) => line.startsWith('- '));
+    const childBlocks = collectChildBlocks(lines);
+    return `
+      <section class="loga-panel loga-panel--${escapeHtml(attrs.variant || value('variant') || 'default')}">
+        ${title ? `<h3>${inline(title)}</h3>` : ''}
+        ${summary ? `<p>${inline(summary)}</p>` : ''}
+        ${listItems.length ? `<ul>${listItems.map((line) => `<li>${inline(line.slice(2))}</li>`).join('')}</ul>` : ''}
+        ${detailEntries.length ? renderDl(Object.fromEntries(detailEntries)) : ''}
+        ${childBlocks.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}
+      </section>
+    `;
   }
 
   if (['roadmap', 'task_list', 'run_list', 'promotion_list', 'cicd_list', 'turn_list', 'memory', 'checklist'].includes(block)) {
