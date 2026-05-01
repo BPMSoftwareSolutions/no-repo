@@ -156,6 +156,113 @@ assert.match(gridHtml, /Current Focus/, 'grid panels must render titles');
 assert.match(gridHtml, /Establish Generic Wrapper Runtime/, 'grid panels must render list content');
 assert.match(gridHtml, /Resume Work/, 'grid panels must render nested action groups');
 
+const operatorLanguageFixture = `::focus_strip
+
+primary:
+  question: "What should I care about right now?"
+  answer: "Wrapper runtime is mid-execution and unblocked"
+
+secondary:
+  - "Next step: validate ownership mapping"
+  - "No blockers present"
+
+status: "in progress"
+
+::
+
+::metric_row
+- label: "Tasks Complete"
+  value: "2 / 4"
+- label: "Blockers"
+  value: "0"
+- label: "Confidence"
+  value: "High"
+::
+
+::split ratio="2:1"
+
+  ## Current Work
+
+  ::roadmap
+  - Establish Generic Wrapper Runtime
+  - Promote Refactor SDK Surfaces
+  ::
+
+  ## Why this matters
+
+  ::evidence_drawer
+  - Wrapper execution logs
+  - Ownership validation
+  - Gate decisions
+  ::
+
+::
+
+::timeline
+- step: "Plan Approved"
+  status: "complete"
+- step: "Wrapper Execution"
+  status: "in progress"
+- step: "Verification"
+  status: "pending"
+::
+
+::decision_panel
+question: "Is this refactor ready to promote?"
+options:
+  - Approve
+  - Revise
+  - Reject
+confidence: "High"
+::
+
+::panel variant="comparison"
+left:
+  title: "Before"
+  - God file
+  - Mixed responsibilities
+right:
+  title: "After"
+  - Modular services
+  - Clear ownership
+::
+
+::tree
+- AI Engine
+  - Roadmap
+  - Workflows
+  - Evidence
+- LOGA
+  - UI Contracts
+  - Renderer
+::
+
+::action_rail
+- Open Current Item
+- Review Candidate
+- Approve Contract
+::`;
+
+const operatorHtml = renderMarkdown(parseMarkdown(operatorLanguageFixture).body);
+
+assert.match(operatorHtml, /loga-focus-strip/, 'focus_strip must render a focus strip');
+assert.match(operatorHtml, /Wrapper runtime is mid-execution and unblocked/, 'focus_strip must render primary answer');
+assert.match(operatorHtml, /loga-metric-row/, 'metric_row must render metric row');
+assert.match(operatorHtml, /Tasks Complete/, 'metric_row must render metrics');
+assert.match(operatorHtml, /loga-split/, 'split must render split layout');
+assert.match(operatorHtml, /Current Work/, 'split must preserve pane headings');
+assert.match(operatorHtml, /Wrapper execution logs/, 'split must render evidence content');
+assert.match(operatorHtml, /loga-timeline/, 'timeline must render timeline');
+assert.match(operatorHtml, /data-status="in progress"/, 'timeline must expose status');
+assert.match(operatorHtml, /loga-decision-panel/, 'decision_panel must render decision surface');
+assert.match(operatorHtml, /Approve/, 'decision_panel must render options');
+assert.match(operatorHtml, /loga-panel--comparison/, 'comparison panel must render comparison variant');
+assert.match(operatorHtml, /Modular services/, 'comparison panel must render right-side items');
+assert.match(operatorHtml, /loga-tree/, 'tree must render workspace tree');
+assert.match(operatorHtml, /UI Contracts/, 'tree must render nested nodes');
+assert.match(operatorHtml, /loga-action-rail/, 'action_rail must render floating action rail');
+assert.match(operatorHtml, /Approve Contract/, 'action_rail must render actions');
+
 const browserRuntime = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/browser.js', 'utf8');
 const labHtml = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab.html', 'utf8');
 
@@ -169,6 +276,13 @@ assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="n
 assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="search"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="center"\]\s*{[\s\S]*?flex:\s*0 0 320px;/, 'linear search zone must have stable debug width');
 assert.match(labHtml, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="context"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="actions"\]\s*{[\s\S]*?flex:\s*0 0 auto;/, 'linear context, filters, and actions zones must stay fixed');
 assert.match(labHtml, /\.loga-toolbar--linear \.loga-control--search\s*{[\s\S]*?width:\s*100%;/, 'linear search control must fill the flexible center zone');
+assert.match(labHtml, /\.loga-focus-strip/, 'lab CSS must support focus strips');
+assert.match(labHtml, /\.loga-metric-row/, 'lab CSS must support metric rows');
+assert.match(labHtml, /\.loga-timeline/, 'lab CSS must support timelines');
+assert.match(labHtml, /\.loga-decision-panel/, 'lab CSS must support decision panels');
+assert.match(labHtml, /\.loga-comparison/, 'lab CSS must support comparison panels');
+assert.match(labHtml, /\.loga-tree/, 'lab CSS must support navigation trees');
+assert.match(labHtml, /\.loga-action-rail/, 'lab CSS must support action rails');
 
 const elements = {};
 const documentStub = {
