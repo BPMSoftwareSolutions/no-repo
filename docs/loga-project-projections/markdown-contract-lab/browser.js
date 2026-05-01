@@ -115,7 +115,8 @@ primary_question: "What should I care about right now?"
     }
 
     loadExternalElementRegistry().then((registry) => {
-      activeElementRegistry = registry;
+      injectRegistryStyles(registry);
+      activeElementRegistry = registry.elements;
       input.value = SAMPLE;
       render();
     }).catch((error) => {
@@ -135,6 +136,35 @@ primary_question: "What should I care about right now?"
     const response = await fetcher(registryUrl, { cache: 'no-store' });
     if (!response.ok) throw new Error(`Registry load failed: ${response.status} ${response.statusText || ''}`.trim());
     return response.json();
+  }
+
+  function injectRegistryStyles(registry) {
+    if (!registry?.styles) throw new Error('Registry styles are required');
+    if (!registry?.elements) throw new Error('Registry elements are required');
+    const existing = document.getElementById('markdown-ui-registry-styles');
+    if (existing && typeof existing.remove === 'function') existing.remove();
+    const style = document.createElement('style');
+    style.id = 'markdown-ui-registry-styles';
+    style.textContent = buildCssFromRegistry(registry);
+    document.head.appendChild(style);
+  }
+
+  function buildCssFromRegistry(registry) {
+    return [
+      stylesToCss(registry.styles),
+      ...Object.entries(registry.media || {}).map(([query, styles]) => `${query}{${stylesToCss(styles)}}`),
+    ].join('\n');
+  }
+
+  function stylesToCss(styles) {
+    return Object.entries(styles || {})
+      .map(([selector, declarations]) => `${selector}{${Object.entries(declarations).map(([property, value]) => `${toCssProperty(property)}:${value};`).join('')}}`)
+      .join('\n');
+  }
+
+  function toCssProperty(property) {
+    if (property.startsWith('--')) return property;
+    return property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
   }
 
   function parseMarkdown(markdown) {

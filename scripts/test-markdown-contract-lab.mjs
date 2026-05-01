@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-import { ELEMENT_REGISTRY } from '../docs/loga-project-projections/markdown-contract-lab/element-registry.js';
+import { ELEMENT_REGISTRY, MARKDOWN_UI_REGISTRY } from '../docs/loga-project-projections/markdown-contract-lab/element-registry.js';
 import { renderDiagnostics, validateContract } from '../docs/loga-project-projections/markdown-contract-lab/contract.js';
 import { parseMarkdown } from '../docs/loga-project-projections/markdown-contract-lab/parser.js';
 import { renderMarkdown, renderQuestionFirst } from '../docs/loga-project-projections/markdown-contract-lab/renderer.js';
@@ -265,7 +265,7 @@ const operatorHtml = renderMarkdown(parseMarkdown(operatorLanguageFixture).body)
 const elementRegistryJson = JSON.parse(fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/markdown-ui-elements.json', 'utf8'));
 
 ['panel', 'metric_row', 'timeline', 'action_rail', 'status_badge'].forEach((blockName) => {
-  assert.deepEqual(ELEMENT_REGISTRY[blockName], elementRegistryJson[blockName], `${blockName} module registry must match JSON element mapping`);
+  assert.deepEqual(ELEMENT_REGISTRY[blockName], elementRegistryJson.elements[blockName], `${blockName} module registry must match JSON element mapping`);
 });
 
 assert.match(operatorHtml, /loga-focus-strip/, 'focus_strip must render a focus strip');
@@ -356,36 +356,50 @@ assert.match(focusDiagnostics, /<li class="pass">zones<\/li>/, 'standalone focus
 const browserRuntime = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/browser.js', 'utf8');
 const labHtml = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab.html', 'utf8');
 const labShellCss = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/lab-shell.css', 'utf8');
-const contractCss = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/markdown-ui-contract.css', 'utf8');
 
 assert.doesNotMatch(labHtml, /<style>/, 'lab HTML must not own inline CSS');
 assert.match(labHtml, /lab-shell\.css/, 'lab HTML must link host-shell CSS');
-assert.match(labHtml, /markdown-ui-contract\.css/, 'lab HTML must link portable markdown UI contract CSS');
+assert.doesNotMatch(labHtml, /markdown-ui-contract\.css/, 'lab HTML must not link rendered LOGA contract CSS');
 assert.doesNotMatch(labShellCss, /\.loga-toolbar|\.loga-grid|\.loga-focus-strip/, 'lab-shell CSS must not own rendered LOGA surface styles');
-assert.doesNotMatch(contractCss, /\.lab-|\.editor-pane|\.preview-pane|\.header-actions/, 'portable markdown UI contract CSS must not own lab host styles');
-
-assert.match(contractCss, /\.loga-toolbar--linear\s*{[\s\S]*?flex-wrap:\s*nowrap;/, 'linear toolbar CSS must prevent wrapping');
-assert.match(contractCss, /\.loga-toolbar--linear\s*{[\s\S]*?align-items:\s*flex-end;/, 'linear toolbar must bottom-align zones');
-assert.match(contractCss, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-x:\s*auto;/, 'linear toolbar CSS must scroll horizontally instead of overlapping');
-assert.match(contractCss, /\.loga-toolbar--linear\s*{[\s\S]*?overflow-y:\s*hidden;/, 'linear toolbar CSS must prevent vertical overflow');
-assert.match(contractCss, /\.loga-toolbar__zone\s*{[\s\S]*?align-items:\s*flex-end;/, 'toolbar zones must bottom-align children by default');
-assert.match(contractCss, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="context"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="search"\]\s*{[\s\S]*?flex-direction:\s*column;[\s\S]*?align-items:\s*flex-start;[\s\S]*?justify-content:\s*flex-end;/, 'label-bearing linear zones must stack vertically and bottom justify');
-assert.match(contractCss, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="navigation"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="actions"\]\s*{[\s\S]*?align-self:\s*flex-end;/, 'control-only linear zones must sit on the bottom edge');
-assert.match(contractCss, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="search"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-align="center"\]\s*{[\s\S]*?flex:\s*0 0 320px;/, 'linear search zone must have stable debug width');
-assert.match(contractCss, /\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="context"\],[\s\S]*?\.loga-toolbar--linear \.loga-toolbar__zone\[data-name="actions"\]\s*{[\s\S]*?flex:\s*0 0 auto;/, 'linear context, filters, and actions zones must stay fixed');
-assert.match(contractCss, /\.loga-toolbar--linear \.loga-control--search\s*{[\s\S]*?width:\s*100%;/, 'linear search control must fill the flexible center zone');
-assert.match(contractCss, /\.loga-focus-strip/, 'portable CSS must support focus strips');
-assert.match(contractCss, /\.loga-metric-row/, 'portable CSS must support metric rows');
-assert.match(contractCss, /\.loga-timeline/, 'portable CSS must support timelines');
-assert.match(contractCss, /\.loga-decision-panel/, 'portable CSS must support decision panels');
-assert.match(contractCss, /\.loga-comparison/, 'portable CSS must support comparison panels');
-assert.match(contractCss, /\.loga-tree/, 'portable CSS must support navigation trees');
-assert.match(contractCss, /\.loga-action-rail/, 'portable CSS must support action rails');
+assert.deepEqual(MARKDOWN_UI_REGISTRY.elements, elementRegistryJson.elements, 'JSON registry must expose element mappings');
+assert.deepEqual(MARKDOWN_UI_REGISTRY.styles, elementRegistryJson.styles, 'JSON registry must expose style mappings');
+assert.equal(elementRegistryJson.styles['.loga-toolbar--linear'].flexWrap, 'nowrap', 'linear toolbar style contract must prevent wrapping');
+assert.equal(elementRegistryJson.styles['.loga-toolbar--linear'].alignItems, 'flex-end', 'linear toolbar style contract must bottom-align zones');
+assert.equal(elementRegistryJson.styles['.loga-toolbar--linear'].overflowX, 'auto', 'linear toolbar style contract must scroll horizontally instead of overlapping');
+assert.equal(elementRegistryJson.styles['.loga-toolbar--linear'].overflowY, 'hidden', 'linear toolbar style contract must prevent vertical overflow');
+assert.equal(elementRegistryJson.styles['.loga-toolbar__group, .loga-toolbar__zone'].alignItems, 'flex-end', 'toolbar zones must bottom-align children by default');
+assert.equal(elementRegistryJson.styles['.loga-toolbar--linear .loga-toolbar__zone[data-name="context"], .loga-toolbar--linear .loga-toolbar__zone[data-name="search"]'].flexDirection, 'column', 'label-bearing linear zones must stack vertically');
+assert.equal(elementRegistryJson.styles['.loga-toolbar--linear .loga-toolbar__zone[data-name="navigation"], .loga-toolbar--linear .loga-toolbar__zone[data-name="filters"], .loga-toolbar--linear .loga-toolbar__zone[data-name="actions"]'].alignSelf, 'flex-end', 'control-only linear zones must sit on the bottom edge');
+assert.equal(elementRegistryJson.styles['.loga-toolbar--linear .loga-toolbar__zone[data-name="search"], .loga-toolbar--linear .loga-toolbar__zone[data-align="center"]'].flex, '0 0 320px', 'linear search zone must have stable debug width');
+assert.equal(elementRegistryJson.styles['.loga-toolbar--linear .loga-control--search'].width, '100%', 'linear search control must fill the flexible center zone');
+assert.ok(elementRegistryJson.styles['.loga-focus-strip'], 'style registry must support focus strips');
+assert.ok(elementRegistryJson.styles['.loga-metric-row'], 'style registry must support metric rows');
+assert.ok(elementRegistryJson.styles['.loga-timeline'], 'style registry must support timelines');
+assert.ok(elementRegistryJson.styles['.loga-decision-panel'], 'style registry must support decision panels');
+assert.ok(elementRegistryJson.styles['.loga-comparison'], 'style registry must support comparison panels');
+assert.ok(elementRegistryJson.styles['.loga-tree ul'], 'style registry must support navigation trees');
+assert.ok(elementRegistryJson.styles['.loga-action-rail'], 'style registry must support action rails');
 
 const elements = {};
 const fetchCalls = [];
+const appendedStyles = [];
 const documentStub = {
+  currentScript: null,
+  head: {
+    appendChild(node) {
+      appendedStyles.push(node);
+    },
+  },
+  createElement(tagName) {
+    return {
+      tagName,
+      id: '',
+      textContent: '',
+      remove() {},
+    };
+  },
   getElementById(id) {
+    if (id === 'markdown-ui-registry-styles') return null;
     if (!elements[id]) {
       elements[id] = {
         checked: true,
@@ -425,6 +439,9 @@ await new Promise((resolve) => setTimeout(resolve, 0));
 assert.ok(windowStub.MarkdownContractLab, 'browser runtime must expose the lab API for diagnostics');
 assert.deepEqual(fetchCalls, ['./markdown-contract-lab/markdown-ui-elements.json'], 'browser runtime must load the JSON contract registry');
 assert.doesNotMatch(browserRuntime, /const ELEMENT_REGISTRY\s*=/, 'browser runtime must not embed a substitute element registry');
+assert.equal(appendedStyles.length, 1, 'browser runtime must inject styles generated from the registry');
+assert.match(appendedStyles[0].textContent, /\.loga-toolbar--linear\{/, 'injected registry CSS must include toolbar styles');
+assert.match(appendedStyles[0].textContent, /flex-wrap:nowrap;/, 'injected registry CSS must convert camelCase to CSS declarations');
 assert.match(elements['rendered-output'].innerHTML, /loga-toolbar--linear/, 'browser runtime must render the initial sample');
 assert.match(elements['markdown-input'].value, /variant="linear"/, 'browser runtime must load the sample into the editor');
 
