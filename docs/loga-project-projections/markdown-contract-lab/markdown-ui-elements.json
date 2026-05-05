@@ -367,27 +367,6 @@
       "fontWeight": "700",
       "flex": "0 0 auto"
     },
-    ".loga-list": {
-      "display": "grid",
-      "gap": "8px",
-      "margin": "18px 0 28px"
-    },
-    ".loga-list-item": {
-      "display": "flex",
-      "alignItems": "center",
-      "justifyContent": "space-between",
-      "gap": "12px",
-      "minHeight": "38px",
-      "padding": "8px 12px",
-      "border": "1px solid var(--line)",
-      "borderRadius": "12px",
-      "background": "rgba(17, 28, 43, 0.32)",
-      "color": "var(--ink)"
-    },
-    ".loga-list-item span": {
-      "color": "var(--muted)",
-      "font": "12px/1.4 var(--mono)"
-    },
     ".loga-focus, .loga-surface": {
       "margin": "22px 0 30px",
       "padding": "22px 0 24px",
@@ -404,8 +383,51 @@
     },
     ".loga-focus .answer, .loga-surface .answer": {
       "maxWidth": "84ch",
-      "color": "var(--ink)",
+      "color": "var(--text)",
       "fontSize": "17px"
+    },
+    ".loga-breadcrumb": {
+      "margin": "6px 0 18px",
+      "color": "var(--muted)",
+      "fontFamily": "var(--mono)",
+      "fontSize": "13px"
+    },
+    ".loga-breadcrumb a": {
+      "color": "var(--muted)",
+      "fontWeight": "500"
+    },
+    ".loga-list": {
+      "display": "grid",
+      "gap": "8px",
+      "margin": "18px 0 28px"
+    },
+    ".loga-list-item": {
+      "display": "inline-flex",
+      "alignItems": "center",
+      "justifyContent": "space-between",
+      "width": "100%",
+      "minHeight": "34px",
+      "padding": "6px 12px",
+      "border": "1px solid var(--line)",
+      "borderRadius": "var(--radius-sm, 6px)",
+      "color": "var(--text)",
+      "fontSize": "13px",
+      "fontWeight": "700"
+    },
+    ".loga-list-item:hover": {
+      "borderColor": "var(--accent)",
+      "background": "var(--accent-soft, rgba(88,166,255,0.07))",
+      "color": "var(--text-strong, #fff)"
+    },
+    ".loga-list-item span": {
+      "color": "var(--muted)",
+      "fontFamily": "var(--mono)",
+      "fontSize": "12px"
+    },
+    ".loga-primitive": {
+      "marginBlock": "12px",
+      "border": "1px solid var(--line)",
+      "borderRadius": "var(--radius-sm, 6px)"
     },
     ".loga-kv": {
       "display": "grid",
@@ -436,11 +458,11 @@
       "fontSize": "0.8em",
       "textTransform": "uppercase",
       "letterSpacing": "0.05em",
-      "borderBottom": "1px solid var(--border)"
+      "borderBottom": "1px solid var(--line)"
     },
     ".loga-table td": {
       "padding": "6px 12px",
-      "borderBottom": "1px solid var(--border)"
+      "borderBottom": "1px solid var(--line)"
     },
     ".loga-evidence-drawer": {
       "margin": "18px 0 24px",
@@ -459,7 +481,7 @@
       "padding": "12px",
       "overflow": "auto",
       "fontSize": "0.8em",
-      "background": "var(--surface-alt, rgba(0,0,0,0.2))"
+      "background": "var(--panel, rgba(0,0,0,0.2))"
     },
     ".loga-panel": {
       "margin": "18px 0 24px",

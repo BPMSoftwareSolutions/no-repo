@@ -9,7 +9,7 @@ export function escapeHtml(value) {
 
 export function inline(value) {
   return escapeHtml(value)
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="#">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => `<a href="${escapeHtml(href)}">${label}</a>`)
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 }
 

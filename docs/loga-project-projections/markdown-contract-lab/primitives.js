@@ -90,7 +90,7 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
   }
 
   if (block === 'breadcrumb') {
-    return `<nav class="loga-breadcrumb" aria-label="Projection path">${records.map((record) => `<a href="#">${escapeHtml(record.label || record.projection_type || 'Open')}</a>`).join('')}</nav>`;
+    return `<nav class="loga-breadcrumb" aria-label="Projection path">${records.map((record) => `<a href="${escapeHtml(record.target || record.projection_type || '#')}">${escapeHtml(record.label || record.projection_type || 'Open')}</a>`).join('')}</nav>`;
   }
 
   if (block === 'surface') {
@@ -108,12 +108,13 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     return `<section class="loga-list ${escapeHtml(block)}">${records.map((record) => {
       const title = record.title || record.label || record.text || record.reminder || record.key || (record.turn ? `Turn ${record.turn}` : 'Untitled');
       const status = [record.status, record.priority, record.progress, record.stage, record.tier].filter(Boolean).join(' | ');
-      return `<a class="loga-list-item" href="#"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(status)}</span></a>`;
+      const href = record.target || record.projection_type || record.key || (record.turn ? String(record.turn) : '') || '#';
+      return `<a class="loga-list-item" href="${escapeHtml(href)}" data-block="${escapeHtml(block)}" data-key="${escapeHtml(record.key || record.turn || '')}"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(status)}</span></a>`;
     }).join('')}</section>`;
   }
 
   if (block === 'nav') {
-    return `<nav class="loga-nav">${records.map((record) => `<a class="loga-pill" href="#">${escapeHtml(record.label || 'Open')}</a>`).join('')}</nav>`;
+    return `<nav class="loga-nav">${records.map((record) => `<a class="loga-pill" href="${escapeHtml(record.target || record.projection_type || '#')}">${escapeHtml(record.label || 'Open')}</a>`).join('')}</nav>`;
   }
 
   if (block === 'next_actions') {

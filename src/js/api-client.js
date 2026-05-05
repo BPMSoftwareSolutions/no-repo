@@ -1,3 +1,6 @@
+import { parseMarkdown } from '../docs/loga-project-projections/markdown-contract-lab/parser.js';
+import { renderMarkdown } from '../docs/loga-project-projections/markdown-contract-lab/renderer.js';
+
 // Shared AIEngine API wrapper
 export async function callAiEngine(method, ...args) {
   try {
@@ -7,17 +10,15 @@ export async function callAiEngine(method, ...args) {
       body: JSON.stringify({ method, args })
     });
     const data = await res.json();
-    
-    if (!res.ok || data.error) {
-      throw new Error(data.error || 'Unknown error');
-    }
-    
+    if (!res.ok || data.error) throw new Error(data.error || 'Unknown error');
     return data.result;
   } catch (err) {
     console.error(`Error calling ${method}:`, err);
     throw err;
   }
 }
+
+// --- SPA link resolution ---
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -30,7 +31,7 @@ function escapeHtml(value) {
 
 function resolveProjectionHref(rawHref) {
   const href = String(rawHref || '').trim();
-  if (!href) return '#';
+  if (!href || href === '#') return '#';
   if (href.startsWith('#')) return href;
 
   const viewerProject = href.match(/\/viewer\/ai-engine\/projects\/([^/\s]+)$/i);
@@ -93,226 +94,104 @@ function resolveProjectionHref(rawHref) {
   return `projection-detail.html?target=${encodeURIComponent(href)}`;
 }
 
-function renderInlineMarkdown(value) {
-  return escapeHtml(value)
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, href) => {
-      return `<a href="${escapeHtml(resolveProjectionHref(href))}">${escapeHtml(label)}</a>`;
-    })
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-}
-
-function stripFrontmatter(text) {
-  return String(text || '').replace(/^---[\s\S]*?---\s*/, '');
-}
-
-function parseLogaRecords(lines) {
-  const records = [];
-  let current = null;
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (line.startsWith('- ')) {
-      if (current) records.push(current);
-      current = {};
-      const inline = line.slice(2);
-      const inlineMatch = inline.match(/^([a-zA-Z0-9_]+):\s*"?([^"]+)"?$/);
-      if (inlineMatch) current[inlineMatch[1]] = inlineMatch[2];
-      else current.label = inline;
-      continue;
-    }
-
-    const pair = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
-    if (pair) {
-      if (!current) current = {};
-      current[pair[1]] = pair[2];
-    }
-  }
-
-  if (current) records.push(current);
-  return records;
-}
-
-function parseKeyValues(lines) {
-  const entries = [];
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    const pair = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
-    if (pair) entries.push([pair[1], pair[2]]);
-    else if (line.startsWith('- ')) entries.push([null, line.slice(2)]);
-  }
-  return entries;
-}
-
-function parseDirectiveAttributes(value = '') {
-  const attrs = {};
-  const pattern = /([a-zA-Z0-9_-]+)=("([^"]*)"|'([^']*)'|([^\s]+))/g;
-  let match;
-  while ((match = pattern.exec(value))) {
-    attrs[match[1]] = match[3] ?? match[4] ?? match[5] ?? '';
-  }
-  return attrs;
-}
-
-function renderAttributeDetails(attrs) {
-  const entries = Object.entries(attrs).filter(([, value]) => value);
-  if (!entries.length) return '';
-  return `<dl>${entries.map(([key, value]) => `<dt>${escapeHtml(key.replaceAll('_', ' '))}</dt><dd>${renderInlineMarkdown(value)}</dd>`).join('')}</dl>`;
-}
-
 function currentSearchParams() {
   if (!globalThis.window?.location) return new URLSearchParams();
   return new URLSearchParams(globalThis.window.location.search);
 }
 
-function resolveLogaRecordHref(blockName, record) {
-  if (record.target || record.projection_type) {
-    return resolveProjectionHref(record.target || record.projection_type);
-  }
-
+function resolveListItemHref(block, key) {
   const params = currentSearchParams();
   const projectId = params.get('projectId') || 'ai-engine';
   const itemKey = params.get('itemKey') || 'generic-wrapper-runtime';
 
-  if (blockName === 'task_list' && record.key) {
-    return `projection-detail.html?type=operator.task_detail&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}&taskKey=${encodeURIComponent(record.key)}`;
+  if (block === 'task_list' && key) {
+    return `projection-detail.html?type=operator.task_detail&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}&taskKey=${encodeURIComponent(key)}`;
   }
-
-  if (blockName === 'promotion_list' && record.key) {
-    return `projection-detail.html?type=operator.promotions&projectId=${encodeURIComponent(projectId)}&promotionKey=${encodeURIComponent(record.key)}`;
+  if (block === 'promotion_list' && key) {
+    return `projection-detail.html?type=operator.promotions&projectId=${encodeURIComponent(projectId)}&promotionKey=${encodeURIComponent(key)}`;
   }
-
-  if (blockName === 'run_list' && record.key) {
-    return `projection-detail.html?type=operator.workflow_run&workflowRunId=${encodeURIComponent(record.key)}`;
+  if (block === 'run_list' && key) {
+    return `projection-detail.html?type=operator.workflow_run&workflowRunId=${encodeURIComponent(key)}`;
   }
-
-  if (blockName === 'turn_list' && record.turn) {
-    return `projection-detail.html?type=operator.agent_session&projectId=${encodeURIComponent(projectId)}&turn=${encodeURIComponent(record.turn)}`;
+  if (block === 'turn_list' && key) {
+    return `projection-detail.html?type=operator.agent_session&projectId=${encodeURIComponent(projectId)}&turn=${encodeURIComponent(key)}`;
   }
-
   return '';
 }
 
-function renderLogaBlock(blockName, lines, attrs = {}) {
-  const name = blockName.toLowerCase();
-  const entries = parseKeyValues(lines);
-  const value = (key) => entries.find(([entryKey]) => entryKey === key)?.[1] || attrs[key] || '';
+function resolveRenderedLinks(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
 
-  if (name === 'surface') {
-    const type = value('type') || 'surface';
-    const priority = value('priority');
-    const summary = value('summary');
-    return `
-      <section class="loga-surface">
-        <p class="eyebrow">${escapeHtml([type.replaceAll('_', ' '), priority].filter(Boolean).join(' / '))}</p>
-        ${summary ? `<p class="lead">${renderInlineMarkdown(summary)}</p>` : ''}
-        ${renderAttributeDetails(Object.fromEntries(Object.entries(attrs).filter(([key]) => !['type', 'priority', 'summary'].includes(key))))}
-        ${entries.filter(([key]) => !key).map(([, entryValue]) => `<p>${renderInlineMarkdown(entryValue)}</p>`).join('')}
-      </section>
-    `;
-  }
+  // Resolve all non-# hrefs (nav pills, breadcrumbs, inline markdown links)
+  div.querySelectorAll('a[href]:not([href="#"])').forEach((a) => {
+    const raw = a.getAttribute('href');
+    if (raw && !raw.startsWith('projection-detail.html')) {
+      a.href = resolveProjectionHref(raw);
+    }
+  });
 
-  if (name === 'focus') {
-    return `
-      <section class="loga-focus">
-        <p class="eyebrow">${escapeHtml(value('status') || 'focus')}</p>
-        <h2>${renderInlineMarkdown(value('question') || 'What should I care about right now?')}</h2>
-        <p class="lead">${renderInlineMarkdown(value('answer'))}</p>
-      </section>
-    `;
-  }
+  // Resolve list item links using block-type-specific routing
+  div.querySelectorAll('a.loga-list-item').forEach((a) => {
+    const raw = a.getAttribute('href');
+    const block = a.dataset.block;
+    const key = a.dataset.key;
+    if (raw && raw !== '#' && !raw.startsWith('projection-detail.html')) {
+      a.href = resolveProjectionHref(raw);
+    } else if (block && key && (!raw || raw === '#')) {
+      const resolved = resolveListItemHref(block, key);
+      if (resolved) a.href = resolved;
+    }
+  });
 
-  if (name === 'panel') {
-    const title = value('title');
-    const summary = value('summary');
-    const details = entries.filter(([key]) => key && !['title', 'summary'].includes(key));
-    return `
-      <section class="loga-panel">
-        ${title ? `<h3>${renderInlineMarkdown(title)}</h3>` : ''}
-        ${summary ? `<p>${renderInlineMarkdown(summary)}</p>` : ''}
-        ${details.length ? `<dl>${details.map(([key, entryValue]) => `<dt>${escapeHtml(key.replaceAll('_', ' '))}</dt><dd>${renderInlineMarkdown(entryValue)}</dd>`).join('')}</dl>` : ''}
-        ${entries.filter(([key]) => !key).map(([, entryValue]) => `<p>${renderInlineMarkdown(entryValue)}</p>`).join('')}
-      </section>
-    `;
-  }
-
-  if (name === 'breadcrumb') {
-    const records = parseLogaRecords(lines);
-    return `<nav class="loga-breadcrumb" aria-label="Projection path">${records.map((record) => `<a href="${escapeHtml(resolveProjectionHref(record.target || record.projection_type))}">${escapeHtml(record.label || record.projection_type || 'Open')}</a>`).join(' / ')}</nav>`;
-  }
-
-  if (name === 'nav') {
-    const records = parseLogaRecords(lines);
-    return `<nav class="loga-nav" aria-label="Projection drilldowns">${records.map((record) => `<a href="${escapeHtml(resolveProjectionHref(record.target || record.projection_type))}">${escapeHtml(record.label || record.projection_type || 'Open')}</a>`).join('')}</nav>`;
-  }
-
-  if (name === 'next_actions') {
-    const actions = lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => line.slice(2));
-    return `<section class="loga-actions" aria-label="Next actions">${actions.map((action) => `<button type="button">${escapeHtml(action)}</button>`).join('')}</section>`;
-  }
-
-  if (name === 'roadmap' || name === 'task_list' || name === 'run_list' || name === 'promotion_list' || name === 'cicd_list' || name === 'turn_list' || name === 'memory' || name === 'checklist') {
-    const records = parseLogaRecords(lines);
-    return `<section class="loga-list loga-${escapeHtml(name)}">${records.map((record) => {
-      const href = resolveLogaRecordHref(name, record);
-      const title = record.title || record.label || record.text || record.reminder || record.key || (record.turn ? `Turn ${record.turn}` : 'Untitled');
-      const body = `
-          <strong>${escapeHtml(title)}</strong>
-          <span>${escapeHtml([record.status, record.priority, record.progress, record.stage, record.tier].filter(Boolean).join(' | '))}</span>
-      `;
-      return href ? `
-        <a class="loga-list-item" href="${escapeHtml(href)}">
-          ${body}
-        </a>
-      ` : `<div class="loga-list-item">${body}</div>`;
-    }).join('')}</section>`;
-  }
-
-  if (name === 'evidence_drawer') {
-    return `<details><summary>Evidence Drawer</summary><pre><code>${escapeHtml(lines.join('\n'))}</code></pre></details>`;
-  }
-
-  return `
-    <section class="loga-panel loga-primitive">
-      <h3>${escapeHtml(blockName.replaceAll('_', ' '))}</h3>
-      ${renderAttributeDetails(attrs)}
-      ${entries.filter(([key]) => key).length ? `<dl>${entries.filter(([key]) => key).map(([key, entryValue]) => `<dt>${escapeHtml(key.replaceAll('_', ' '))}</dt><dd>${renderInlineMarkdown(entryValue)}</dd>`).join('')}</dl>` : ''}
-      ${entries.filter(([key]) => !key).map(([, entryValue]) => `<p>${renderInlineMarkdown(entryValue)}</p>`).join('')}
-      ${!Object.keys(attrs).length && !entries.length && lines.some((line) => line.trim()) ? `<p>${renderInlineMarkdown(lines.join(' '))}</p>` : ''}
-    </section>
-  `;
+  return div.innerHTML;
 }
+
+// --- CSS injection from JSON registry ---
+
+let stylesInjected = false;
+
+async function injectRegistryStyles() {
+  if (stylesInjected || typeof document === 'undefined') return;
+  stylesInjected = true;
+  try {
+    const url = new URL('../docs/loga-project-projections/markdown-contract-lab/markdown-ui-elements.json', import.meta.url);
+    const res = await fetch(url);
+    const registry = await res.json();
+    const style = document.createElement('style');
+    style.id = 'markdown-ui-registry-styles';
+    style.textContent = generateCss(registry.styles);
+    document.head.appendChild(style);
+  } catch (err) {
+    console.warn('Could not inject markdown UI registry styles:', err);
+  }
+}
+
+function generateCss(styles) {
+  return Object.entries(styles).map(([selector, props]) => {
+    if (selector.startsWith('@')) {
+      const inner = Object.entries(props)
+        .map(([sel, p]) => `${sel}{${propsToDeclarations(p)}}`)
+        .join('');
+      return `${selector}{${inner}}`;
+    }
+    return `${selector}{${propsToDeclarations(props)}}`;
+  }).join('');
+}
+
+function propsToDeclarations(props) {
+  return Object.entries(props)
+    .map(([k, v]) => `${k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}:${v}`)
+    .join(';');
+}
+
+injectRegistryStyles();
+
+// --- Main renderer ---
 
 export function renderMarkdownProjection(text) {
   if (!text) return '';
-  const lines = stripFrontmatter(text).split(/\r?\n/);
-  const html = [];
-
-  for (let index = 0; index < lines.length; index++) {
-    const line = lines[index];
-    const blockStart = line.trim().match(/^:{2,3}([a-zA-Z0-9_]+)(?:\s+(.*))?$/);
-    if (blockStart) {
-      const blockLines = [];
-      index++;
-      while (index < lines.length && !/^:{2,3}$/.test(lines[index].trim())) {
-        blockLines.push(lines[index]);
-        index++;
-      }
-      html.push(renderLogaBlock(blockStart[1], blockLines, parseDirectiveAttributes(blockStart[2])));
-      continue;
-    }
-
-    if (line.trim() === '---') {
-      html.push('<hr>');
-      continue;
-    }
-
-    if (/^###\s+/.test(line)) html.push(`<h3>${renderInlineMarkdown(line.replace(/^###\s+/, ''))}</h3>`);
-    else if (/^##\s+/.test(line)) html.push(`<h2>${renderInlineMarkdown(line.replace(/^##\s+/, ''))}</h2>`);
-    else if (/^#\s+/.test(line)) html.push(`<h1>${renderInlineMarkdown(line.replace(/^#\s+/, ''))}</h1>`);
-    else if (/^>\s+/.test(line)) html.push(`<blockquote>${renderInlineMarkdown(line.replace(/^>\s+/, ''))}</blockquote>`);
-    else if (!line.trim()) html.push('');
-    else html.push(`<p>${renderInlineMarkdown(line)}</p>`);
-  }
-
-  return html.join('');
+  const { body } = parseMarkdown(text);
+  const raw = renderMarkdown(body);
+  return resolveRenderedLinks(raw);
 }
