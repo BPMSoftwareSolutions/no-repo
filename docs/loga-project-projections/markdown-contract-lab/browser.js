@@ -344,6 +344,28 @@ primary_question: "What should I care about right now?"
     }
     if (block === 'next_actions') return `<section class="loga-actions">${lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => `<button type="button">${escapeHtml(line.slice(2))}</button>`).join('')}</section>`;
     if (block === 'focus') return `<section class="loga-focus"><p class="eyebrow">${escapeHtml(value('status') || 'focus')}</p><p class="question">${inline(value('question') || 'What matters?')}</p><p class="answer">${inline(value('answer'))}</p></section>`;
+    if (block === 'surface') {
+      const type = value('type') || 'surface';
+      const priority = value('priority');
+      const summary = value('summary');
+      return `<section class="loga-surface"><p class="eyebrow">${escapeHtml([type.replaceAll('_', ' '), priority].filter(Boolean).join(' / '))}</p>${summary ? `<p class="answer">${inline(summary)}</p>` : ''}</section>`;
+    }
+    if (block === 'evidence_drawer') return `<details class="loga-evidence-drawer"><summary>${escapeHtml(value('title') || 'Evidence')}</summary><pre><code>${escapeHtml(lines.join('\n'))}</code></pre></details>`;
+    if (block === 'kv') {
+      const pairs = lines.map((l) => l.trim()).filter(Boolean).map((l) => { const m = l.match(/^(.+?):\s*(.*)$/); return m ? { label: m[1].trim(), value: m[2].trim() } : null; }).filter(Boolean);
+      return `<dl class="loga-kv">${pairs.map((p) => `<dt>${escapeHtml(p.label)}</dt><dd>${escapeHtml(p.value)}</dd>`).join('')}</dl>`;
+    }
+    if (block === 'table') {
+      const parseRow = (l) => l.trim().slice(1, -1).split('|').map((c) => c.trim());
+      const allRows = lines.filter((l) => l.trim().startsWith('|'));
+      const dataRows = allRows.filter((l) => !/^\|[-:\s|]+\|?$/.test(l.trim()));
+      if (!dataRows.length) return '';
+      const [headerRow, ...bodyRows] = dataRows;
+      const headers = parseRow(headerRow).filter(Boolean);
+      const thead = `<thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>`;
+      const tbody = `<tbody>${bodyRows.map((row) => `<tr>${parseRow(row).filter(Boolean).map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+      return `<table class="loga-table">${thead}${tbody}</table>`;
+    }
     return renderWarning({
       title: 'Unsupported block',
       detail: `No renderer contract exists for directive "${name}".`,
@@ -386,6 +408,13 @@ primary_question: "What should I care about right now?"
         listItems: variant === 'comparison' ? [] : lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => line.slice(2)),
         childrenHtml: childHtml,
       };
+    }
+    if (block === 'metric_row') {
+      if (!lines.some((l) => l.trim().startsWith('- '))) {
+        const items = lines.map((l) => l.trim()).filter(Boolean).map((l) => { const m = l.match(/^(.+?):\s*(.+)$/); return m ? { label: m[1].trim(), value: m[2].trim() } : null; }).filter(Boolean);
+        return { items };
+      }
+      return { items: records, fields: keyValues };
     }
     return { items: records, fields: keyValues };
   }

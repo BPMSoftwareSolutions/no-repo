@@ -121,7 +121,24 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
   }
 
   if (block === 'evidence_drawer') {
-    return `<details><summary>Evidence Drawer</summary><pre><code>${escapeHtml(lines.join('\n'))}</code></pre></details>`;
+    return `<details class="loga-evidence-drawer"><summary>${escapeHtml(value('title') || 'Evidence')}</summary><pre><code>${escapeHtml(lines.join('\n'))}</code></pre></details>`;
+  }
+
+  if (block === 'kv') {
+    const pairs = lines.map((l) => l.trim()).filter(Boolean).map((l) => { const m = l.match(/^(.+?):\s*(.*)$/); return m ? { label: m[1].trim(), value: m[2].trim() } : null; }).filter(Boolean);
+    return `<dl class="loga-kv">${pairs.map((p) => `<dt>${escapeHtml(p.label)}</dt><dd>${escapeHtml(p.value)}</dd>`).join('')}</dl>`;
+  }
+
+  if (block === 'table') {
+    const parseRow = (l) => l.trim().slice(1, -1).split('|').map((c) => c.trim());
+    const allRows = lines.filter((l) => l.trim().startsWith('|'));
+    const dataRows = allRows.filter((l) => !/^\|[-:\s|]+\|?$/.test(l.trim()));
+    if (!dataRows.length) return '';
+    const [headerRow, ...bodyRows] = dataRows;
+    const headers = parseRow(headerRow).filter(Boolean);
+    const thead = `<thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>`;
+    const tbody = `<tbody>${bodyRows.map((row) => `<tr>${parseRow(row).filter(Boolean).map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+    return `<table class="loga-table">${thead}${tbody}</table>`;
   }
 
   if (['toolbar', 'search', 'select', 'filter_group', 'action_group'].includes(block)) {
@@ -185,6 +202,13 @@ function createRegistryModel({ block, lines, attrs, records, keyValues, value, r
     };
   }
 
+  if (block === 'metric_row') {
+    if (!lines.some((l) => l.trim().startsWith('- '))) {
+      const items = lines.map((l) => l.trim()).filter(Boolean).map((l) => { const m = l.match(/^(.+?):\s*(.+)$/); return m ? { label: m[1].trim(), value: m[2].trim() } : null; }).filter(Boolean);
+      return { items };
+    }
+    return { items: records, fields: keyValues };
+  }
   return { items: records, fields: keyValues };
 }
 
