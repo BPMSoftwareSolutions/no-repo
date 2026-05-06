@@ -243,6 +243,82 @@
       "fontFamily": "var(--mono)",
       "fontSize": "13px"
     },
+    ".home-layout": {
+      "display": "grid",
+      "gridTemplateColumns": "minmax(0, 1fr) 260px",
+      "gap": "48px",
+      "alignItems": "start"
+    },
+    ".modes": {
+      "display": "grid",
+      "gap": "10px"
+    },
+    ".mode": {
+      "display": "block",
+      "padding": "18px 20px",
+      "border": "1px solid var(--line)",
+      "borderRadius": "var(--radius)",
+      "background": "var(--surface)",
+      "color": "inherit",
+      "textDecoration": "none",
+      "transition": "border-color 140ms ease, background 140ms ease"
+    },
+    ".mode:hover": {
+      "borderColor": "var(--accent)",
+      "background": "var(--surface-hover)"
+    },
+    ".mode .title": {
+      "margin": "0 0 4px",
+      "color": "var(--accent)",
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "letterSpacing": "-0.025em",
+      "lineHeight": "1.25",
+      "transition": "color 140ms ease"
+    },
+    ".mode:hover .title": {
+      "color": "var(--accent-2)"
+    },
+    ".mode .desc": {
+      "margin": "0",
+      "color": "var(--muted)",
+      "fontSize": "14px"
+    },
+    ".side-panel": {
+      "position": "sticky",
+      "top": "32px",
+      "padding": "20px",
+      "border": "1px solid var(--line)",
+      "borderRadius": "var(--radius)",
+      "background": "var(--surface)"
+    },
+    ".side-panel h2": {
+      "margin": "0 0 16px",
+      "fontSize": "16px",
+      "letterSpacing": "-0.02em"
+    },
+    ".side-panel ul": {
+      "margin": "0",
+      "paddingLeft": "0",
+      "listStyle": "none",
+      "display": "grid",
+      "gap": "10px"
+    },
+    ".side-panel li": {
+      "color": "var(--muted)",
+      "fontSize": "14px"
+    },
+    ".count": {
+      "display": "inline-flex",
+      "alignItems": "center",
+      "padding": "1px 8px",
+      "borderRadius": "999px",
+      "background": "rgba(124, 156, 255, 0.15)",
+      "color": "var(--accent-2)",
+      "fontFamily": "var(--mono)",
+      "fontSize": "12px",
+      "fontWeight": "700"
+    },
     "body > header > p:first-of-type:has(> a)": {
       "marginBottom": "8px",
       "color": "var(--muted)",
@@ -1848,6 +1924,13 @@
       ".workspace-runtime-pill, .workspace-toolbar__actions": {
         "justifySelf": "start",
         "justifyContent": "flex-start"
+      },
+      ".home-layout": {
+        "gridTemplateColumns": "minmax(0, 1fr)",
+        "gap": "28px"
+      },
+      ".side-panel": {
+        "position": "static"
       }
     },
     "@media (max-width: 640px)": {
@@ -2000,5 +2083,12 @@
       "showTree": true,
       "treeTitle": "Knowledge Tree"
     }
+  },
+  "dataSources": {
+    "roadmap_items": { "api": "getLogaRoadmapItems", "params": ["projectId"] },
+    "portfolio_projects": { "api": "getLogaPortfolioProjects", "params": [] },
+    "workflow_runs": { "api": "getLogaWorkflowRuns", "params": ["projectId"] },
+    "agent_turns": { "api": "getLogaAgentTurns", "params": ["projectId"] },
+    "promotions": { "api": "getLogaPromotions", "params": ["projectId"] }
   }
 }

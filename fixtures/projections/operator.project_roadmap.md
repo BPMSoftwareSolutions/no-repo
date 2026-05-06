@@ -45,34 +45,13 @@ summary: "Replace bespoke refactor scripts with contract-driven wrapper executio
 
 ## Implementation Roadmap
 
-::roadmap
-- key: "generic-wrapper-runtime"
-  title: "Establish Generic Wrapper Runtime"
-  status: "in progress"
-  priority: "high"
-  progress: "2 / 4 tasks complete"
-  target: "/viewer/ai-engine/projects/ai-engine/roadmap/generic-wrapper-runtime"
-
-- key: "sdk-refactor-surfaces"
-  title: "Promote Refactor SDK Surfaces"
-  status: "not started"
-  priority: "high"
-  progress: "0 / 5 tasks complete"
-  target: "/viewer/ai-engine/projects/ai-engine/promotions/sdk-refactor-surfaces"
-
-- key: "workflow-ci-observability"
-  title: "Expose Workflow and CI/CD Status"
-  status: "in progress"
-  priority: "medium"
-  progress: "1 / 3 tasks complete"
-  target: "/viewer/ai-engine/projects/ai-engine/workflow-runs"
-
-- key: "agent-memory-turns"
-  title: "Expose Memory and DB Turns"
-  status: "in progress"
-  priority: "high"
-  progress: "2 / 3 tasks complete"
-  target: "/viewer/ai-engine/projects/ai-engine/agent-session"
+::each source="roadmap_items" block="roadmap"
+- key: "{{key}}"
+  title: "{{title}}"
+  status: "{{status}}"
+  priority: "{{priority}}"
+  progress: "{{progress}}"
+  target: "{{target}}"
 ::
 
 ## Why This Matters

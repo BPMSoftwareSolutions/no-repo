@@ -39,7 +39,7 @@ export function renderContractErrors(errors) {
   `;
 }
 
-export function renderMarkdown(markdown) {
+export function renderMarkdown(markdown, dataContext = {}) {
   const lines = markdown.split(/\r?\n/);
   const html = [];
 
@@ -48,7 +48,7 @@ export function renderMarkdown(markdown) {
     const directive = line.trim().match(/^:{2,3}([a-zA-Z0-9_]+)(?:\s+(.*))?$/);
     if (directive) {
       const collected = collectBlock(lines, index);
-      html.push(renderBlock(directive[1], collected.lines, parseAttrs(directive[2])));
+      html.push(renderBlock(directive[1], collected.lines, parseAttrs(directive[2]), dataContext));
       index = collected.endIndex;
       continue;
     }
@@ -65,14 +65,15 @@ export function renderMarkdown(markdown) {
   return html.join('');
 }
 
-function renderBlock(name, lines, attrs) {
+function renderBlock(name, lines, attrs, dataContext = {}) {
   const block = name.toLowerCase();
+  const boundRenderBlock = (n, l, a) => renderBlock(n, l, a, dataContext);
 
   if (block === 'toolbar') {
     return renderToolbar({
       lines,
       attrs,
-      renderBlock,
+      renderBlock: boundRenderBlock,
       renderContractErrors,
     });
   }
@@ -82,7 +83,8 @@ function renderBlock(name, lines, attrs) {
     name,
     lines,
     attrs,
-    renderBlock,
+    renderBlock: boundRenderBlock,
+    dataContext,
   });
 }
 

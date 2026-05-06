@@ -47,86 +47,16 @@ Blocked Projects: 0
 
 ## Active Projects
 
-::portfolio_grid
-- name: "Curated Canonical AI Instincts Fine-Tuning"
-  status: "active"
-  charter: "ready_for_execution"
-  completion_pct: 45.95
-  done_items: 17
-  total_items: 37
-  last_run: "2026-05-05T00:30:00Z"
-  active_item: "Train embedding model on governed corpus"
-  blockers: 0
-
-- name: "LOGA Structured Markdown BFF Integration"
-  status: "active"
-  charter: "chartered"
-  completion_pct: 13.33
-  done_items: 2
-  total_items: 15
-  last_run: "2026-05-04T22:10:00Z"
-  active_item: "Bind contract surface to renderer pipeline"
-  blockers: 0
-
-- name: "Governed UX System"
-  status: "active"
-  charter: "chartered"
-  completion_pct: 100.00
-  done_items: 12
-  total_items: 12
-  last_run: "2026-05-03T18:45:00Z"
-  active_item: "None"
-  blockers: 0
-
-- name: "Spring Boot Governed Execution Gateway"
-  status: "active"
-  charter: "chartered"
-  completion_pct: 0.00
-  done_items: 0
-  total_items: 8
-  last_run: "2026-05-01T09:00:00Z"
-  active_item: "Define governed execution contract"
-  blockers: 0
-
-- name: "Governed Pattern Intelligence Loop"
-  status: "active"
-  charter: "chartering"
-  completion_pct: 0.00
-  done_items: 0
-  total_items: 6
-  last_run: "2026-04-30T14:20:00Z"
-  active_item: "Charter pattern intelligence scope"
-  blockers: 0
-
-- name: "Autonomous Implementation Runner"
-  status: "active"
-  charter: "chartered"
-  completion_pct: 0.00
-  done_items: 0
-  total_items: 10
-  last_run: "2026-04-29T11:00:00Z"
-  active_item: "Bootstrap runner execution context"
-  blockers: 0
-
-- name: "Polyglot Code Shaping and Repository Intelligence"
-  status: "active"
-  charter: "chartered"
-  completion_pct: 0.00
-  done_items: 0
-  total_items: 9
-  last_run: "2026-04-28T16:30:00Z"
-  active_item: "Define code shape contract"
-  blockers: 0
-
-- name: "Governed Intent Code Search and Repo-less Agent Readiness"
-  status: "active"
-  charter: "active_execution"
-  completion_pct: 0.00
-  done_items: 0
-  total_items: 7
-  last_run: "2026-05-02T08:00:00Z"
-  active_item: "Validate intent search surface"
-  blockers: 0
+::each source="portfolio_projects" block="portfolio_grid"
+- name: "{{name}}"
+  status: "{{status}}"
+  completion_pct: {{completion_pct}}
+  done_items: {{done_items}}
+  total_items: {{total_items}}
+  last_run: "{{last_run}}"
+  active_item: "{{active_item}}"
+  blockers: {{blockers}}
+  project_id: "{{project_id}}"
 ::
 
 ## Why should I trust this?

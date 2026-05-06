@@ -3,10 +3,26 @@ import { escapeHtml, inline, renderDl, renderWarning } from './html.js';
 import { ELEMENT_REGISTRY } from './element-registry.js';
 import { renderRegisteredElement } from './registry-renderer.js';
 
-export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock }) {
+export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock, dataContext = {} }) {
   const records = parseRecords(lines);
   const keyValues = parseKeyValues(lines);
   const value = (key) => keyValues[key] || attrs[key] || '';
+
+  if (block === 'each') {
+    const source = attrs.source;
+    const targetBlock = attrs.block || 'list';
+    const items = dataContext[source];
+    if (!items || !items.length) {
+      return `<p style="color:var(--muted);font:12px/1.4 var(--mono);margin:12px 0">No ${escapeHtml(source || 'data')} available.</p>`;
+    }
+    const expandedLines = items.flatMap(item =>
+      lines.map(line => line.replace(/\{\{([^}]+)\}\}/g, (_, k) => {
+        const val = item[k.trim()];
+        return val != null ? String(val) : '';
+      }))
+    );
+    return renderBlock(targetBlock, expandedLines, {});
+  }
 
   if (block === 'toolbar_zone') {
     const children = collectChildBlocks(lines);

@@ -32,12 +32,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const proj = await loadProjection(projType, params);
     const { frontmatter } = parseMarkdown(proj.text || '');
+    const dataContext = await hydrateDataSources(proj.text || '', params);
 
     renderPageHeader(frontmatter);
     mountWorkspaceChrome(frontmatter);
     applyShellRules(frontmatter);
 
-    container.innerHTML = renderMarkdownProjection(proj.text);
+    container.innerHTML = renderMarkdownProjection(proj.text, dataContext);
     document.getElementById('evidence-content').textContent = JSON.stringify(proj.provenance || proj, null, 2);
   } catch (error) {
     container.innerHTML = `<p class="loga-error">Error loading projection: ${error.message}</p>`;
@@ -248,6 +249,27 @@ async function loadLocalProjectionFixture(projType) {
     sourceTruth: 'sql',
     provenance: { sourceTruth: 'sql', projectionType: projType, fixture: 'docs/loga-project-projections' },
   };
+}
+
+// --- Data source hydration ---
+
+async function hydrateDataSources(text, params) {
+  const sourceDefs = (MARKDOWN_UI_REGISTRY.dataSources) || {};
+  const matches = [...text.matchAll(/::each\s+[^\n]*source="([^"]+)"/gm)];
+  const sourceNames = [...new Set(matches.map(m => m[1]))];
+  if (!sourceNames.length) return {};
+  const sources = {};
+  await Promise.all(sourceNames.map(async sourceName => {
+    const def = sourceDefs[sourceName];
+    if (!def) return;
+    const apiArgs = (def.params || []).map(p => params[p]).filter(Boolean);
+    try {
+      sources[sourceName] = await callAiEngine(def.api, ...apiArgs);
+    } catch {
+      sources[sourceName] = null;
+    }
+  }));
+  return sources;
 }
 
 // --- Utility ---

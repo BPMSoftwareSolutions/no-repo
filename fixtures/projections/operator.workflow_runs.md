@@ -18,16 +18,11 @@ status: "active"
 
 ## Active Runs
 
-::run_list
-- key: "refactor-runtime"
-  title: "Generic Wrapper Runtime Refactor"
-  status: "running"
-  stage: "implementation"
-
-- key: "architecture-review"
-  title: "Architecture Integrity Review"
-  status: "waiting"
-  stage: "evidence review"
+::each source="workflow_runs" block="run_list"
+- key: "{{key}}"
+  title: "{{title}}"
+  status: "{{status}}"
+  stage: "{{stage}}"
 ::
 
 ## Last Completed Run

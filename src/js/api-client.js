@@ -198,9 +198,9 @@ injectRegistryStyles();
 
 // --- Main renderer ---
 
-export function renderMarkdownProjection(text) {
+export function renderMarkdownProjection(text, dataContext = {}) {
   if (!text) return '';
   const { body } = parseMarkdown(text);
-  const raw = renderMarkdown(body);
+  const raw = renderMarkdown(body, dataContext);
   return resolveRenderedLinks(raw);
 }
