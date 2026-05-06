@@ -5,6 +5,7 @@ import { mountWorkspaceChrome } from './workspace-chrome.js';
 import { MARKDOWN_UI_REGISTRY } from '../renderer/element-registry.js';
 
 let pollingInterval = null;
+let gaugeRefreshInFlight = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -75,8 +76,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (projType === 'operator.project_detail') {
     if (pollingInterval) clearInterval(pollingInterval);
     pollingInterval = setInterval(async () => {
-      await injectCompletionGauge({ projType, params, container });
-      updateLiveUpdateBadge();
+      if (gaugeRefreshInFlight) return;
+      gaugeRefreshInFlight = true;
+      try {
+        await injectCompletionGauge({ projType, params, container });
+        updateLiveUpdateBadge();
+      } finally {
+        gaugeRefreshInFlight = false;
+      }
     }, 5000);
 
     window.addEventListener('beforeunload', () => {
@@ -244,9 +251,6 @@ async function injectCompletionGauge({ projType, params, container }) {
   if (!container || !params?.projectId) return;
   if (projType !== 'operator.roadmap_item' && projType !== 'operator.project_detail' && projType !== 'operator.project_roadmap') return;
 
-  container.querySelectorAll('.injected-completion-gauge').forEach((el) => el.remove());
-  container.querySelectorAll('.injected-completion-gauge-grid').forEach((el) => el.remove());
-
   let report = null;
   try {
     report = await callAiEngine('getProjectImplementationRoadmapReport', params.projectId);
@@ -257,6 +261,9 @@ async function injectCompletionGauge({ projType, params, container }) {
   const allItems = Array.isArray(report?.roadmap_summary?.phases) ? report.roadmap_summary.phases : [];
 
   if (projType === 'operator.roadmap_item') {
+    container.querySelectorAll('.injected-completion-gauge').forEach((el) => el.remove());
+    container.querySelectorAll('.injected-completion-gauge-grid').forEach((el) => el.remove());
+
     const item = allItems.find((entry) => entry?.item_key === params.itemKey || entry?.stable_item_key === params.itemKey);
     if (!item) return;
     const progress = normalizeItemProgress(item);
@@ -334,10 +341,31 @@ async function injectCompletionGauge({ projType, params, container }) {
     }
 
     if (!gaugeBlocks.length) return;
+
     const gridMarkup = `<div class="injected-completion-gauge-grid">${gaugeBlocks.join('')}</div>`;
     if (projType === 'operator.project_detail') {
-      host.insertAdjacentHTML('beforeend', gridMarkup);
+      const nextSignature = JSON.stringify({
+        activeItemKey: activeItem?.item_key || activeItem?.stable_item_key || '',
+        activeItemStatus: activeItem?.item_status || '',
+        activeItemOpenTaskCount: activeItem?.open_task_count ?? null,
+        activeItemTotalTaskCount: activeItem?.total_task_count ?? null,
+        summary,
+      });
+
+      const existingGrid = host.querySelector('.injected-completion-gauge-grid');
+      if (existingGrid?.dataset.signature === nextSignature) return;
+
+      if (existingGrid) {
+        existingGrid.outerHTML = gridMarkup;
+      } else {
+        host.insertAdjacentHTML('beforeend', gridMarkup);
+      }
+
+      const currentGrid = host.querySelector('.injected-completion-gauge-grid');
+      if (currentGrid) currentGrid.dataset.signature = nextSignature;
     } else {
+      container.querySelectorAll('.injected-completion-gauge').forEach((el) => el.remove());
+      container.querySelectorAll('.injected-completion-gauge-grid').forEach((el) => el.remove());
       host.insertAdjacentHTML('afterend', gridMarkup);
     }
   }
