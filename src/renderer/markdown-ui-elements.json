@@ -741,18 +741,20 @@
       "padding": "4px 10px",
       "font": "12px/1.4 var(--sans)"
     },
-    ".workspace-toolbar": {
+    "#workspace-chrome": {
       "position": "sticky",
       "top": "0",
       "zIndex": "15",
+      "background": "rgba(13, 17, 23, 0.88)",
+      "backdropFilter": "blur(20px)"
+    },
+    ".workspace-toolbar": {
       "width": "calc(100% - 64px)",
       "maxWidth": "none",
       "margin": "10px auto 26px",
       "padding": "14px 0 12px",
       "borderTop": "1px solid var(--line-soft)",
-      "borderBottom": "1px solid var(--line)",
-      "background": "rgba(13, 17, 23, 0.88)",
-      "backdropFilter": "blur(20px)"
+      "borderBottom": "1px solid var(--line)"
     },
     ".workspace-toolbar__row": {
       "display": "grid",
