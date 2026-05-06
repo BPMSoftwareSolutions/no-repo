@@ -113,12 +113,12 @@ export async function buildLogaTreeChildren(nodeId, { client }) {
 
   if (nodeId.startsWith('project-') && nodeId.endsWith('-current-focus')) {
     const projectId = nodeId.slice('project-'.length, -'-current-focus'.length);
-    return buildCurrentFocusChildren(nodeId, projectId);
+    return buildCurrentFocusChildren(nodeId, projectId, { client });
   }
 
   if (nodeId.startsWith('project-') && nodeId.endsWith('-roadmap-items')) {
     const projectId = nodeId.slice('project-'.length, -'-roadmap-items'.length);
-    return buildRoadmapItemsChildren(nodeId, projectId);
+    return buildRoadmapItemsChildren(nodeId, projectId, { client });
   }
 
   if (nodeId.startsWith('project-') && nodeId.endsWith('-promotions')) {
@@ -148,7 +148,13 @@ export async function buildLogaTreeChildren(nodeId, { client }) {
 
   if (nodeId.startsWith('project-') && nodeId.endsWith('-tasks')) {
     const scoped = parseRoadmapItemScopedNode(nodeId, 'tasks');
-    return buildTasksChildren(nodeId, scoped?.projectId || 'ai-engine');
+    return buildTasksChildren(nodeId, scoped?.projectId || 'ai-engine', { client });
+  }
+
+  // UUID-based individual task expansion — must come before the slug-based -tasks- check
+  if (nodeId.includes('-tasks-task-')) {
+    const match = nodeId.match(/-tasks-task-([0-9a-f-]{36})$/i);
+    if (match) return buildSubtaskListChildren(nodeId, match[1], { client });
   }
 
   if (nodeId.includes('-tasks-')) {
@@ -318,43 +324,56 @@ function buildRoadmapChildren(parentId, projectId) {
         id: `project-${projectId}-roadmap-items`,
         label: 'All Roadmap Items',
         type: 'item_group',
-        meta: 'fixture available',
         hasChildren: true,
+        contentHref: `projection-detail.html?type=operator.project_roadmap&projectId=${encodeURIComponent(projectId)}`,
       }),
     ],
   };
 }
 
-function buildCurrentFocusChildren(parentId, projectId) {
-  return {
-    parent_id: parentId,
-    nodes: [
-      treeNode({
-        id: `project-${projectId}-roadmap-item-generic-wrapper-runtime`,
-        label: 'Generic Wrapper Runtime',
+async function buildCurrentFocusChildren(parentId, projectId, { client }) {
+  try {
+    const roadmap = await client.getProjectRoadmap(projectId);
+    const items = roadmap.items || [];
+    const focus = items.filter((i) => i.is_current_project_stage === true);
+    const display = focus.length > 0 ? focus : items.filter((i) => i.item_status === 'in_progress').slice(0, 3);
+    return {
+      parent_id: parentId,
+      nodes: display.map((item) => treeNode({
+        id: `project-${projectId}-roadmap-item-${item.item_key}`,
+        label: item.item_title,
         type: 'roadmap_item',
-        meta: '2 / 4 tasks',
+        meta: item.item_status,
         hasChildren: true,
-        contentHref: `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=generic-wrapper-runtime`,
-      }),
-    ],
-  };
+        contentHref: `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(item.item_key)}`,
+      })),
+    };
+  } catch {
+    return { parent_id: parentId, nodes: [] };
+  }
 }
 
-function buildRoadmapItemsChildren(parentId, projectId) {
-  return {
-    parent_id: parentId,
-    nodes: [
-      treeNode({
-        id: `project-${projectId}-roadmap-item-generic-wrapper-runtime`,
-        label: 'Generic Wrapper Runtime',
+async function buildRoadmapItemsChildren(parentId, projectId, { client }) {
+  try {
+    const roadmap = await client.getProjectRoadmap(projectId);
+    const items = roadmap.items || [];
+    const open = items.filter((i) => i.item_status !== 'done' && i.item_status !== 'completed');
+    const display = open.length > 0 ? open : items;
+    return {
+      parent_id: parentId,
+      nodes: display.map((item) => treeNode({
+        id: `project-${projectId}-roadmap-item-${item.item_key}`,
+        label: item.item_title,
         type: 'roadmap_item',
-        meta: 'current focus',
+        status: item.item_status,
+        meta: item.total_task_count > 0 ? `${item.open_task_count} / ${item.total_task_count} tasks` : undefined,
         hasChildren: true,
-        contentHref: `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=generic-wrapper-runtime`,
-      }),
-    ],
-  };
+        contentHref: `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(item.item_key)}`,
+      })),
+    };
+  } catch {
+    return { parent_id: parentId, nodes: [] };
+  }
 }
 
 function buildRoadmapItemChildren(parentId) {
@@ -477,16 +496,53 @@ function buildMemoryChildren(parentId) {
   };
 }
 
-function buildTasksChildren(parentId, projectId) {
-  return {
-    parent_id: parentId,
-    nodes: [
-      taskNode(parentId, projectId, 'define-contract-schema', 'Define wrapper contract schema', 'done'),
-      taskNode(parentId, projectId, 'implement-wrapper-operations', 'Implement reusable wrapper operations', 'in progress'),
-      taskNode(parentId, projectId, 'replace-hard-coded-scripts', 'Replace hard-coded wrapper scripts', 'blocked', true),
-      taskNode(parentId, projectId, 'validate-execution-evidence', 'Validate wrapper execution evidence', 'not started'),
-    ],
-  };
+async function buildTasksChildren(parentId, projectId, { client }) {
+  const scoped = parseRoadmapItemScopedNode(parentId, 'tasks');
+  const itemKey = scoped?.itemKey;
+  if (!itemKey || !projectId) return { parent_id: parentId, nodes: [] };
+  try {
+    const roadmap = await client.getProjectRoadmap(projectId);
+    const item = (roadmap.items || []).find((i) => i.item_key === itemKey);
+    if (!item?.implementation_item_id) return { parent_id: parentId, nodes: [] };
+    const result = await client.listImplementationTasks(item.implementation_item_id);
+    const allTasks = Array.isArray(result) ? result : (result.tasks || []);
+    const topLevel = allTasks.filter((t) => !t.parent_task_id);
+    return {
+      parent_id: parentId,
+      nodes: topLevel.map((task) => {
+        const hasSubtasks = allTasks.some((t) => t.parent_task_id === task.implementation_item_task_id);
+        return treeNode({
+          id: `${parentId}-task-${task.implementation_item_task_id}`,
+          label: task.title,
+          type: 'task',
+          status: task.status,
+          hasChildren: hasSubtasks,
+          contentHref: `projection-detail.html?type=operator.task_detail&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}&taskKey=${encodeURIComponent(task.implementation_item_task_id)}`,
+        });
+      }),
+    };
+  } catch {
+    return { parent_id: parentId, nodes: [] };
+  }
+}
+
+async function buildSubtaskListChildren(parentId, taskId, { client }) {
+  try {
+    const result = await client.listImplementationSubtasks(taskId);
+    const subtasks = Array.isArray(result) ? result : (result.subtasks || result.tasks || []);
+    return {
+      parent_id: parentId,
+      nodes: subtasks.map((subtask) => treeNode({
+        id: `${parentId}-subtask-${subtask.implementation_item_task_id || subtask.id}`,
+        label: subtask.title,
+        type: 'subtask',
+        status: subtask.status,
+        contentHref: `projection-detail.html?type=operator.subtask_detail&taskId=${encodeURIComponent(taskId)}&subtaskId=${encodeURIComponent(subtask.implementation_item_task_id || subtask.id)}`,
+      })),
+    };
+  } catch {
+    return { parent_id: parentId, nodes: [] };
+  }
 }
 
 function buildSubtasksChildren(parentId) {
