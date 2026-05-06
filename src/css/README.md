@@ -1,42 +1,15 @@
-# AI Engine Inspection UI — Modern Markdown Global Styles
+# AI Engine Inspection UI - Contract-Driven Styling
 
-This package contains a standalone global stylesheet for the multi-page inspection UI.
+This folder no longer contains the source of truth for inspection page UI styles.
 
-## File
+## Source of truth
 
-- `global-inspection.css`
+- `src/renderer/markdown-ui-elements.json`
 
-## Usage
+Styles are generated and injected at runtime from the markdown UI contract registry.
 
-Add this to every HTML page:
+## Guidance
 
-```html
-<link rel="stylesheet" href="global-inspection.css">
-```
-
-The design target is:
-
-```text
-smooth markdown workspace
-clean document rhythm
-modern app polish
-minimal chrome
-interactive affordances without looking like old-school HTML
-```
-
-## Optional light mode
-
-Add this to the body tag:
-
-```html
-<body class="theme-light">
-```
-
-## Works with
-
-- semantic HTML pages
-- tables
-- details/evidence drawers
-- breadcrumbs/nav
-- forms
-- the previously generated `inspection.js`
+- Do not add page styling to `src/css` for projection surfaces.
+- Change tokens, element styles, media rules, shell rules, and routes in the registry JSON.
+- Keep styling changes contract-driven so markdown + registry fully define the UI.
