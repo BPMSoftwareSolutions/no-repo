@@ -468,6 +468,115 @@ function applyTemplate(template, tokens) {
 // --- Transforms (registry-named, async, load templates from files) ---
 
 const TRANSFORMS = {
+  async buildProjectPortfolioProjection(params, apiData) {
+    const payload = apiData || {};
+    const projects = Array.isArray(payload?.projects) ? payload.projects : [];
+    const completion = payload?.portfolio_completion || {};
+    const summary = payload?.summary || {};
+
+    const toNum = (value, fallback = 0) => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    };
+    const quote = (value) => String(value ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const cardStatus = (project) => {
+      const process = String(project?.process_status || '').toLowerCase();
+      const activeStatus = String(project?.active_item_status || '').toLowerCase();
+      if (process === 'completed') return 'completed';
+      if (activeStatus === 'blocked' || toNum(project?.blocker_count, 0) > 0) return 'blocked';
+      if (process === 'cancelled') return 'inactive';
+      return 'active';
+    };
+
+    const activeProjects = projects.filter((project) => {
+      const process = String(project?.process_status || '').toLowerCase();
+      return process === 'active' || process === 'completed';
+    });
+
+    const cards = activeProjects.map((project) => {
+      const projectId = project?.project_id || '';
+      const name = project?.project_name || projectId || 'Untitled project';
+      const completionPct = toNum(project?.completion_pct, 0);
+      const doneItems = toNum(project?.done_items, 0);
+      const totalItems = toNum(project?.total_items, 0);
+      const activeItem = project?.active_item_title || 'None';
+      const blockers = toNum(project?.blocker_count, 0);
+      const lastRun = project?.last_activity_at || project?.last_updated_at || '';
+      const status = cardStatus(project);
+      const target = projectId
+        ? `projection-detail.html?type=operator.project_detail&projectId=${encodeURIComponent(projectId)}`
+        : '#';
+
+      return `- name: "${quote(name)}"\n  project_id: "${quote(projectId)}"\n  target: "${quote(target)}"\n  status: "${quote(status)}"\n  completion_pct: ${completionPct.toFixed(2)}\n  done_items: ${doneItems}\n  total_items: ${totalItems}\n  active_item: "${quote(activeItem)}"\n  blockers: ${blockers}\n  last_run: "${quote(lastRun)}"`;
+    }).join('\n\n');
+
+    const completionPct = toNum(completion?.completion_percentage, 0);
+    const completedItems = toNum(completion?.completed_roadmap_items, 0);
+    const totalItems = toNum(completion?.total_roadmap_items, 0);
+    const openItems = toNum(completion?.open_roadmap_items, Math.max(0, totalItems - completedItems));
+    const blockedItems = toNum(completion?.blocked_items, 0);
+    const inProgressItems = toNum(completion?.in_progress_items, 0);
+    const awaitingReviewItems = toNum(completion?.awaiting_review_items, 0);
+
+    const text = `---
+loga_contract: "ai-engine-ui/v1"
+interaction_contract: "loga-choreography/v1"
+navigation_contract: "loga-navigation/v1"
+projection_type: "operator.project_portfolio"
+projection_id: "operator-project-portfolio"
+source_system: "ai-engine"
+source_truth: "sql"
+primary_question: "What is the delivery state across all projects?"
+workspace_mode: "focus"
+surface_label: "Project Portfolio"
+allowed_actions:
+  - refresh_projection
+---
+
+# Project Portfolio
+
+::surface type="project_portfolio" priority="high" summary="Portfolio completion is ${completionPct.toFixed(2)}% across ${totalItems} roadmap items."
+::
+
+## Portfolio Completion
+
+::portfolio_gauge
+completion_pct: ${completionPct.toFixed(2)}
+completed_items: ${completedItems}
+total_items: ${totalItems}
+in_progress: ${inProgressItems}
+blocked: ${blockedItems}
+awaiting_review: ${awaitingReviewItems}
+::
+
+## Portfolio Snapshot
+
+::metric_row
+Total Projects: ${toNum(summary?.total_projects, projects.length)}
+Open Items: ${openItems}
+Blocked Items: ${blockedItems}
+Approval Backlog: ${toNum(summary?.approval_backlog_count, 0)}
+::
+
+## Active Projects
+
+::portfolio_grid
+${cards}
+::`;
+
+    return {
+      text,
+      contentType: 'text/markdown; charset=utf-8',
+      projectionType: 'operator.project_portfolio',
+      sourceTruth: 'sql',
+      provenance: {
+        sourceTruth: 'sql',
+        projectionType: 'operator.project_portfolio',
+        projectCount: projects.length,
+      },
+    };
+  },
+
   async buildProjectDetailProjection(params, apiData) {
     const summary = apiData || {};
     const projectId = params.projectId || 'ai-engine';

@@ -2221,7 +2221,8 @@
       "api": "getLogaOperatorHomeProjection"
     },
     "operator.project_portfolio": {
-      "api": "getLogaProjectPortfolioProjection",
+      "api": "getPortfolioBundle",
+      "transform": "buildProjectPortfolioProjection",
       "fixtureFallback": true
     },
     "operator.project_catalog": {
