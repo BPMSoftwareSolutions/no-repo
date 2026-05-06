@@ -271,6 +271,60 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     return `<section class="loga-actions">${lines.map((line) => line.trim()).filter((line) => line.startsWith('- ')).map((line) => `<button type="button">${escapeHtml(line.slice(2))}</button>`).join('')}</section>`;
   }
 
+  if (block === 'portfolio_gauge') {
+    const pct = parseFloat(value('completion_pct') || 0);
+    const safePct = Math.min(100, Math.max(0, Number.isFinite(pct) ? pct : 0));
+    const completed = value('completed_items') || '';
+    const total = value('total_items') || '';
+    const inProgress = value('in_progress') || '';
+    const blocked = value('blocked') || '';
+    const awaiting = value('awaiting_review') || '';
+    const tier = safePct >= 80 ? 'high' : safePct >= 30 ? 'mid' : 'low';
+    const tierColor = { high: '#22c55e', mid: '#f59e0b', low: '#ef4444' }[tier];
+    const R = 75; const gx = 100; const gy = 110;
+    const toRad = (d) => (d * Math.PI) / 180;
+    const pt = (deg) => [gx + R * Math.cos(toRad(deg)), gy + R * Math.sin(toRad(deg))];
+    const [sx, sy] = pt(135);
+    const [ex, ey] = pt(45);
+    const bgPath = `M ${sx.toFixed(2)} ${sy.toFixed(2)} A ${R} ${R} 0 1 1 ${ex.toFixed(2)} ${ey.toFixed(2)}`;
+    const fillDeg = 270 * safePct / 100;
+    let fillPath = '';
+    if (fillDeg > 0.5) {
+      const [fx, fy] = pt(135 + Math.min(fillDeg, 269.99));
+      const la = fillDeg > 180 ? 1 : 0;
+      fillPath = `M ${sx.toFixed(2)} ${sy.toFixed(2)} A ${R} ${R} 0 ${la} 1 ${fx.toFixed(2)} ${fy.toFixed(2)}`;
+    }
+    const stats = [
+      completed ? { label: 'done', val: completed, mod: '' } : null,
+      total ? { label: 'total items', val: total, mod: '' } : null,
+      inProgress && inProgress !== '0' ? { label: 'in progress', val: inProgress, mod: 'progress' } : null,
+      blocked && blocked !== '0' ? { label: 'blocked', val: blocked, mod: 'blocked' } : null,
+      awaiting && awaiting !== '0' ? { label: 'review', val: awaiting, mod: 'review' } : null,
+    ].filter(Boolean);
+    return `<div class="portfolio-gauge" data-tier="${escapeHtml(tier)}"><svg class="portfolio-gauge__svg" viewBox="0 0 200 200" aria-label="${escapeHtml(pct.toFixed(1))} percent complete"><path class="portfolio-gauge__track" d="${bgPath}" fill="none" stroke-width="14" stroke-linecap="round"/>${fillPath ? `<path class="portfolio-gauge__fill" d="${fillPath}" fill="none" stroke="${escapeHtml(tierColor)}" stroke-width="14" stroke-linecap="round"/>` : ''}<text class="portfolio-gauge__pct-text" x="${gx}" y="102" text-anchor="middle">${escapeHtml(pct.toFixed(1))}%</text><text class="portfolio-gauge__sub-text" x="${gx}" y="122" text-anchor="middle">complete</text></svg><div class="portfolio-gauge__stats">${stats.map((s) => `<span class="portfolio-gauge__stat${s.mod ? ` portfolio-gauge__stat--${s.mod}` : ''}"><strong>${escapeHtml(String(s.val))}</strong><em>${escapeHtml(s.label)}</em></span>`).join('')}</div></div>`;
+  }
+
+  if (block === 'bucket_chart') {
+    const pairs = lines.map((l) => l.trim()).filter(Boolean).map((l) => {
+      const m = l.match(/^(.+?):\s*(\d+)/);
+      return m ? { label: m[1].trim(), value: parseInt(m[2], 10) } : null;
+    }).filter(Boolean);
+    if (!pairs.length) return '';
+    const total = pairs.reduce((sum, p) => sum + p.value, 0) || 1;
+    const palette = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#64748b', '#0ea5e9'];
+    const bar = pairs.filter((p) => p.value > 0).map((p, i) => {
+      const segPct = (p.value / total * 100).toFixed(3);
+      const color = palette[i % palette.length];
+      return `<span class="bucket-chart__segment" style="width:${segPct}%;background:${color}" title="${escapeHtml(p.label)}: ${p.value}" aria-hidden="true"></span>`;
+    }).join('');
+    const legend = pairs.map((p, i) => {
+      const color = palette[i % palette.length];
+      const segPct = (p.value / total * 100).toFixed(1);
+      return `<div class="bucket-chart__item"><span class="bucket-chart__swatch" style="background:${color}" aria-hidden="true"></span><span class="bucket-chart__item-label">${escapeHtml(p.label)}</span><strong class="bucket-chart__item-count">${p.value}</strong><span class="bucket-chart__item-pct">${segPct}%</span></div>`;
+    }).join('');
+    return `<div class="bucket-chart"><div class="bucket-chart__bar" role="img" aria-label="Project distribution">${bar}</div><div class="bucket-chart__legend">${legend}</div></div>`;
+  }
+
   if (block === 'evidence_drawer') {
     return `<details class="loga-evidence-drawer"><summary>${escapeHtml(value('title') || 'Evidence')}</summary><pre><code>${escapeHtml(lines.join('\n'))}</code></pre></details>`;
   }

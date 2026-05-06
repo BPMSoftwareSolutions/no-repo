@@ -23,29 +23,23 @@ allowed_actions:
 
 ## Portfolio Completion
 
-::panel type="status_summary" status="active" headline="Portfolio completion is 30.81% across 185 roadmap items."
-::
-
-57 completed roadmap items, 0 blocked, 3 in progress, 6 awaiting review.
-
-::metric_row
-Completion %: 30.81
-Total Roadmap Items: 185
-Completed Items: 57
-Open Items: 128
-Blocked Items: 0
-In Progress: 3
-Awaiting Review: 6
+::portfolio_gauge
+completion_pct: 30.81
+completed_items: 57
+total_items: 185
+in_progress: 3
+blocked: 0
+awaiting_review: 6
 ::
 
 ## Project Buckets
 
-::kv
-Completed Projects: 0
+::bucket_chart
 Active Projects: 58
-Chartered / Not Started: 1
-Blocked Projects: 0
 Exceptions: 40
+Chartered / Not Started: 1
+Completed Projects: 0
+Blocked Projects: 0
 ::
 
 ## Active Projects
