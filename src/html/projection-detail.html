@@ -10,13 +10,18 @@
 
   <div id="workspace-chrome"></div>
 
-  <main class="projection-shell">
+  <main class="projection-shell projection-shell--resizable">
     <aside class="projection-shell__tree" aria-labelledby="tree-title">
-      <h2 id="tree-title" class="projection-shell__title">Knowledge Tree</h2>
+      <div class="projection-shell__tree-header">
+        <h2 id="tree-title" class="projection-shell__title">Knowledge Tree</h2>
+        <button id="tree-panel-toggle" class="projection-shell__tree-toggle" type="button" aria-expanded="true">Hide panel</button>
+      </div>
       <div id="projection-tree" class="projection-tree" aria-live="polite">
         <p>Loading projection tree...</p>
       </div>
     </aside>
+
+    <div id="tree-panel-resizer" class="projection-shell__resizer" role="separator" aria-label="Resize side panel" aria-orientation="vertical"></div>
 
     <article class="projection-shell__surface">
       <div id="projection-content" class="rendered" aria-live="polite">

@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const container = document.getElementById('projection-content');
   const tree = document.getElementById('projection-tree');
+  setupSidePanelControls();
 
   mountWorkspaceChrome({});
   renderPersistentTree(tree);
@@ -42,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       applyShellRules(frontmatter);
 
       container.innerHTML = renderMarkdownProjection(proj.text, dataContext);
+      await injectCompletionGauge({ projType, params, container });
       document.getElementById('evidence-content').textContent = JSON.stringify(proj.provenance || proj, null, 2);
       
       // Show live update badge for status and roadmap projections
@@ -90,6 +92,174 @@ function updateLiveUpdateBadge() {
   if (badge) {
     badge.classList.add('live-pulse');
     setTimeout(() => badge.classList.remove('live-pulse'), 300);
+  }
+}
+
+function setupSidePanelControls() {
+  const shell = document.querySelector('.projection-shell');
+  const toggle = document.getElementById('tree-panel-toggle');
+  const resizer = document.getElementById('tree-panel-resizer');
+  if (!shell || !toggle || !resizer) return;
+
+  const WIDTH_KEY = 'projectionTreePanelWidth';
+  const COLLAPSED_KEY = 'projectionTreePanelCollapsed';
+  const MIN_WIDTH = 240;
+  const MAX_WIDTH = 680;
+  const mobile = () => window.matchMedia('(max-width: 760px)').matches;
+
+  const clampWidth = (value) => Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, value));
+  const applyWidth = (value) => {
+    if (mobile() || shell.classList.contains('projection-shell--tree-collapsed')) return;
+    const safe = clampWidth(Number(value) || 300);
+    shell.style.gridTemplateColumns = `${safe}px 10px minmax(0, 1fr)`;
+    localStorage.setItem(WIDTH_KEY, String(safe));
+  };
+
+  const syncCollapsedState = (collapsed) => {
+    shell.classList.toggle('projection-shell--tree-collapsed', collapsed);
+    toggle.textContent = collapsed ? 'Show panel' : 'Hide panel';
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    localStorage.setItem(COLLAPSED_KEY, String(collapsed));
+    if (!collapsed && !mobile()) {
+      applyWidth(localStorage.getItem(WIDTH_KEY) || '320');
+    }
+    if (collapsed || mobile()) shell.style.gridTemplateColumns = '';
+  };
+
+  toggle.addEventListener('click', () => {
+    const collapsed = !shell.classList.contains('projection-shell--tree-collapsed');
+    syncCollapsedState(collapsed);
+  });
+
+  resizer.addEventListener('dblclick', () => applyWidth(320));
+  resizer.addEventListener('pointerdown', (event) => {
+    if (mobile() || shell.classList.contains('projection-shell--tree-collapsed')) return;
+    event.preventDefault();
+    const shellRect = shell.getBoundingClientRect();
+    const firstTrack = shellRect.width * 0.28;
+    const startWidth = clampWidth(parseInt(localStorage.getItem(WIDTH_KEY) || `${Math.round(firstTrack)}`, 10));
+    const startX = event.clientX;
+    resizer.setPointerCapture(event.pointerId);
+
+    const onMove = (moveEvent) => {
+      const delta = moveEvent.clientX - startX;
+      applyWidth(startWidth + delta);
+    };
+
+    const onUp = (upEvent) => {
+      resizer.releasePointerCapture(upEvent.pointerId);
+      resizer.removeEventListener('pointermove', onMove);
+      resizer.removeEventListener('pointerup', onUp);
+      resizer.removeEventListener('pointercancel', onUp);
+    };
+
+    resizer.addEventListener('pointermove', onMove);
+    resizer.addEventListener('pointerup', onUp);
+    resizer.addEventListener('pointercancel', onUp);
+  });
+
+  const persistedCollapsed = localStorage.getItem(COLLAPSED_KEY) === 'true';
+  syncCollapsedState(persistedCollapsed);
+  if (!persistedCollapsed && !mobile()) {
+    applyWidth(localStorage.getItem(WIDTH_KEY) || '320');
+  }
+
+  window.addEventListener('resize', () => {
+    if (mobile()) {
+      shell.style.gridTemplateColumns = '';
+    } else if (!shell.classList.contains('projection-shell--tree-collapsed')) {
+      applyWidth(localStorage.getItem(WIDTH_KEY) || '320');
+    }
+  });
+}
+
+function normalizeItemProgress(item) {
+  const totalTasks = Number(item?.total_task_count || 0);
+  const openTasks = Number(item?.open_task_count || 0);
+  if (Number.isFinite(totalTasks) && totalTasks > 0) {
+    const doneTasks = Math.max(0, totalTasks - (Number.isFinite(openTasks) ? openTasks : 0));
+    const pct = Math.round((doneTasks / totalTasks) * 100);
+    return {
+      pct,
+      completed: doneTasks,
+      total: totalTasks,
+      inProgress: String(item?.item_status || '').toLowerCase() === 'in_progress' ? 1 : 0,
+      blocked: String(item?.item_status || '').toLowerCase() === 'blocked' ? 1 : 0,
+      awaiting: String(item?.item_status || '').toLowerCase() === 'awaiting_review' ? 1 : 0,
+    };
+  }
+
+  const status = String(item?.item_status || '').toLowerCase();
+  if (status === 'done' || status === 'completed') return { pct: 100, completed: 1, total: 1, inProgress: 0, blocked: 0, awaiting: 0 };
+  if (status === 'awaiting_review') return { pct: 90, completed: 0, total: 0, inProgress: 0, blocked: 0, awaiting: 1 };
+  if (status === 'in_progress') return { pct: 50, completed: 0, total: 0, inProgress: 1, blocked: 0, awaiting: 0 };
+  if (status === 'blocked') return { pct: 25, completed: 0, total: 0, inProgress: 0, blocked: 1, awaiting: 0 };
+  return { pct: 0, completed: 0, total: 0, inProgress: 0, blocked: 0, awaiting: 0 };
+}
+
+function renderGaugeMarkup({ pct, completed, total, inProgress, blocked, awaiting }) {
+  const safePct = Math.min(100, Math.max(0, Number.isFinite(pct) ? pct : 0));
+  const tier = safePct >= 80 ? 'high' : safePct >= 30 ? 'mid' : 'low';
+  const tierColor = { high: '#22c55e', mid: '#f59e0b', low: '#ef4444' }[tier];
+  const R = 75;
+  const gx = 100;
+  const gy = 110;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const pt = (deg) => [gx + R * Math.cos(toRad(deg)), gy + R * Math.sin(toRad(deg))];
+  const [sx, sy] = pt(135);
+  const [ex, ey] = pt(45);
+  const bgPath = `M ${sx.toFixed(2)} ${sy.toFixed(2)} A ${R} ${R} 0 1 1 ${ex.toFixed(2)} ${ey.toFixed(2)}`;
+  const fillDeg = 270 * safePct / 100;
+  let fillPath = '';
+  if (fillDeg > 0.5) {
+    const [fx, fy] = pt(135 + Math.min(fillDeg, 269.99));
+    const la = fillDeg > 180 ? 1 : 0;
+    fillPath = `M ${sx.toFixed(2)} ${sy.toFixed(2)} A ${R} ${R} 0 ${la} 1 ${fx.toFixed(2)} ${fy.toFixed(2)}`;
+  }
+
+  const stats = [
+    { label: 'done', val: completed, mod: '' },
+    { label: 'total tasks', val: total, mod: '' },
+    inProgress ? { label: 'in progress', val: inProgress, mod: 'progress' } : null,
+    blocked ? { label: 'blocked', val: blocked, mod: 'blocked' } : null,
+    awaiting ? { label: 'review', val: awaiting, mod: 'review' } : null,
+  ].filter(Boolean);
+
+  return `<div class="portfolio-gauge" data-tier="${escapeHtml(tier)}"><svg class="portfolio-gauge__svg" viewBox="0 0 200 200" aria-label="${escapeHtml(safePct.toFixed(1))} percent complete"><path class="portfolio-gauge__track" d="${bgPath}" fill="none" stroke-width="14" stroke-linecap="round"/>${fillPath ? `<path class="portfolio-gauge__fill" d="${fillPath}" fill="none" stroke="${escapeHtml(tierColor)}" stroke-width="14" stroke-linecap="round"/>` : ''}<text class="portfolio-gauge__pct-text" x="${gx}" y="102" text-anchor="middle">${escapeHtml(safePct.toFixed(1))}%</text><text class="portfolio-gauge__sub-text" x="${gx}" y="122" text-anchor="middle">complete</text></svg><div class="portfolio-gauge__stats">${stats.map((s) => `<span class="portfolio-gauge__stat${s.mod ? ` portfolio-gauge__stat--${s.mod}` : ''}"><strong>${escapeHtml(String(s.val))}</strong><em>${escapeHtml(s.label)}</em></span>`).join('')}</div></div>`;
+}
+
+async function injectCompletionGauge({ projType, params, container }) {
+  if (!container || !params?.projectId) return;
+  if (projType !== 'operator.roadmap_item' && projType !== 'operator.project_detail') return;
+
+  container.querySelectorAll('.injected-completion-gauge').forEach((el) => el.remove());
+
+  let report;
+  try {
+    report = await callAiEngine('getProjectImplementationRoadmapReport', params.projectId);
+  } catch {
+    return;
+  }
+
+  const allItems = Array.isArray(report?.roadmap_summary?.phases) ? report.roadmap_summary.phases : [];
+
+  if (projType === 'operator.roadmap_item') {
+    const item = allItems.find((entry) => entry?.item_key === params.itemKey || entry?.stable_item_key === params.itemKey);
+    if (!item) return;
+    const progress = normalizeItemProgress(item);
+    const h2 = container.querySelector('h2');
+    if (!h2) return;
+    h2.insertAdjacentHTML('afterend', `<section class="injected-completion-gauge"><p class="injected-completion-gauge__title">Item Completion</p>${renderGaugeMarkup(progress)}</section>`);
+    return;
+  }
+
+  if (projType === 'operator.project_detail') {
+    const activeItem = report?.active_item?.active_item;
+    if (!activeItem) return;
+    const progress = normalizeItemProgress(activeItem);
+    const focus = container.querySelector('.loga-focus');
+    if (!focus) return;
+    focus.insertAdjacentHTML('beforeend', `<section class="injected-completion-gauge"><p class="injected-completion-gauge__title">Active Item Completion</p>${renderGaugeMarkup(progress)}</section>`);
   }
 }
 
