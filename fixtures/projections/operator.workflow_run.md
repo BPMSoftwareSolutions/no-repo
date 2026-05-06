@@ -4,6 +4,8 @@ projection_type: "operator.workflow_run"
 projection_id: "workflow-run:refactor-runtime"
 source_truth: "sql"
 primary_question: "What happened in this run?"
+workspace_mode: "execution"
+surface_label: "Workflow Run"
 ---
 
 # Workflow Run

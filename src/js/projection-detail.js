@@ -2,43 +2,40 @@ import { callAiEngine, renderMarkdownProjection } from './api-client.js';
 import { renderProjectionTree } from './projection-tree.js';
 import { parseMarkdown } from '../renderer/parser.js';
 import { mountWorkspaceChrome } from './workspace-chrome.js';
+import { MARKDOWN_UI_REGISTRY } from '../renderer/element-registry.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const projType = urlParams.get('type') || 'operator.home';
-  const projectId = urlParams.get('projectId');
-  const itemKey = urlParams.get('itemKey');
-  const taskKey = urlParams.get('taskKey');
-  const subtaskKey = urlParams.get('subtaskKey');
-  const workflowRunId = urlParams.get('workflowRunId');
-  const evidencePacketKey = urlParams.get('evidencePacketKey');
-  const target = urlParams.get('target');
-  
-  const titleEl = document.getElementById('detail-title');
-  const questionEl = document.getElementById('detail-question');
+  const params = {
+    projectId: urlParams.get('projectId'),
+    itemKey: urlParams.get('itemKey'),
+    taskKey: urlParams.get('taskKey'),
+    subtaskKey: urlParams.get('subtaskKey'),
+    workflowRunId: urlParams.get('workflowRunId'),
+    evidencePacketKey: urlParams.get('evidencePacketKey'),
+    turn: urlParams.get('turn'),
+    promotionKey: urlParams.get('promotionKey'),
+    target: urlParams.get('target'),
+  };
+
   const container = document.getElementById('projection-content');
   const tree = document.getElementById('projection-tree');
-
-  titleEl.textContent = getSurfaceTitle(projType);
-  questionEl.textContent = getSurfaceQuestion(projType);
 
   mountWorkspaceChrome({});
   renderPersistentTree(tree);
 
   try {
-    const proj = await loadProjection({
-      projType,
-      projectId,
-      itemKey,
-      taskKey,
-      subtaskKey,
-      workflowRunId,
-      evidencePacketKey,
-      target,
-    });
+    if (params.target) {
+      throw new Error(`No local projection route is registered for target: ${params.target}`);
+    }
 
+    const proj = await loadProjection(projType, params);
     const { frontmatter } = parseMarkdown(proj.text || '');
+
+    renderPageHeader(frontmatter);
     mountWorkspaceChrome(frontmatter);
+    applyShellRules(frontmatter);
 
     container.innerHTML = renderMarkdownProjection(proj.text);
     document.getElementById('evidence-content').textContent = JSON.stringify(proj.provenance || proj, null, 2);
@@ -46,6 +43,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     container.innerHTML = `<p class="loga-error">Error loading projection: ${error.message}</p>`;
   }
 });
+
+// --- Page header ---
+
+function renderPageHeader(frontmatter) {
+  const header = document.getElementById('page-header');
+  if (!header) return;
+  const label = frontmatter.surface_label || '';
+  const question = frontmatter.primary_question || '';
+  header.innerHTML = [
+    `<p><a href="index.html">Inspection Home</a> / <a href="projections.html">Projection Inspection</a></p>`,
+    label ? `<h1>${escapeHtml(label)}</h1>` : '',
+    question ? `<p><strong>Primary question:</strong> <span>${escapeHtml(question)}</span></p>` : '',
+  ].join('');
+}
+
+// --- Shell rules ---
+
+function applyShellRules(frontmatter) {
+  const mode = frontmatter.workspace_mode || 'default';
+  const rules = (MARKDOWN_UI_REGISTRY.shell || {})[mode] || (MARKDOWN_UI_REGISTRY.shell || {}).default || {};
+  const aside = document.querySelector('.projection-shell__tree');
+  if (aside) aside.hidden = rules.showTree === false;
+  const treeTitle = document.getElementById('tree-title');
+  if (treeTitle && rules.treeTitle !== undefined) {
+    treeTitle.textContent = rules.treeTitle || 'Knowledge Tree';
+  }
+}
+
+// --- Persistent tree ---
 
 async function renderPersistentTree(tree) {
   try {
@@ -55,181 +81,187 @@ async function renderPersistentTree(tree) {
   }
 }
 
-function getSurfaceTitle(projType) {
-  return {
-    'operator.home': 'Operator Home',
-    'operator.project_catalog': 'Project Catalog',
-    'operator.project_portfolio': 'Project Portfolio',
-    'operator.project_detail': 'Project Detail',
-    'operator.project_roadmap': 'Project Roadmap',
-    'operator.roadmap_item': 'Roadmap Item',
-    'operator.task_detail': 'Task Detail',
-    'operator.subtask_detail': 'Subtask Detail',
-    'operator.evidence_packet': 'Evidence Packet',
-    'operator.promotions': 'Promotions',
-    'operator.workflow_runs': 'Workflow Runs',
-    'operator.workflow_run': 'Workflow Run',
-    'operator.cicd_status': 'CI/CD Status',
-    'operator.agent_session': 'Agent Session',
-  }[projType] || 'Projection Detail';
+// --- Template loading ---
+
+const templateCache = new Map();
+
+async function loadTemplate(name) {
+  if (templateCache.has(name)) return templateCache.get(name);
+  const res = await fetch(`/fixtures/templates/${name}.md.tmpl`);
+  if (!res.ok) throw new Error(`Template not found: ${name}`);
+  const text = await res.text();
+  templateCache.set(name, text);
+  return text;
 }
 
-function getSurfaceQuestion(projType) {
-  return {
-    'operator.home': 'What needs attention now?',
-    'operator.project_catalog': 'What projects exist?',
-    'operator.project_portfolio': 'What is the delivery state across all projects?',
-    'operator.project_detail': 'What is happening in this project?',
-    'operator.project_roadmap': 'What should I care about right now?',
-    'operator.roadmap_item': 'What is being worked right now?',
-    'operator.task_detail': 'What needs to happen?',
-    'operator.subtask_detail': 'What is the next concrete step?',
-    'operator.evidence_packet': 'Why should I trust this?',
-    'operator.promotions': 'What capabilities were promoted?',
-    'operator.workflow_runs': 'What is currently running?',
-    'operator.workflow_run': 'What happened in this run?',
-    'operator.cicd_status': 'Is delivery healthy?',
-    'operator.agent_session': 'What is the agent doing?',
-  }[projType] || 'What does this surface help the operator decide?';
+function applyTemplate(template, tokens) {
+  return template.replace(/\{\{([^}]+)\}\}/g, (_, key) => {
+    const parts = key.trim().split('.');
+    let val = tokens;
+    for (const p of parts) val = val?.[p];
+    return val != null ? String(val) : '';
+  });
 }
 
-async function loadProjection({ projType, projectId, itemKey, taskKey, subtaskKey, workflowRunId, evidencePacketKey, target }) {
-  if (target) {
-    throw new Error(`No local projection route is registered for target: ${target}`);
+// --- Transforms (registry-named, async, load templates from files) ---
+
+const TRANSFORMS = {
+  async buildProjectDetailProjection(params, apiData) {
+    const summary = apiData || {};
+    const projectId = params.projectId || 'ai-engine';
+    const rawTitle = summary.implementation_packet_title || projectId;
+    const title = rawTitle.replace(/\s*Implementation Roadmap\s*$/i, '').trim();
+    const tokens = {
+      projectId,
+      title,
+      objective: (summary.objective || '').replace(/"/g, "'"),
+      charter: summary.charter_status || 'unknown',
+      activeItem: summary.active_item_title || 'None',
+      activeStatus: summary.active_item_status || '',
+      owner: summary.current_owner || 'operator',
+      completion: summary.completion_pct ? `${summary.completion_pct}%` : 'unknown',
+      doneItems: summary.done_items ?? '',
+      blockers: summary.blocker_count ?? 0,
+    };
+    const template = await loadTemplate('operator.project_detail');
+    const text = applyTemplate(template, tokens);
+    const packetKey = summary.implementation_packet_key || '';
+    return {
+      text,
+      contentType: 'text/markdown; charset=utf-8',
+      projectionType: 'operator.project_detail',
+      sourceTruth: 'sql',
+      provenance: { sourceTruth: 'sql', projectionType: 'operator.project_detail', projectId, implementationPacketKey: packetKey },
+    };
+  },
+
+  async buildTaskProjection(params) {
+    const projectId = params.projectId || 'ai-engine';
+    const itemKey = params.itemKey || 'generic-wrapper-runtime';
+    const task = getTask(params.taskKey || '');
+    const template = await loadTemplate('operator.task_detail');
+    const text = applyTemplate(template, { projectId, itemKey, task });
+    return {
+      text,
+      contentType: 'text/markdown; charset=utf-8',
+      projectionType: 'operator.task_detail',
+      sourceTruth: 'sql',
+      provenance: { sourceTruth: 'sql', projectionType: 'operator.task_detail', projectId, itemKey, taskKey: params.taskKey, fixture: 'local-task-projection' },
+    };
+  },
+
+  async buildSubtaskProjection(params) {
+    const projectId = params.projectId || 'ai-engine';
+    const itemKey = params.itemKey || 'generic-wrapper-runtime';
+    const taskKey = params.taskKey || 'replace-hard-coded-scripts';
+    const subtask = getSubtask(params.subtaskKey || '');
+    const template = await loadTemplate('operator.subtask_detail');
+    const text = applyTemplate(template, { projectId, itemKey, taskKey, subtask });
+    return {
+      text,
+      contentType: 'text/markdown; charset=utf-8',
+      projectionType: 'operator.subtask_detail',
+      sourceTruth: 'sql',
+      provenance: { sourceTruth: 'sql', projectionType: 'operator.subtask_detail', projectId, itemKey, taskKey, subtaskKey: params.subtaskKey, fixture: 'local-subtask-projection' },
+    };
+  },
+
+  async buildTurnProjection(params) {
+    const projectId = params.projectId || 'ai-engine';
+    const turn = params.turn || '';
+    const turnData = getTurn(turn);
+    const template = await loadTemplate('operator.turn_detail');
+    const text = applyTemplate(template, { projectId, turn, turnData });
+    return {
+      text,
+      contentType: 'text/markdown; charset=utf-8',
+      projectionType: 'operator.agent_session',
+      sourceTruth: 'sql',
+      provenance: { sourceTruth: 'sql', projectionType: 'operator.agent_session', projectId, turn, fixture: 'local-turn-projection' },
+    };
+  },
+
+  async buildPromotionProjection(params) {
+    const projectId = params.projectId || 'ai-engine';
+    const promotionKey = params.promotionKey || '';
+    const promo = getPromotion(promotionKey);
+    const template = await loadTemplate('operator.promotion_detail');
+    const text = applyTemplate(template, { projectId, promotionKey, promo });
+    return {
+      text,
+      contentType: 'text/markdown; charset=utf-8',
+      projectionType: 'operator.promotions',
+      sourceTruth: 'sql',
+      provenance: { sourceTruth: 'sql', projectionType: 'operator.promotions', projectId, promotionKey, fixture: 'local-promotion-projection' },
+    };
+  },
+};
+
+// --- Registry-driven route executor ---
+
+async function loadProjection(projType, params) {
+  const routes = MARKDOWN_UI_REGISTRY.routes || {};
+  const def = routes[projType];
+
+  if (!def) return loadLocalProjectionFixture(projType);
+
+  for (const req of (def.required || [])) {
+    if (!params[req]) throw new Error(`${projType} requires ${req}. Add ?${req}=... to the URL.`);
   }
 
-  if (projType === 'operator.home') {
-    return callAiEngine('getLogaOperatorHomeProjection');
+  const paramValues = (def.params || []).map(p => params[p]);
+  const allParamsPresent = paramValues.every(Boolean);
+
+  // Transform-only route (no API)
+  if (def.transform && !def.api) {
+    if (!allParamsPresent && def.fixtureFallback) return loadLocalProjectionFixture(projType);
+    return TRANSFORMS[def.transform](params);
   }
 
-  if (projType === 'operator.project_portfolio') {
-    return callAiEngine('getLogaProjectPortfolioProjection')
-      .catch(() => loadLocalProjectionFixture(projType));
-  }
-
-  if (projType === 'operator.project_catalog') {
-    return callAiEngine('getLogaProjectCatalogProjection');
-  }
-
-  if (projType === 'operator.project_detail' && projectId) {
-    return callAiEngine('getPortfolioProject', projectId)
-      .then((data) => buildProjectDetailProjection(projectId, data.summary || data))
-      .catch(() => loadLocalProjectionFixture(projType));
-  }
-
-  if (projType === 'operator.project_roadmap') {
-    if (!projectId) {
-      throw new Error('Project roadmap drilldown requires projectId. Open a project from the catalog or add ?projectId=...');
+  // API route (with optional transform)
+  if (def.api) {
+    if (!allParamsPresent && def.fixtureFallback) return loadLocalProjectionFixture(projType);
+    const apiArgs = paramValues.filter(Boolean);
+    const apiCall = () => callAiEngine(def.api, ...apiArgs);
+    if (def.transform) {
+      const promise = apiCall().then(data => {
+        const apiData = def.transformDataPath ? (data[def.transformDataPath] || data) : data;
+        return TRANSFORMS[def.transform](params, apiData);
+      });
+      return def.fixtureFallback ? promise.catch(() => loadLocalProjectionFixture(projType)) : promise;
     }
-    return callAiEngine('getLogaProjectRoadmapProjection', projectId)
-      .catch(() => loadLocalProjectionFixture(projType));
-  }
-
-  if (projType === 'operator.roadmap_item') {
-    if (!projectId || !itemKey) {
-      throw new Error('Roadmap item drilldown requires projectId and itemKey.');
-    }
-    return callAiEngine('getLogaRoadmapItemProjection', projectId, itemKey)
-      .catch(() => loadLocalProjectionFixture(projType));
-  }
-
-  if (projType === 'operator.workflow_run') {
-    if (!workflowRunId) {
-      return loadLocalProjectionFixture('operator.workflow_run');
-    }
-    return callAiEngine('getLogaWorkflowRunProjection', workflowRunId)
-      .catch(() => loadLocalProjectionFixture('operator.workflow_run'));
-  }
-
-  if (projType === 'operator.task_detail' && taskKey) {
-    return buildTaskProjection({ projectId, itemKey, taskKey });
-  }
-
-  if (projType === 'operator.subtask_detail') {
-    return buildSubtaskProjection({ projectId, itemKey, taskKey, subtaskKey });
-  }
-
-  if (projType === 'operator.agent_session') {
-    const urlParams = new URLSearchParams(window.location.search);
-    const turn = urlParams.get('turn');
-    if (turn) return buildTurnProjection({ projectId, turn });
-  }
-
-  if (projType === 'operator.promotions') {
-    const urlParams = new URLSearchParams(window.location.search);
-    const promotionKey = urlParams.get('promotionKey');
-    if (promotionKey) return buildPromotionProjection({ projectId, promotionKey });
-  }
-
-  if (projType === 'operator.evidence_packet') {
-    if (!evidencePacketKey) {
-      return loadLocalProjectionFixture(projType);
-    }
-    return callAiEngine('getLogaEvidencePacketProjection', evidencePacketKey)
-      .catch(() => loadLocalProjectionFixture(projType));
+    return def.fixtureFallback ? apiCall().catch(() => loadLocalProjectionFixture(projType)) : apiCall();
   }
 
   return loadLocalProjectionFixture(projType);
 }
 
-function buildSubtaskProjection({ projectId = 'ai-engine', itemKey = 'generic-wrapper-runtime', taskKey = 'replace-hard-coded-scripts', subtaskKey = '' }) {
-  const subtask = getSubtask(subtaskKey);
+async function loadLocalProjectionFixture(projType) {
+  const safeType = String(projType || '').replace(/[^a-zA-Z0-9._-]/g, '');
+  const response = await fetch(`/fixtures/projections/${safeType}.md`);
+  if (!response.ok) throw new Error(`Unknown projection type: ${projType}`);
+  const text = await response.text();
   return {
-    text: `---
-loga_contract: "ai-engine-ui/v1"
-projection_type: "operator.subtask_detail"
-projection_id: "subtask:${subtask.key}"
-source_truth: "sql"
-primary_question: "What is the next concrete step?"
-workspace_mode: "focus"
-active_surfaces: "roadmap"
----
-
-# Subtask
-## ${subtask.title}
-
-::breadcrumb
-- label: "Roadmap Item"
-  target: "/viewer/ai-engine/projects/${projectId}/roadmap/${itemKey}"
-  projection_type: "operator.roadmap_item"
-
-- label: "Task"
-  target: "projection-detail.html?type=operator.task_detail&projectId=${projectId}&itemKey=${itemKey}&taskKey=${taskKey}"
-  projection_type: "operator.task_detail"
-::
-
-::focus
-question: "What is the next concrete step?"
-answer: "${subtask.summary}"
-status: "${subtask.status}"
-::
-
-::panel
-title: "${subtask.title}"
-status: "${subtask.status}"
-owner: "operator"
-summary: "${subtask.summary}"
-::
-
-::next_actions
-- Return to task
-- Review evidence
-- Refresh branch
-::`,
+    text,
     contentType: 'text/markdown; charset=utf-8',
-    projectionType: 'operator.subtask_detail',
+    projectionType: projType,
     sourceTruth: 'sql',
-    provenance: {
-      sourceTruth: 'sql',
-      projectionType: 'operator.subtask_detail',
-      projectId,
-      itemKey,
-      taskKey,
-      subtaskKey,
-      fixture: 'local-subtask-projection',
-    },
+    provenance: { sourceTruth: 'sql', projectionType: projType, fixture: 'docs/loga-project-projections' },
   };
 }
+
+// --- Utility ---
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// --- Data lookup tables ---
 
 function getSubtask(subtaskKey) {
   return {
@@ -263,132 +295,6 @@ function getSubtask(subtaskKey) {
     status: 'unknown',
     summary: 'This subtask is available structurally, but no detailed projection has been published yet.',
   };
-}
-
-function buildProjectDetailProjection(projectId, summary) {
-  const title = summary.implementation_packet_title
-    ? summary.implementation_packet_title.replace(/\s*Implementation Roadmap\s*$/i, '').trim()
-    : projectId;
-  const completion = summary.completion_pct ? `${summary.completion_pct}%` : 'unknown';
-  const activeItem = summary.active_item_title || 'None';
-  const activeStatus = summary.active_item_status || '';
-  const charter = summary.charter_status || 'unknown';
-  const objective = summary.objective || '';
-  const owner = summary.current_owner || 'operator';
-  const doneItems = summary.done_items ?? '';
-  const blockers = summary.blocker_count ?? 0;
-  const packetKey = summary.implementation_packet_key || '';
-
-  const text = `---
-loga_contract: "ai-engine-ui/v1"
-projection_type: "operator.project_detail"
-projection_id: "project:${projectId}"
-source_truth: "sql"
-primary_question: "What is happening in this project?"
-workspace_mode: "focus"
-active_surfaces: "roadmap,promotions,workflows,memory"
----
-
-# ${title}
-
-::breadcrumb
-- label: "Projects"
-  target: "/viewer/ai-engine/projects"
-  projection_type: "operator.project_catalog"
-::
-
-::focus
-question: "What is happening in this project?"
-answer: "${objective.replace(/"/g, "'")}"
-status: "${charter}"
-::
-
-## Current Focus
-
-::panel
-title: "${activeItem}"
-status: "${activeStatus}"
-owner: "${owner}"
-::
-
-## Open Lanes
-
-::nav
-- label: "Roadmap"
-  target: "/viewer/ai-engine/projects/${projectId}/roadmap"
-  projection_type: "operator.project_roadmap"
-
-- label: "Promotions"
-  target: "/viewer/ai-engine/projects/${projectId}/promotions"
-  projection_type: "operator.promotions"
-
-- label: "Workflow Runs"
-  target: "/viewer/ai-engine/projects/${projectId}/workflow-runs"
-  projection_type: "operator.workflow_runs"
-
-- label: "Agent Session"
-  target: "/viewer/ai-engine/projects/${projectId}/agent-session"
-  projection_type: "operator.agent_session"
-::
-
-## Portfolio Status
-
-::metric_row
-Completion: ${completion}
-Completed Items: ${doneItems}
-Blockers: ${blockers}
-Charter: ${charter}
-::
-
-::next_actions
-- Open Roadmap
-- Review Active Item
-- Check Workflow Runs
-::`;
-
-  return { text, contentType: 'text/markdown; charset=utf-8', projectionType: 'operator.project_detail', sourceTruth: 'sql', provenance: { sourceTruth: 'sql', projectionType: 'operator.project_detail', projectId, implementationPacketKey: packetKey } };
-}
-
-function buildTaskProjection({ projectId = 'ai-engine', itemKey = 'generic-wrapper-runtime', taskKey = '' }) {
-  const task = getTask(taskKey);
-  const text = `---
-loga_contract: "ai-engine-ui/v1"
-projection_type: "operator.task_detail"
-projection_id: "task:${task.key}"
-source_truth: "sql"
-primary_question: "What needs to happen?"
-workspace_mode: "execution"
-active_surfaces: "roadmap,workflows"
----
-
-# Task
-## ${task.title}
-
-::breadcrumb
-- label: "Roadmap Item"
-  target: "/viewer/ai-engine/projects/${projectId}/roadmap/${itemKey}"
-  projection_type: "operator.roadmap_item"
-::
-
-::focus
-question: "What needs to happen?"
-answer: "${task.summary}"
-status: "${task.status}"
-::
-
-::panel
-title: "${task.title}"
-status: "${task.status}"
-owner: "operator"
-summary: "${task.summary}"
-::
-
-::next_actions
-- Continue implementation
-- Review evidence
-- Return to roadmap item
-::`;
-  return { text, contentType: 'text/markdown; charset=utf-8', projectionType: 'operator.task_detail', sourceTruth: 'sql', provenance: { sourceTruth: 'sql', projectionType: 'operator.task_detail', projectId, itemKey, taskKey, fixture: 'local-task-projection' } };
 }
 
 function getTask(taskKey) {
@@ -425,95 +331,12 @@ function getTask(taskKey) {
   };
 }
 
-function buildTurnProjection({ projectId = 'ai-engine', turn = '' }) {
-  const turnData = getTurn(turn);
-  const text = `---
-loga_contract: "ai-engine-ui/v1"
-projection_type: "operator.agent_session"
-projection_id: "turn:${projectId}:${turn}"
-source_truth: "sql"
-primary_question: "What happened in this turn?"
-workspace_mode: "evidence"
-active_surfaces: "memory,evidence"
-agent_href: "projection-detail.html?type=operator.agent_session&projectId=${projectId}"
----
-
-# Agent Turn ${turn}
-
-::breadcrumb
-- label: "Agent Session"
-  target: "/viewer/ai-engine/projects/${projectId}/agent-session"
-  projection_type: "operator.agent_session"
-::
-
-::focus
-question: "What happened in this turn?"
-answer: "${turnData.summary}"
-status: "${turnData.status}"
-::
-
-::panel
-title: "Turn ${turn}: ${turnData.action}"
-status: "${turnData.status}"
-evidence: "${turnData.evidence}"
-::
-
-::next_actions
-- Return to session
-- Review evidence
-- Open workflow run
-::`;
-  return { text, contentType: 'text/markdown; charset=utf-8', projectionType: 'operator.agent_session', sourceTruth: 'sql', provenance: { sourceTruth: 'sql', projectionType: 'operator.agent_session', projectId, turn, fixture: 'local-turn-projection' } };
-}
-
 function getTurn(turn) {
   return {
     '1': { action: 'startWork', status: 'persisted', evidence: 'claim acquired', summary: 'Work was started. A governed claim was acquired and the session was initialized under the refactor workflow.' },
     '2': { action: 'analyze candidate', status: 'persisted', evidence: 'responsibility map produced', summary: 'The refactor candidate was analyzed. A responsibility map was produced and persisted as SQL-backed evidence.' },
     '3': { action: 'propose contract', status: 'pending', evidence: 'awaiting wrapper evidence', summary: 'A wrapper contract proposal is pending. Execution is waiting for the evidence packet to be produced.' },
   }[String(turn)] || { action: `Turn ${turn}`, status: 'unknown', evidence: 'none', summary: 'No detail has been published for this turn yet.' };
-}
-
-function buildPromotionProjection({ projectId = 'ai-engine', promotionKey = '' }) {
-  const promo = getPromotion(promotionKey);
-  const text = `---
-loga_contract: "ai-engine-ui/v1"
-projection_type: "operator.promotions"
-projection_id: "promotion:${projectId}:${promotionKey}"
-source_truth: "sql"
-primary_question: "What does this promotion enable?"
-workspace_mode: "evolution"
-active_surfaces: "promotions,cicd"
----
-
-# Promotion
-## ${promotionKey}
-
-::breadcrumb
-- label: "Promotions"
-  target: "/viewer/ai-engine/projects/${projectId}/promotions"
-  projection_type: "operator.promotions"
-::
-
-::focus
-question: "What does this promotion enable?"
-answer: "${promo.impact}"
-status: "${promo.status}"
-::
-
-::panel
-title: "${promotionKey}"
-status: "${promo.status}"
-impact: "${promo.impact}"
-summary: "${promo.description}"
-::
-
-::next_actions
-- Return to promotions
-- View workflow runs
-- Check downstream consumers
-::`;
-  return { text, contentType: 'text/markdown; charset=utf-8', projectionType: 'operator.promotions', sourceTruth: 'sql', provenance: { sourceTruth: 'sql', projectionType: 'operator.promotions', projectId, promotionKey, fixture: 'local-promotion-projection' } };
 }
 
 function getPromotion(promotionKey) {
@@ -525,25 +348,4 @@ function getPromotion(promotionKey) {
     'executeGovernedRefactorWrapper': { status: 'needed', impact: 'Makes wrapper execution observable through the SDK.', description: 'This promotion is needed to replace direct script execution with a governed wrapper call that produces observable, evidence-backed execution records accessible from project surfaces.' },
     'getRefactorWrapperEvidence': { status: 'needed', impact: 'Makes wrapper evidence inspectable from project surfaces.', description: 'This promotion is needed to expose the wrapper execution evidence packet as a first-class SDK surface so operators can verify refactor execution without navigating raw SQL.' },
   }[promotionKey] || { status: 'unknown', impact: 'No detail available.', description: 'No promotion detail has been published for this key yet.' };
-}
-
-async function loadLocalProjectionFixture(projType) {
-  const safeType = String(projType || '').replace(/[^a-zA-Z0-9._-]/g, '');
-  const response = await fetch(`/fixtures/projections/${safeType}.md`);
-  if (!response.ok) {
-    throw new Error(`Unknown projection type: ${projType}`);
-  }
-
-  const text = await response.text();
-  return {
-    text,
-    contentType: 'text/markdown; charset=utf-8',
-    projectionType: projType,
-    sourceTruth: 'sql',
-    provenance: {
-      sourceTruth: 'sql',
-      projectionType: projType,
-      fixture: 'docs/loga-project-projections',
-    },
-  };
 }

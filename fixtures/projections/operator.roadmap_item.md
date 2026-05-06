@@ -4,6 +4,8 @@ projection_type: "operator.roadmap_item"
 projection_id: "roadmap-item:generic-wrapper-runtime"
 source_truth: "sql"
 primary_question: "What is being worked right now?"
+workspace_mode: "execution"
+surface_label: "Roadmap Item"
 ---
 
 # Roadmap Item

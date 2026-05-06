@@ -1,0 +1,38 @@
+---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.promotions"
+projection_id: "promotion:{{projectId}}:{{promotionKey}}"
+source_truth: "sql"
+primary_question: "What does this promotion enable?"
+workspace_mode: "evolution"
+active_surfaces: "promotions,cicd"
+surface_label: "Promotion Detail"
+---
+
+# Promotion
+## {{promotionKey}}
+
+::breadcrumb
+- label: "Promotions"
+  target: "/viewer/ai-engine/projects/{{projectId}}/promotions"
+  projection_type: "operator.promotions"
+::
+
+::focus
+question: "What does this promotion enable?"
+answer: "{{promo.impact}}"
+status: "{{promo.status}}"
+::
+
+::panel
+title: "{{promotionKey}}"
+status: "{{promo.status}}"
+impact: "{{promo.impact}}"
+summary: "{{promo.description}}"
+::
+
+::next_actions
+- Return to promotions
+- View workflow runs
+- Check downstream consumers
+::

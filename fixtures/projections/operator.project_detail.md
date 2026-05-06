@@ -7,6 +7,8 @@ projection_id: "project:ai-engine"
 source_system: "ai-engine"
 source_truth: "sql"
 primary_question: "What is happening in this project?"
+workspace_mode: "focus"
+surface_label: "Project Detail"
 allowed_actions:
   - open_related_document
   - refresh_projection

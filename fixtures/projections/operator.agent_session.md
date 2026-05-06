@@ -4,6 +4,8 @@ projection_type: "operator.agent_session"
 projection_id: "project:ai-engine:agent-session"
 source_truth: "sql"
 primary_question: "What is the agent doing?"
+workspace_mode: "diagnostic"
+surface_label: "Agent Session"
 ---
 
 # Agent Session

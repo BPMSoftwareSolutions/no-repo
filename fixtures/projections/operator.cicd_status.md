@@ -4,6 +4,8 @@ projection_type: "operator.cicd_status"
 projection_id: "project:ai-engine:cicd"
 source_truth: "sql"
 primary_question: "Is delivery infrastructure healthy?"
+workspace_mode: "diagnostic"
+surface_label: "CI/CD Status"
 ---
 
 # CI/CD Status

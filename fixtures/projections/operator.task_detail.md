@@ -4,6 +4,8 @@ projection_type: "operator.task_detail"
 projection_id: "task:replace-hard-coded-scripts"
 source_truth: "sql"
 primary_question: "What needs to happen?"
+workspace_mode: "execution"
+surface_label: "Task Detail"
 ---
 
 # Task

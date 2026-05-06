@@ -4,6 +4,8 @@ projection_type: "operator.promotions"
 projection_id: "project:ai-engine:promotions"
 source_truth: "sql"
 primary_question: "What capabilities were promoted?"
+workspace_mode: "evolution"
+surface_label: "Promotions"
 ---
 
 # Promotions

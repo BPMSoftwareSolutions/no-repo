@@ -1,0 +1,67 @@
+---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.project_detail"
+projection_id: "project:{{projectId}}"
+source_truth: "sql"
+primary_question: "What is happening in this project?"
+workspace_mode: "focus"
+active_surfaces: "roadmap,promotions,workflows,memory"
+surface_label: "Project Detail"
+---
+
+# {{title}}
+
+::breadcrumb
+- label: "Projects"
+  target: "/viewer/ai-engine/projects"
+  projection_type: "operator.project_catalog"
+::
+
+::focus
+question: "What is happening in this project?"
+answer: "{{objective}}"
+status: "{{charter}}"
+::
+
+## Current Focus
+
+::panel
+title: "{{activeItem}}"
+status: "{{activeStatus}}"
+owner: "{{owner}}"
+::
+
+## Open Lanes
+
+::nav
+- label: "Roadmap"
+  target: "/viewer/ai-engine/projects/{{projectId}}/roadmap"
+  projection_type: "operator.project_roadmap"
+
+- label: "Promotions"
+  target: "/viewer/ai-engine/projects/{{projectId}}/promotions"
+  projection_type: "operator.promotions"
+
+- label: "Workflow Runs"
+  target: "/viewer/ai-engine/projects/{{projectId}}/workflow-runs"
+  projection_type: "operator.workflow_runs"
+
+- label: "Agent Session"
+  target: "/viewer/ai-engine/projects/{{projectId}}/agent-session"
+  projection_type: "operator.agent_session"
+::
+
+## Portfolio Status
+
+::metric_row
+Completion: {{completion}}
+Completed Items: {{doneItems}}
+Blockers: {{blockers}}
+Charter: {{charter}}
+::
+
+::next_actions
+- Open Roadmap
+- Review Active Item
+- Check Workflow Runs
+::

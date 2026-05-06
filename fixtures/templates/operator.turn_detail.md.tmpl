@@ -1,0 +1,37 @@
+---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.agent_session"
+projection_id: "turn:{{projectId}}:{{turn}}"
+source_truth: "sql"
+primary_question: "What happened in this turn?"
+workspace_mode: "evidence"
+active_surfaces: "memory,evidence"
+surface_label: "Agent Turn"
+agent_href: "projection-detail.html?type=operator.agent_session&projectId={{projectId}}"
+---
+
+# Agent Turn {{turn}}
+
+::breadcrumb
+- label: "Agent Session"
+  target: "/viewer/ai-engine/projects/{{projectId}}/agent-session"
+  projection_type: "operator.agent_session"
+::
+
+::focus
+question: "What happened in this turn?"
+answer: "{{turnData.summary}}"
+status: "{{turnData.status}}"
+::
+
+::panel
+title: "Turn {{turn}}: {{turnData.action}}"
+status: "{{turnData.status}}"
+evidence: "{{turnData.evidence}}"
+::
+
+::next_actions
+- Return to session
+- Review evidence
+- Open workflow run
+::

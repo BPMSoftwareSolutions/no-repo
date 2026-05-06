@@ -1,0 +1,42 @@
+---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.subtask_detail"
+projection_id: "subtask:{{subtask.key}}"
+source_truth: "sql"
+primary_question: "What is the next concrete step?"
+workspace_mode: "focus"
+active_surfaces: "roadmap"
+surface_label: "Subtask Detail"
+---
+
+# Subtask
+## {{subtask.title}}
+
+::breadcrumb
+- label: "Roadmap Item"
+  target: "/viewer/ai-engine/projects/{{projectId}}/roadmap/{{itemKey}}"
+  projection_type: "operator.roadmap_item"
+
+- label: "Task"
+  target: "projection-detail.html?type=operator.task_detail&projectId={{projectId}}&itemKey={{itemKey}}&taskKey={{taskKey}}"
+  projection_type: "operator.task_detail"
+::
+
+::focus
+question: "What is the next concrete step?"
+answer: "{{subtask.summary}}"
+status: "{{subtask.status}}"
+::
+
+::panel
+title: "{{subtask.title}}"
+status: "{{subtask.status}}"
+owner: "operator"
+summary: "{{subtask.summary}}"
+::
+
+::next_actions
+- Return to task
+- Review evidence
+- Refresh branch
+::

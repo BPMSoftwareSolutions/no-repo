@@ -4,6 +4,8 @@ projection_type: "operator.evidence_packet"
 projection_id: "evidence:generic-wrapper-runtime"
 source_truth: "sql"
 primary_question: "Why should I trust this?"
+workspace_mode: "evidence"
+surface_label: "Evidence Packet"
 ---
 
 # Evidence Packet

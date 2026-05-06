@@ -7,6 +7,8 @@ projection_id: "project:ai-engine:roadmap"
 source_system: "ai-engine"
 source_truth: "sql"
 primary_question: "What should I care about right now?"
+workspace_mode: "focus"
+surface_label: "Project Roadmap"
 allowed_actions:
   - open_roadmap_item
   - open_evidence_packet

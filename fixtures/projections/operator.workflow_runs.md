@@ -4,6 +4,8 @@ projection_type: "operator.workflow_runs"
 projection_id: "project:ai-engine:workflow-runs"
 source_truth: "sql"
 primary_question: "What is currently running?"
+workspace_mode: "execution"
+surface_label: "Workflow Runs"
 ---
 
 # Workflow Runs

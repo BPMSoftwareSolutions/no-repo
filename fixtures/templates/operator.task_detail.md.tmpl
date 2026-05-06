@@ -1,0 +1,38 @@
+---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.task_detail"
+projection_id: "task:{{task.key}}"
+source_truth: "sql"
+primary_question: "What needs to happen?"
+workspace_mode: "execution"
+active_surfaces: "roadmap,workflows"
+surface_label: "Task Detail"
+---
+
+# Task
+## {{task.title}}
+
+::breadcrumb
+- label: "Roadmap Item"
+  target: "/viewer/ai-engine/projects/{{projectId}}/roadmap/{{itemKey}}"
+  projection_type: "operator.roadmap_item"
+::
+
+::focus
+question: "What needs to happen?"
+answer: "{{task.summary}}"
+status: "{{task.status}}"
+::
+
+::panel
+title: "{{task.title}}"
+status: "{{task.status}}"
+owner: "operator"
+summary: "{{task.summary}}"
+::
+
+::next_actions
+- Continue implementation
+- Review evidence
+- Return to roadmap item
+::
