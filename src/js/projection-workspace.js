@@ -190,7 +190,7 @@ function renderSuggestions({ suggestions, state }) {
   items.forEach((item, index) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `search-suggestion${index === state.activeSuggestion ? ' is-active' : ''}`;
+    button.className = `workspace-toolbar__button search-suggestion${index === state.activeSuggestion ? ' is-active' : ''}`;
     button.innerHTML = `
       <strong>${escapeHtml(item.label)}</strong>
       <span>${escapeHtml(item.type)} · ${escapeHtml(item.context)} · ${escapeHtml(item.status)}</span>

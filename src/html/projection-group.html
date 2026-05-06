@@ -13,71 +13,7 @@
     <p><strong>Primary question:</strong> <span id="group-question">Which projection do you want to inspect?</span></p>
   </header>
 
-  <section class="workspace-toolbar" aria-label="Projection workspace controls">
-    <div class="toolbar-row">
-      <div class="toolbar-brand">
-        <span>Inspection Workspace</span>
-        <strong>Projection Graph</strong>
-      </div>
-
-      <label class="toolbar-field">
-        <span>Search</span>
-        <input data-workspace-search type="search" placeholder="Search projects, tasks, evidence..." autocomplete="off">
-        <div data-search-suggestions class="search-suggestions" hidden></div>
-      </label>
-
-      <label class="toolbar-field">
-        <span>Scope</span>
-        <select data-workspace-scope>
-          <option value="ai-engine">AI Engine</option>
-          <option value="all-projects">All Projects</option>
-          <option value="system-surfaces">System Surfaces</option>
-        </select>
-      </label>
-
-      <label class="toolbar-field">
-        <span>Mode</span>
-        <select data-workspace-mode>
-          <option value="focus">Focus</option>
-          <option value="execution">Execution</option>
-          <option value="diagnostic">Diagnostic</option>
-          <option value="evidence">Evidence</option>
-          <option value="evolution">Evolution</option>
-        </select>
-        <small data-mode-hint>Current focus and active roadmap item</small>
-      </label>
-
-      <a class="runtime-pill" href="projection-detail.html?type=operator.agent_session&projectId=ai-engine">
-        <span class="pulse"></span>
-        <span>Agent active · Turn 3</span>
-      </a>
-    </div>
-
-    <div class="toolbar-row secondary">
-      <nav class="surface-chips" aria-label="Surface filters">
-        <button type="button" data-surface="roadmap" class="chip active" aria-pressed="true">Roadmap</button>
-        <button type="button" data-surface="promotions" class="chip active" aria-pressed="true">Promotions</button>
-        <button type="button" data-surface="workflows" class="chip active" aria-pressed="true">Workflows</button>
-        <button type="button" data-surface="cicd" aria-pressed="false">CI/CD</button>
-        <button type="button" data-surface="memory" class="chip active" aria-pressed="true">Memory</button>
-        <button type="button" data-surface="evidence" aria-pressed="false">Evidence</button>
-      </nav>
-
-      <div class="toolbar-actions">
-        <div class="attention-controls">
-          <button type="button" data-attention="needs-attention" class="active" aria-pressed="true">Needs Attention</button>
-          <button type="button" data-attention="blocked-only" aria-pressed="false">Blocked Only</button>
-          <button type="button" data-attention="high-priority" aria-pressed="false">High Priority</button>
-        </div>
-
-        <div class="tree-controls">
-          <button type="button" data-tree-action="expand-focus">Expand Focus</button>
-          <button type="button" data-tree-action="collapse-all">Collapse All</button>
-          <button type="button" data-tree-action="refresh-branch">Refresh Branch</button>
-        </div>
-      </div>
-    </div>
-  </section>
+  <div id="workspace-chrome"></div>
 
   <main class="projection-workspace">
     <aside class="projection-tree-panel" aria-labelledby="tree-title">

@@ -1,7 +1,6 @@
 /**
  * Chrome renderer — translates an `operator.workspace_chrome` contract
- * into the workspace toolbar HTML that global-inspection.css and
- * projection-workspace.js expect.
+ * into toolbar HTML that binds to the markdown UI registry styles.
  *
  * The chrome contract is the single source of truth for every toolbar
  * control. projection-detail.js loads it, applies per-projection
@@ -58,7 +57,7 @@ export function renderWorkspaceChrome(markdown, overrides = {}) {
 function renderPrimaryRow(toolbarBlock, merged) {
   const zones = collectChildBlocks(toolbarBlock.lines).filter((b) => b.name === 'toolbar_zone');
   const parts = zones.map((zone) => renderZone(zone, merged));
-  return `<div class="toolbar-row">${parts.join('')}</div>`;
+  return `<div class="workspace-toolbar__row workspace-toolbar__row--primary">${parts.join('')}</div>`;
 }
 
 function renderZone(zone, merged) {
@@ -86,9 +85,9 @@ function renderBrandZone(zoneValues, merged) {
   const eyebrow = escapeHtml(merged.workspace || zoneValues.eyebrow || 'Inspection Workspace');
   const context = escapeHtml(merged.context || zoneValues.context || 'Projection Graph');
   return `
-    <div class="toolbar-brand">
-      <span>${eyebrow}</span>
-      <strong>${context}</strong>
+    <div class="workspace-toolbar__brand loga-toolbar__context">
+      <span class="eyebrow">${eyebrow}</span>
+      <strong class="workspace-toolbar__title">${context}</strong>
     </div>
   `;
 }
@@ -99,7 +98,7 @@ function renderSearchZone(children) {
     ? (parseKeyValues(searchBlock.lines).placeholder || 'Search...')
     : 'Search...';
   return `
-    <label class="toolbar-field">
+    <label class="workspace-toolbar__field loga-control loga-control--search">
       <span>Search</span>
       <input data-workspace-search type="search" placeholder="${escapeHtml(placeholder)}" autocomplete="off">
       <div data-search-suggestions class="search-suggestions" hidden></div>
@@ -121,7 +120,7 @@ function renderSelectZone(children, merged, zoneName) {
     .map((opt) => `<option value="${escapeHtml(opt)}"${opt === currentValue ? ' selected' : ''}>${escapeHtml(opt)}</option>`)
     .join('');
   return `
-    <label class="toolbar-field">
+    <label class="workspace-toolbar__field loga-control">
       <span>${label}</span>
       <select data-${escapeHtml(bind)}>${optionHtml}</select>
     </label>
@@ -145,10 +144,10 @@ function renderModeZone(children, merged) {
     evolution: 'Promotions, SDK changes, and release posture',
   };
   return `
-    <label class="toolbar-field">
+    <label class="workspace-toolbar__field loga-control">
       <span>Mode</span>
       <select data-workspace-mode>${optionHtml}</select>
-      <small data-mode-hint>${escapeHtml(modeHints[currentMode] || '')}</small>
+      <small class="workspace-toolbar__hint" data-mode-hint>${escapeHtml(modeHints[currentMode] || '')}</small>
     </label>
   `;
 }
@@ -160,7 +159,7 @@ function renderAgentZone(children, merged) {
   const label = escapeHtml(merged.agent_status || kv.label || 'Agent active');
   const href = escapeHtml(merged.agent_href || kv.href || '#');
   return `
-    <a class="runtime-pill" href="${href}">
+    <a class="workspace-runtime-pill loga-toolbar__status" href="${href}">
       <span class="pulse"></span>
       <span>${label}</span>
     </a>
@@ -174,9 +173,9 @@ function renderAgentZone(children, merged) {
 function renderSecondaryRow(surfaceChips, attentionControls, treeControls, merged) {
   const activeSurfaceSet = parseActiveSurfaces(merged.active_surfaces);
   return `
-    <div class="toolbar-row secondary">
+    <div class="workspace-toolbar__row workspace-toolbar__row--secondary">
       ${surfaceChips ? renderSurfaceChips(surfaceChips, activeSurfaceSet) : ''}
-      <div class="toolbar-actions">
+      <div class="workspace-toolbar__actions">
         ${attentionControls ? renderAttentionControls(attentionControls) : ''}
         ${treeControls ? renderTreeControls(treeControls) : ''}
       </div>
@@ -193,9 +192,9 @@ function renderSurfaceChips(block, activeSurfaceSet) {
       : (chip.active === 'true');
     const activeClass = isActive ? ' active' : '';
     const pressed = String(isActive);
-    return `<button type="button" data-surface="${escapeHtml(value)}" class="chip${activeClass}" aria-pressed="${pressed}">${escapeHtml(chip.label || value)}</button>`;
+    return `<button type="button" data-surface="${escapeHtml(value)}" class="workspace-toolbar__button loga-chip${activeClass}" aria-pressed="${pressed}">${escapeHtml(chip.label || value)}</button>`;
   }).join('');
-  return `<nav class="surface-chips" aria-label="Surface filters">${chipHtml}</nav>`;
+  return `<nav class="workspace-toolbar__surface-chips loga-chip-group" aria-label="Surface filters">${chipHtml}</nav>`;
 }
 
 function renderAttentionControls(block) {
@@ -203,18 +202,18 @@ function renderAttentionControls(block) {
   const html = controls.map((ctrl, index) => {
     const value = ctrl.value || ctrl.label?.toLowerCase().replace(/\s+/g, '-') || '';
     const isActive = index === 0;
-    return `<button type="button" data-attention="${escapeHtml(value)}"${isActive ? ' class="active"' : ''} aria-pressed="${String(isActive)}">${escapeHtml(ctrl.label || value)}</button>`;
+    return `<button type="button" data-attention="${escapeHtml(value)}" class="workspace-toolbar__button${isActive ? ' active' : ''}" aria-pressed="${String(isActive)}">${escapeHtml(ctrl.label || value)}</button>`;
   }).join('');
-  return `<div class="attention-controls">${html}</div>`;
+  return `<div class="workspace-toolbar__control-group">${html}</div>`;
 }
 
 function renderTreeControls(block) {
   const controls = parseRecords(block.lines);
   const html = controls.map((ctrl) => {
     const action = ctrl.action || ctrl.value || '';
-    return `<button type="button" data-tree-action="${escapeHtml(action)}">${escapeHtml(ctrl.label || action)}</button>`;
+    return `<button type="button" data-tree-action="${escapeHtml(action)}" class="workspace-toolbar__button">${escapeHtml(ctrl.label || action)}</button>`;
   }).join('');
-  return `<div class="tree-controls">${html}</div>`;
+  return `<div class="workspace-toolbar__control-group">${html}</div>`;
 }
 
 // ---------------------------------------------------------------------------

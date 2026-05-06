@@ -1,7 +1,7 @@
 import { callAiEngine, renderMarkdownProjection } from './api-client.js';
 import { renderProjectionTree } from './projection-tree.js';
-import { renderWorkspaceChrome } from '../renderer/chrome.js';
 import { parseMarkdown } from '../renderer/parser.js';
+import { mountWorkspaceChrome } from './workspace-chrome.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -46,20 +46,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     container.innerHTML = `<p style="color: var(--red)">Error loading projection: ${error.message}</p>`;
   }
 });
-
-async function mountWorkspaceChrome(overrides) {
-  const slot = document.getElementById('workspace-chrome');
-  if (!slot) return;
-  try {
-    const res = await fetch('/fixtures/projections/operator.workspace_chrome.md');
-    if (!res.ok) throw new Error(`Chrome fixture not found (${res.status})`);
-    const markdown = await res.text();
-    slot.innerHTML = renderWorkspaceChrome(markdown, overrides);
-    document.dispatchEvent(new CustomEvent('workspace-chrome:mounted', { detail: { overrides } }));
-  } catch (error) {
-    console.warn('Workspace chrome could not be rendered:', error.message);
-  }
-}
 
 async function renderPersistentTree(tree) {
   try {

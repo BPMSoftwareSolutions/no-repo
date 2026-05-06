@@ -1,10 +1,16 @@
 import { callAiEngine } from './api-client.js';
 import { renderProjectionTree } from './projection-tree.js';
+import { mountWorkspaceChrome } from './workspace-chrome.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const surfaceList = document.getElementById('surface-list');
   const attentionList = document.getElementById('recent-attention');
   const tree = document.getElementById('projection-tree');
+
+  mountWorkspaceChrome({
+    workspace_mode: 'focus',
+    active_surfaces: 'roadmap,promotions,workflows,memory',
+  });
 
   try {
     const [homeResult, catalogResult, projectsResult] = await Promise.allSettled([

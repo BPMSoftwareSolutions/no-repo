@@ -1,5 +1,6 @@
 import { callAiEngine } from './api-client.js';
 import { renderProjectionTree } from './projection-tree.js';
+import { mountWorkspaceChrome } from './workspace-chrome.js';
 
 const SURFACE_CONFIG = {
   'operator.project_detail': {
@@ -26,6 +27,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('group-title').textContent = config.title;
   document.getElementById('group-question').textContent = config.question;
+
+  mountWorkspaceChrome({
+    workspace_mode: surface === 'operator.project_roadmap' ? 'focus' : 'execution',
+    active_surfaces: surface === 'operator.project_roadmap' ? 'roadmap,memory' : 'roadmap,workflows',
+  });
 
   try {
     const data = await callAiEngine('listProjects', { limit: 50 }).catch(() => ({ projects: [] }));
