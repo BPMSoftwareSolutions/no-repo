@@ -49,6 +49,7 @@ Blocked Projects: 0
 
 ::portfolio_grid
 - name: "Curated Canonical AI Instincts Fine-Tuning"
+  project_id: "2b95183e-53b2-4c06-8efb-3177739940e9"
   status: "active"
   charter: "ready_for_execution"
   completion_pct: 45.95
@@ -59,6 +60,7 @@ Blocked Projects: 0
   blockers: 0
 
 - name: "LOGA Structured Markdown BFF Integration"
+  project_id: "e188d2d6-c12c-4597-a8a5-9f4f79dd41f3"
   status: "active"
   charter: "chartered"
   completion_pct: 13.33
@@ -69,6 +71,7 @@ Blocked Projects: 0
   blockers: 0
 
 - name: "Governed UX System"
+  project_id: "4f889cc4-330a-402e-9bf9-951dc3a1ea2f"
   status: "active"
   charter: "chartered"
   completion_pct: 100.00
@@ -79,6 +82,7 @@ Blocked Projects: 0
   blockers: 0
 
 - name: "Spring Boot Governed Execution Gateway"
+  project_id: "ead1e860-87f4-40ca-bb0d-2de2461f15c8"
   status: "active"
   charter: "chartered"
   completion_pct: 0.00
@@ -89,6 +93,7 @@ Blocked Projects: 0
   blockers: 0
 
 - name: "Governed Pattern Intelligence Loop"
+  project_id: "95825020-5c44-46f0-a159-8ddfb9f88bc5"
   status: "active"
   charter: "chartering"
   completion_pct: 0.00
@@ -99,6 +104,7 @@ Blocked Projects: 0
   blockers: 0
 
 - name: "Autonomous Implementation Runner"
+  project_id: "c56c1e97-b1af-440f-91ed-023b09f160b1"
   status: "active"
   charter: "chartered"
   completion_pct: 0.00
@@ -109,6 +115,7 @@ Blocked Projects: 0
   blockers: 0
 
 - name: "Polyglot Code Shaping and Repository Intelligence"
+  project_id: "cf81fad9-ddc5-402c-aa80-323461e483ff"
   status: "active"
   charter: "chartered"
   completion_pct: 0.00
@@ -119,6 +126,7 @@ Blocked Projects: 0
   blockers: 0
 
 - name: "Governed Intent Code Search and Repo-less Agent Readiness"
+  project_id: "035c4ed6-af7a-444f-ae35-4189d5f6d27f"
   status: "active"
   charter: "active_execution"
   completion_pct: 0.00

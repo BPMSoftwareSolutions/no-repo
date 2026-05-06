@@ -4,6 +4,8 @@ import { parseMarkdown } from '../renderer/parser.js';
 import { mountWorkspaceChrome } from './workspace-chrome.js';
 import { MARKDOWN_UI_REGISTRY } from '../renderer/element-registry.js';
 
+let pollingInterval = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const projType = urlParams.get('type') || 'operator.home';
@@ -25,25 +27,71 @@ document.addEventListener('DOMContentLoaded', async () => {
   mountWorkspaceChrome({});
   renderPersistentTree(tree);
 
-  try {
-    if (params.target) {
-      throw new Error(`No local projection route is registered for target: ${params.target}`);
+  const renderProjectionContent = async () => {
+    try {
+      if (params.target) {
+        throw new Error(`No local projection route is registered for target: ${params.target}`);
+      }
+
+      const proj = await loadProjection(projType, params);
+      const { frontmatter } = parseMarkdown(proj.text || '');
+      const dataContext = await hydrateDataSources(proj.text || '', params);
+
+      renderPageHeader(frontmatter);
+      mountWorkspaceChrome(frontmatter);
+      applyShellRules(frontmatter);
+
+      container.innerHTML = renderMarkdownProjection(proj.text, dataContext);
+      document.getElementById('evidence-content').textContent = JSON.stringify(proj.provenance || proj, null, 2);
+      
+      // Show live update badge for status and roadmap projections
+      if (projType === 'operator.project_status' || projType === 'operator.project_roadmap') {
+        showLiveUpdateBadge();
+      }
+    } catch (error) {
+      container.innerHTML = `<p class="loga-error">Error loading projection: ${error.message}</p>`;
     }
+  };
 
-    const proj = await loadProjection(projType, params);
-    const { frontmatter } = parseMarkdown(proj.text || '');
-    const dataContext = await hydrateDataSources(proj.text || '', params);
+  // Initial load
+  await renderProjectionContent();
 
-    renderPageHeader(frontmatter);
-    mountWorkspaceChrome(frontmatter);
-    applyShellRules(frontmatter);
-
-    container.innerHTML = renderMarkdownProjection(proj.text, dataContext);
-    document.getElementById('evidence-content').textContent = JSON.stringify(proj.provenance || proj, null, 2);
-  } catch (error) {
-    container.innerHTML = `<p class="loga-error">Error loading projection: ${error.message}</p>`;
+  // Set up polling for status and roadmap projections (5 second interval)
+  if (projType === 'operator.project_status' || projType === 'operator.project_roadmap') {
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(async () => {
+      await renderProjectionContent();
+      updateLiveUpdateBadge();
+    }, 5000);
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (pollingInterval) clearInterval(pollingInterval);
+    });
   }
 });
+
+// --- Live update indicator ---
+
+function showLiveUpdateBadge() {
+  let badge = document.getElementById('live-update-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'live-update-badge';
+    badge.className = 'live-update-badge';
+    badge.innerHTML = '<span class="live-dot"></span> Live monitoring active';
+    const header = document.querySelector('body > header');
+    if (header) header.appendChild(badge);
+  }
+}
+
+function updateLiveUpdateBadge() {
+  const badge = document.getElementById('live-update-badge');
+  if (badge) {
+    badge.classList.add('live-pulse');
+    setTimeout(() => badge.classList.remove('live-pulse'), 300);
+  }
+}
 
 // --- Page header ---
 
@@ -133,6 +181,288 @@ const TRANSFORMS = {
       projectionType: 'operator.project_detail',
       sourceTruth: 'sql',
       provenance: { sourceTruth: 'sql', projectionType: 'operator.project_detail', projectId, implementationPacketKey: packetKey },
+    };
+  },
+
+  async buildProjectStatusProjection(params) {
+    const projectId = params.projectId || 'ai-engine';
+    
+    // Fetch roadmap with full task lists
+    let roadmap = {};
+    try {
+      roadmap = await callAiEngine('getProjectRoadmap', projectId);
+    } catch (error) {
+      console.error('Error fetching roadmap:', error);
+    }
+
+    const items = Array.isArray(roadmap?.items) ? roadmap.items : [];
+    
+    // Enrich each item with task counts and detailed status
+    const enrichedItems = await Promise.all(items.map(async (item, idx) => {
+      let tasks = [];
+      try {
+        const tasksRes = await callAiEngine('listImplementationTasks', item.implementation_item_id);
+        tasks = Array.isArray(tasksRes?.tasks) ? tasksRes.tasks : [];
+      } catch {
+        // continue with empty tasks
+      }
+      
+      const tasksByStatus = {
+        open: tasks.filter(t => t.status === 'open').length,
+        in_progress: tasks.filter(t => t.status === 'in_progress').length,
+        completed: tasks.filter(t => t.status === 'completed').length,
+        blocked: tasks.filter(t => t.status === 'blocked').length,
+      };
+      
+      // Infer item status from task states and sequence
+      let inferredStatus = item.status;
+      if (!inferredStatus) {
+        // If explicit status not set, infer from tasks
+        if (tasksByStatus.completed === tasks.length && tasks.length > 0) {
+          inferredStatus = 'completed';
+        } else if (tasksByStatus.in_progress > 0 || tasksByStatus.blocked > 0 || tasksByStatus.completed > 0) {
+          inferredStatus = 'in_progress';
+        } else if (idx === 0 || items.slice(0, idx).some(i => !i.status)) {
+          // If first item or previous items aren't explicitly complete, mark as active
+          inferredStatus = 'in_progress';
+        } else {
+          inferredStatus = 'open';
+        }
+      }
+      
+      return {
+        ...item,
+        status: inferredStatus,
+        taskCount: tasks.length,
+        tasksByStatus,
+        allTasks: tasks,
+      };
+    }));
+
+    // Calculate aggregate stats based on inferred status
+    const totalItems = enrichedItems.length;
+    const completedItems = enrichedItems.filter(i => i.status === 'completed');
+    const inProgressItems = enrichedItems.filter(i => i.status === 'in_progress');
+    const notStartedItems = enrichedItems.filter(i => i.status === 'open');
+    const blockedItems = enrichedItems.filter(i => i.status === 'blocked');
+    
+    const allTasks = enrichedItems.flatMap(i => i.allTasks || []);
+    const totalTasks = allTasks.length;
+    const completedTasks = allTasks.filter(t => t.status === 'completed').length;
+    const completionPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    const activeItem = inProgressItems[0] || notStartedItems[0] || completedItems[0];
+    const blockedCount = allTasks.filter(t => t.status === 'blocked').length;
+
+    const lastRefresh = new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+
+    const tokens = {
+      projectId,
+      projectTitle: roadmap.implementation_packet_title || 'Implementation Roadmap',
+      activeItemTitle: activeItem?.title || 'None',
+      activeItemStatus: activeItem?.status || 'unknown',
+      completedCount: completedItems.length,
+      inProgressCount: inProgressItems.length,
+      notStartedCount: notStartedItems.length,
+      totalCount: totalItems,
+      completionPercent,
+      blockedCount,
+      lastRefresh,
+      inProgressItems,
+      completedItems,
+      notStartedItems,
+    };
+
+    const template = await loadTemplate('operator.project_status');
+    const text = applyTemplate(template, tokens);
+    
+    return {
+      text,
+      contentType: 'text/markdown; charset=utf-8',
+      projectionType: 'operator.project_status',
+      sourceTruth: 'sdk',
+      provenance: { 
+        sourceTruth: 'sdk',
+        projectionType: 'operator.project_status',
+        projectId,
+        itemCount: totalItems,
+        taskCount: totalTasks,
+        completionPercent,
+      },
+    };
+  },
+
+  async buildProjectRoadmapProjection(params) {
+    const projectId = params.projectId || 'ai-engine';
+    
+    // Fetch roadmap with full task lists
+    let roadmap = {};
+    try {
+      roadmap = await callAiEngine('getProjectRoadmap', projectId);
+    } catch (error) {
+      console.error('Error fetching roadmap:', error);
+    }
+
+    const items = Array.isArray(roadmap?.items) ? roadmap.items : [];
+    
+    // Enrich each item with task counts
+    const enrichedItems = await Promise.all(items.map(async (item, idx) => {
+      let tasks = [];
+      try {
+        const tasksRes = await callAiEngine('listImplementationTasks', item.implementation_item_id);
+        tasks = Array.isArray(tasksRes?.tasks) ? tasksRes.tasks : [];
+      } catch {
+        // continue with empty tasks
+      }
+      
+      const tasksByStatus = {
+        open: tasks.filter(t => t.status === 'open').length,
+        in_progress: tasks.filter(t => t.status === 'in_progress').length,
+        completed: tasks.filter(t => t.status === 'completed').length,
+        blocked: tasks.filter(t => t.status === 'blocked').length,
+      };
+      
+      // Infer item status from task states
+      let inferredStatus = item.status;
+      if (!inferredStatus) {
+        if (tasksByStatus.completed === tasks.length && tasks.length > 0) {
+          inferredStatus = 'completed';
+        } else if (tasksByStatus.in_progress > 0 || tasksByStatus.blocked > 0 || tasksByStatus.completed > 0) {
+          inferredStatus = 'in_progress';
+        } else if (idx === 0 || items.slice(0, idx).some(i => !i.status)) {
+          inferredStatus = 'in_progress';
+        } else {
+          inferredStatus = 'open';
+        }
+      }
+      
+      const completedTasks = tasksByStatus.completed;
+      const totalTasks = tasks.length;
+      const completionPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      
+      return {
+        ...item,
+        status: inferredStatus,
+        taskCount: tasks.length,
+        tasksByStatus,
+        completedTasks,
+        totalTasks,
+        completionPercent,
+        allTasks: tasks,
+      };
+    }));
+
+    // Build markdown roadmap representation with task counts
+    const lastRefresh = new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+
+    const formatStatus = (value, fallback = 'not started') =>
+      String(value || fallback).replace(/_/g, ' ');
+    const quote = (value) => String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const humanizeKey = (value) => String(value || 'untitled item')
+      .split('-')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+
+    const totalTasks = enrichedItems.reduce((sum, item) => sum + item.totalTasks, 0);
+    const completedTasks = enrichedItems.reduce((sum, item) => sum + item.completedTasks, 0);
+    const blockedTasks = enrichedItems.reduce((sum, item) => sum + item.tasksByStatus.blocked, 0);
+    const inProgressItems = enrichedItems.filter((item) => item.status === 'in_progress');
+    const completedItems = enrichedItems.filter((item) => item.status === 'completed');
+    const activeItem = inProgressItems[0] || enrichedItems[0] || null;
+    const projectTitle = roadmap.implementation_packet_title || 'Implementation Roadmap';
+    const focusTitle = activeItem?.title || humanizeKey(activeItem?.item_key) || 'Implementation roadmap';
+    const focusSummary = activeItem?.summary
+      || activeItem?.description
+      || `Track roadmap execution across ${enrichedItems.length} items and ${totalTasks} implementation tasks.`;
+
+    // Create roadmap items markdown
+    const roadmapItemsMarkdown = enrichedItems.map(item => {
+      const itemKey = item.item_key || item.implementation_item_id;
+      const title = item.title || humanizeKey(itemKey);
+      const status = formatStatus(item.status);
+      const priority = item.priority || 'medium';
+      const completed = item.completedTasks || 0;
+      const total = item.totalTasks || 0;
+      const target = `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}`;
+      
+      return `- key: "${quote(item.implementation_item_id)}"\n  title: "${quote(title)}"\n  status: "${quote(status)}"\n  priority: "${quote(priority)}"\n  progress: "${completed} / ${total} tasks complete"\n  target: "${quote(target)}"`;
+    }).join('\n');
+
+    // Build the markdown projection
+    const roadmapMarkdown = `---
+loga_contract: "ai-engine-ui/v1"
+interaction_contract: "loga-choreography/v1"
+navigation_contract: "loga-navigation/v1"
+projection_type: "operator.project_roadmap"
+projection_id: "project:${projectId}:roadmap"
+source_system: "ai-engine"
+source_truth: "sql"
+primary_question: "What should I care about right now?"
+workspace_mode: "focus"
+surface_label: "Project Roadmap"
+allowed_actions:
+  - open_roadmap_item
+  - open_evidence_packet
+  - refresh_projection
+---
+
+# Roadmap
+
+## ${quote(projectTitle)}
+
+::focus
+question: "What should I care about right now?"
+answer: "${quote(focusSummary)}"
+status: "${quote(formatStatus(activeItem?.status, 'in progress'))}"
+::
+
+## Current Focus
+
+::panel
+title: "${quote(focusTitle)}"
+status: "${quote(formatStatus(activeItem?.status, 'in progress'))}"
+owner: "operator"
+summary: "${quote(focusSummary)}"
+::
+
+## Implementation Roadmap
+
+::roadmap
+${roadmapItemsMarkdown}
+::
+
+## Delivery Snapshot
+
+- ${completedItems.length} of ${enrichedItems.length} roadmap items complete.
+- ${inProgressItems.length} roadmap items currently in progress.
+- ${completedTasks} of ${totalTasks} implementation tasks complete.
+- ${blockedTasks} blocked tasks currently need attention.
+
+*Auto-refreshing — Last updated ${lastRefresh} (every 5 seconds)*`;
+
+    return {
+      text: roadmapMarkdown,
+      contentType: 'text/markdown; charset=utf-8',
+      projectionType: 'operator.project_roadmap',
+      sourceTruth: 'sdk',
+      provenance: { 
+        sourceTruth: 'sdk',
+        projectionType: 'operator.project_roadmap',
+        projectId,
+        itemCount: items.length,
+        enrichedItems,
+      },
     };
   },
 

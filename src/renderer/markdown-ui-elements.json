@@ -1972,6 +1972,29 @@
       "border": "1px solid var(--line)",
       "borderRadius": "18px",
       "background": "linear-gradient(135deg, rgba(124, 156, 255, 0.14), rgba(17, 28, 43, 0.48))"
+    },
+    ".live-update-badge": {
+      "display": "inline-flex",
+      "alignItems": "center",
+      "gap": "8px",
+      "marginLeft": "auto",
+      "paddingRight": "16px",
+      "fontSize": "12px",
+      "color": "var(--green)",
+      "fontWeight": "600",
+      "letterSpacing": "0.04em",
+      "textTransform": "uppercase"
+    },
+    ".live-dot": {
+      "display": "inline-block",
+      "width": "8px",
+      "height": "8px",
+      "borderRadius": "50%",
+      "background": "var(--green)",
+      "boxShadow": "0 0 8px rgba(63, 185, 80, 0.6)"
+    },
+    ".live-update-badge.live-pulse .live-dot": {
+      "boxShadow": "0 0 16px rgba(63, 185, 80, 0.9)"
     }
   },
   "media": {
@@ -2118,6 +2141,11 @@
       "transform": "buildProjectDetailProjection",
       "transformDataPath": "summary",
       "fixtureFallback": true
+    },
+    "operator.project_status": {
+      "params": ["projectId"],
+      "required": ["projectId"],
+      "transform": "buildProjectStatusProjection"
     },
     "operator.project_roadmap": {
       "api": "getLogaProjectRoadmapProjection",

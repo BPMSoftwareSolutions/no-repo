@@ -1,0 +1,36 @@
+---
+surface_label: Implementation Roadmap Status
+primary_question: What is the current state of this project's implementation roadmap?
+workspace_mode: execution
+---
+
+# {{projectTitle}} — Live Roadmap Status
+
+::focus
+title="Roadmap Overview"
+summary="Overall Progress: {{completionPercent}}% complete • {{completedCount}}/{{totalCount}} items done • {{blockedCount}} blocked tasks"
+:::
+
+## Progress Summary
+
+- **Overall Completion:** {{completionPercent}}%
+- **Items Complete:** {{completedCount}} of {{totalCount}}
+- **Blocked Tasks:** {{blockedCount}}
+- **Last Updated:** {{lastRefresh}} (auto-refresh every 5 seconds)
+
+## Current Status
+
+**Active Delivery Scope:** All {{totalCount}} roadmap items active
+
+- ✓ Completed: {{completedCount}} items
+- ⧗ In Progress: {{inProgressCount}} items
+- → Not Started: {{notStartedCount}} items
+
+## Implementation Progress
+
+View the full [implementation roadmap and task details](projection-detail.html?type=operator.project_roadmap&projectId={{projectId}}) for complete sequencing and execution plan.
+
+---
+
+**This page auto-refreshes every 5 seconds.** Click refresh in your browser to force an immediate update.
+
