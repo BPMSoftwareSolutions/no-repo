@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('evidence-content').textContent = JSON.stringify(proj.provenance || proj, null, 2);
       
       // Show live update badge for live status projections
-      if (projType === 'operator.project_status' || projType === 'operator.roadmap_items') {
+      if (projType === 'operator.project_status' || projType === 'operator.roadmap_items' || projType === 'operator.project_detail') {
         showLiveUpdateBadge();
       }
     } catch (error) {
@@ -65,8 +65,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       await renderProjectionContent();
       updateLiveUpdateBadge();
     }, 5000);
-    
-    // Cleanup on page unload
+
+    window.addEventListener('beforeunload', () => {
+      if (pollingInterval) clearInterval(pollingInterval);
+    });
+  }
+
+  // For project detail, only refresh the gauge — avoids full DOM replacement distortion
+  if (projType === 'operator.project_detail') {
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(async () => {
+      await injectCompletionGauge({ projType, params, container });
+      updateLiveUpdateBadge();
+    }, 5000);
+
     window.addEventListener('beforeunload', () => {
       if (pollingInterval) clearInterval(pollingInterval);
     });
