@@ -139,7 +139,47 @@ const TRANSFORMS = {
   async buildTaskProjection(params) {
     const projectId = params.projectId || 'ai-engine';
     const itemKey = params.itemKey || 'generic-wrapper-runtime';
-    const task = getTask(params.taskKey || '');
+    const taskKey = params.taskKey || '';
+
+    // If taskKey looks like a UUID, fetch live data from the SDK
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(taskKey);
+    let task = null;
+    if (isUuid) {
+      try {
+        // Resolve the implementation_item_id for this itemKey via the roadmap
+        let implementationItemId = null;
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) {
+          const roadmap = await callAiEngine('getProjectRoadmap', projectId);
+          const items = Array.isArray(roadmap?.items) ? roadmap.items : [];
+          const found = items.find(i => i.item_key === itemKey || i.implementation_item_id === itemKey);
+          implementationItemId = found?.implementation_item_id || null;
+        }
+        if (implementationItemId) {
+          const tasksRes = await callAiEngine('listImplementationTasks', implementationItemId);
+          const tasks = Array.isArray(tasksRes?.tasks) ? tasksRes.tasks : [];
+          const raw = tasks.find(t =>
+            t.implementation_item_task_id === taskKey || t.id === taskKey
+          );
+          if (raw) {
+            const fullDescription = raw.description || raw.summary || '';
+            // summary must be single-line (used inside YAML-like directive values)
+            const firstLine = fullDescription.split('\n')[0].replace(/"/g, "'").trim();
+            task = {
+              key:         raw.implementation_item_task_id || raw.id || taskKey,
+              title:       raw.title || taskKey,
+              status:      raw.status || 'unknown',
+              summary:     firstLine || 'No detailed projection has been published for this task yet.',
+              description: fullDescription ? fullDescription.split('\n').map(l => l.trimEnd()).join('\n') : '',
+            };
+          }
+        }
+      } catch {
+        // fall through to fixture lookup
+      }
+    }
+
+    if (!task) task = getTask(taskKey);
+
     const template = await loadTemplate('operator.task_detail');
     const text = applyTemplate(template, { projectId, itemKey, task });
     return {
@@ -147,7 +187,7 @@ const TRANSFORMS = {
       contentType: 'text/markdown; charset=utf-8',
       projectionType: 'operator.task_detail',
       sourceTruth: 'sql',
-      provenance: { sourceTruth: 'sql', projectionType: 'operator.task_detail', projectId, itemKey, taskKey: params.taskKey, fixture: 'local-task-projection' },
+      provenance: { sourceTruth: 'sql', projectionType: 'operator.task_detail', projectId, itemKey, taskKey, fixture: isUuid ? 'live-sdk' : 'local-task-projection' },
     };
   },
 
@@ -350,6 +390,7 @@ function getTask(taskKey) {
     title: taskKey || 'Task',
     status: 'unknown',
     summary: 'No detailed projection has been published for this task yet.',
+    description: '',
   };
 }
 
