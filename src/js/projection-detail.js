@@ -165,11 +165,12 @@ const TRANSFORMS = {
             // summary must be single-line (used inside YAML-like directive values)
             const firstLine = fullDescription.split('\n')[0].replace(/"/g, "'").trim();
             task = {
-              key:         raw.implementation_item_task_id || raw.id || taskKey,
-              title:       raw.title || taskKey,
-              status:      raw.status || 'unknown',
-              summary:     firstLine || 'No detailed projection has been published for this task yet.',
-              description: fullDescription ? fullDescription.split('\n').map(l => l.trimEnd()).join('\n') : '',
+              key:                raw.implementation_item_task_id || raw.id || taskKey,
+              title:              raw.title || taskKey,
+              status:             raw.status || 'unknown',
+              summary:            firstLine || 'No detailed projection has been published for this task yet.',
+              acceptanceCriteria: parseDescriptionSection(fullDescription, 'Acceptance Criteria'),
+              deliverables:       parseDescriptionSection(fullDescription, 'Deliverables'),
             };
           }
         }
@@ -366,32 +367,65 @@ function getTask(taskKey) {
       title: 'Define Wrapper Contract Schema',
       status: 'done',
       summary: 'The wrapper contract schema has been defined. It specifies the input, output, and evidence requirements for all governed wrapper executions.',
+      acceptanceCriteria: '',
+      deliverables: '',
     },
     'implement-wrapper-operations': {
       key: 'implement-wrapper-operations',
       title: 'Implement Reusable Wrapper Operations',
       status: 'in progress',
       summary: 'Generic wrapper operations are being built to replace bespoke script behavior with contract-driven, reusable execution primitives.',
+      acceptanceCriteria: '',
+      deliverables: '',
     },
     'replace-hard-coded-scripts': {
       key: 'replace-hard-coded-scripts',
       title: 'Replace Hard-coded Wrapper Scripts',
       status: 'blocked',
       summary: 'The system must replace bespoke source/destination rewrite behavior with generic contract-driven operations. Blocked until the SDK promotes the required execution surfaces.',
+      acceptanceCriteria: '',
+      deliverables: '',
     },
     'validate-execution-evidence': {
       key: 'validate-execution-evidence',
       title: 'Validate Wrapper Execution Evidence',
       status: 'not started',
       summary: 'Wrapper execution evidence must be validated against the contract before the governed refactor path is considered complete.',
+      acceptanceCriteria: '',
+      deliverables: '',
     },
   }[taskKey] || {
     key: taskKey || 'task',
     title: taskKey || 'Task',
     status: 'unknown',
     summary: 'No detailed projection has been published for this task yet.',
-    description: '',
+    acceptanceCriteria: '',
+    deliverables: '',
   };
+}
+
+// Parse a named section out of a description string and return a LOGA ::checklist directive block.
+// Looks for a heading line like "Acceptance Criteria:" or "Deliverables:" and collects
+// the following "- ..." bullet lines until the next heading or end of string.
+function parseDescriptionSection(text, sectionName) {
+  if (!text) return '';
+  const lines = text.split('\n');
+  const headingPattern = new RegExp(`^\\s*${sectionName}\\s*:?\\s*$`, 'i');
+  // Known section headings that delimit sections
+  const knownHeadings = /^\s*(Acceptance Criteria|Deliverables|Notes|Background|Context)\s*:?\s*$/i;
+  let inSection = false;
+  const items = [];
+  for (const line of lines) {
+    if (headingPattern.test(line)) { inSection = true; continue; }
+    if (inSection && knownHeadings.test(line) && !headingPattern.test(line)) break;
+    if (inSection && /^\s*-\s+/.test(line)) {
+      items.push(line.trim().replace(/^-\s+/, '').replace(/"/g, "'"));
+    }
+  }
+  if (!items.length) return '';
+  const header = `## ${sectionName}\n`;
+  const block = `::checklist\n${items.map(i => `- text: "${i}"`).join('\n')}\n::`;
+  return header + block;
 }
 
 function getTurn(turn) {
