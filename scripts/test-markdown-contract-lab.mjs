@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-import { ELEMENT_REGISTRY, MARKDOWN_UI_REGISTRY } from '../docs/loga-project-projections/markdown-contract-lab/element-registry.js';
-import { renderDiagnostics, validateContract } from '../docs/loga-project-projections/markdown-contract-lab/contract.js';
-import { parseMarkdown } from '../docs/loga-project-projections/markdown-contract-lab/parser.js';
-import { renderMarkdown, renderQuestionFirst } from '../docs/loga-project-projections/markdown-contract-lab/renderer.js';
+import { ELEMENT_REGISTRY, MARKDOWN_UI_REGISTRY } from '../src/renderer/element-registry.js';
+import { renderDiagnostics, validateContract } from '../src/renderer/contract.js';
+import { parseMarkdown } from '../src/renderer/parser.js';
+import { renderMarkdown, renderQuestionFirst } from '../src/renderer/renderer.js';
 
 function renderContract(markdown) {
   const parsed = parseMarkdown(markdown);
@@ -262,7 +262,7 @@ right:
 ::`;
 
 const operatorHtml = renderMarkdown(parseMarkdown(operatorLanguageFixture).body);
-const elementRegistryJson = JSON.parse(fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/markdown-ui-elements.json', 'utf8'));
+const elementRegistryJson = JSON.parse(fs.readFileSync('./src/renderer/markdown-ui-elements.json', 'utf8'));
 
 ['panel', 'metric_row', 'timeline', 'action_rail', 'status_badge'].forEach((blockName) => {
   assert.deepEqual(ELEMENT_REGISTRY[blockName], elementRegistryJson.elements[blockName], `${blockName} module registry must match JSON element mapping`);
@@ -353,9 +353,9 @@ assert.doesNotMatch(focusDiagnostics, /Missing loga_contract|Missing ux_contract
 assert.match(focusDiagnostics, /<li class="pass">contract<\/li>/, 'standalone focus_strip must pass contract diagnostics as an experiment');
 assert.match(focusDiagnostics, /<li class="pass">zones<\/li>/, 'standalone focus_strip must pass flow diagnostics as a component-owned experiment');
 
-const browserRuntime = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/browser.js', 'utf8');
-const labHtml = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab.html', 'utf8');
-const labShellCss = fs.readFileSync('./docs/loga-project-projections/markdown-contract-lab/lab-shell.css', 'utf8');
+const browserRuntime = fs.readFileSync('./src/renderer/browser.js', 'utf8');
+const labHtml = fs.readFileSync('./src/html/lab.html', 'utf8');
+const labShellCss = fs.readFileSync('./src/renderer/lab-shell.css', 'utf8');
 
 assert.doesNotMatch(labHtml, /<style>/, 'lab HTML must not own inline CSS');
 assert.match(labHtml, /lab-shell\.css/, 'lab HTML must link host-shell CSS');
@@ -437,7 +437,7 @@ new Function('document', 'window', browserRuntime)(documentStub, windowStub);
 await new Promise((resolve) => setTimeout(resolve, 0));
 
 assert.ok(windowStub.MarkdownContractLab, 'browser runtime must expose the lab API for diagnostics');
-assert.deepEqual(fetchCalls, ['./markdown-contract-lab/markdown-ui-elements.json'], 'browser runtime must load the JSON contract registry');
+assert.deepEqual(fetchCalls, ['./markdown-ui-elements.json'], 'browser runtime must load the JSON contract registry');
 assert.doesNotMatch(browserRuntime, /const ELEMENT_REGISTRY\s*=/, 'browser runtime must not embed a substitute element registry');
 assert.equal(appendedStyles.length, 1, 'browser runtime must inject styles generated from the registry');
 assert.match(appendedStyles[0].textContent, /\.loga-toolbar--linear\{/, 'injected registry CSS must include toolbar styles');

@@ -10,7 +10,7 @@ const result = await client.getLogaProjectPortfolioProjection();
 
 const outPath = join(
   __dirname,
-  '../docs/loga-project-projections/markdown-contract-lab/project-portfolio.md'
+  '../fixtures/project-portfolio.md'
 );
 
 writeFileSync(outPath, result.text, 'utf8');

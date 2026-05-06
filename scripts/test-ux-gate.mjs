@@ -53,7 +53,7 @@ function validateMarkdown(markdown) {
 }
 
 try {
-  const fixture = fs.readFileSync('./docs/approval-review-fixture.md', 'utf8');
+  const fixture = fs.readFileSync('./docs/archive/approval-review-fixture.md', 'utf8');
   console.log('Validating Approval Review Fixture against UX Gate rules...');
   const findings = validateMarkdown(fixture);
 

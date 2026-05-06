@@ -505,7 +505,7 @@ function getPromotion(promotionKey) {
 
 async function loadLocalProjectionFixture(projType) {
   const safeType = String(projType || '').replace(/[^a-zA-Z0-9._-]/g, '');
-  const response = await fetch(`/docs/loga-project-projections/markdown-projections/${safeType}.md`);
+  const response = await fetch(`/fixtures/projections/${safeType}.md`);
   if (!response.ok) {
     throw new Error(`Unknown projection type: ${projType}`);
   }

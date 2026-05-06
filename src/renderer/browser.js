@@ -1,7 +1,7 @@
 (() => {
   const SCRIPT_BASE_URL = document.currentScript?.src
     ? new URL('.', document.currentScript.src).href
-    : './markdown-contract-lab/';
+    : './';
 
   const SAMPLE = `---
 loga_contract: "ai-engine-ui/v1"

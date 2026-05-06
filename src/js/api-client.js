@@ -1,5 +1,5 @@
-import { parseMarkdown } from '../docs/loga-project-projections/markdown-contract-lab/parser.js';
-import { renderMarkdown } from '../docs/loga-project-projections/markdown-contract-lab/renderer.js';
+import { parseMarkdown } from '../renderer/parser.js';
+import { renderMarkdown } from '../renderer/renderer.js';
 
 // Shared AIEngine API wrapper
 export async function callAiEngine(method, ...args) {
@@ -155,7 +155,7 @@ async function injectRegistryStyles() {
   if (stylesInjected || typeof document === 'undefined') return;
   stylesInjected = true;
   try {
-    const url = new URL('../docs/loga-project-projections/markdown-contract-lab/markdown-ui-elements.json', import.meta.url);
+    const url = new URL('../renderer/markdown-ui-elements.json', import.meta.url);
     const res = await fetch(url);
     const registry = await res.json();
     const style = document.createElement('style');
