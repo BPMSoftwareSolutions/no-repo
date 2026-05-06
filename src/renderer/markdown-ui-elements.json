@@ -1225,6 +1225,108 @@
       "padding": "6px 12px",
       "borderBottom": "1px solid var(--line)"
     },
+    ".portfolio-grid": {
+      "display": "grid",
+      "gridTemplateColumns": "repeat(auto-fill, minmax(280px, 1fr))",
+      "gap": "16px",
+      "margin": "18px 0 24px"
+    },
+    ".portfolio-project-card": {
+      "display": "flex",
+      "flexDirection": "column",
+      "gap": "8px",
+      "padding": "16px",
+      "borderRadius": "var(--radius-sm, 6px)",
+      "border": "1px solid var(--line)",
+      "background": "var(--panel, rgba(255,255,255,0.03))",
+      "color": "inherit",
+      "textDecoration": "none",
+      "transition": "border-color 0.15s, background 0.15s"
+    },
+    ".portfolio-project-card:hover": {
+      "borderColor": "var(--accent)",
+      "background": "var(--hover, rgba(255,255,255,0.06))"
+    },
+    ".portfolio-project-card__header": {
+      "display": "flex",
+      "alignItems": "flex-start",
+      "justifyContent": "space-between",
+      "gap": "8px"
+    },
+    ".portfolio-project-card__name": {
+      "fontSize": "0.9em",
+      "lineHeight": "1.3",
+      "flex": "1"
+    },
+    ".portfolio-project-card__status": {
+      "display": "inline-flex",
+      "alignItems": "center",
+      "padding": "2px 8px",
+      "borderRadius": "999px",
+      "fontSize": "11px",
+      "fontFamily": "var(--mono)",
+      "background": "rgba(124, 156, 255, 0.1)",
+      "color": "var(--accent-2)",
+      "whiteSpace": "nowrap",
+      "flexShrink": "0"
+    },
+    ".portfolio-progress": {
+      "height": "6px",
+      "borderRadius": "999px",
+      "background": "var(--line)",
+      "overflow": "hidden"
+    },
+    ".portfolio-progress__bar": {
+      "height": "100%",
+      "borderRadius": "999px",
+      "background": "var(--accent)",
+      "transition": "width 0.3s ease"
+    },
+    ".portfolio-progress[data-tier='high'] .portfolio-progress__bar": {
+      "background": "var(--green, #22c55e)"
+    },
+    ".portfolio-progress[data-tier='mid'] .portfolio-progress__bar": {
+      "background": "var(--amber, #f59e0b)"
+    },
+    ".portfolio-progress[data-tier='low'] .portfolio-progress__bar": {
+      "background": "var(--red, #ef4444)"
+    },
+    ".portfolio-project-card__meta": {
+      "display": "flex",
+      "alignItems": "center",
+      "justifyContent": "space-between",
+      "gap": "8px"
+    },
+    ".portfolio-project-card__pct": {
+      "fontSize": "0.8em",
+      "fontFamily": "var(--mono)",
+      "opacity": "0.7"
+    },
+    ".portfolio-project-card__blockers": {
+      "fontSize": "11px",
+      "padding": "2px 8px",
+      "borderRadius": "999px",
+      "background": "rgba(239, 68, 68, 0.15)",
+      "color": "var(--red, #ef4444)",
+      "fontFamily": "var(--mono)"
+    },
+    ".portfolio-project-card__active": {
+      "fontSize": "0.8em",
+      "lineHeight": "1.35",
+      "opacity": "0.8",
+      "overflow": "hidden",
+      "textOverflow": "ellipsis",
+      "whiteSpace": "nowrap"
+    },
+    ".portfolio-project-card__active-label": {
+      "opacity": "0.55",
+      "fontWeight": "500"
+    },
+    ".portfolio-project-card__last-run": {
+      "fontSize": "0.75em",
+      "opacity": "0.45",
+      "fontFamily": "var(--mono)"
+    },
     ".loga-evidence-drawer": {
       "margin": "18px 0 24px",
       "borderRadius": "4px",

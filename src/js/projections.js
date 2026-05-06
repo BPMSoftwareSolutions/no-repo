@@ -58,6 +58,14 @@ function buildSurfaceGroups({ hasHome, hasCatalog, projects }) {
       href: 'projection-detail.html?type=operator.home',
     },
     {
+      label: 'Project Portfolio',
+      question: 'What is the delivery state across all projects?',
+      count: '1 portfolio projection',
+      meaning: 'Completion rates, active items, and blocked projects across the portfolio',
+      status: 'Fixture available',
+      href: 'projection-detail.html?type=operator.project_portfolio',
+    },
+    {
       label: 'Project Catalog',
       question: 'What projects exist?',
       count: hasCatalog ? '1 projection' : 'Unavailable',

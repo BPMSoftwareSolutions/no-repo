@@ -51,6 +51,14 @@ export async function buildLogaTreeChildren(nodeId, { client }) {
           contentUrl: '/api/loga/projections/project-catalog',
         }),
         treeNode({
+          id: 'project-portfolio',
+          label: 'Project Portfolio',
+          type: 'projection_surface',
+          meta: 'portfolio overview',
+          hasChildren: true,
+          contentHref: 'projection-detail.html?type=operator.project_portfolio',
+        }),
+        treeNode({
           id: 'project-surfaces',
           label: 'Project Surfaces',
           type: 'projection_group',
@@ -70,6 +78,28 @@ export async function buildLogaTreeChildren(nodeId, { client }) {
           hasChildren: true,
         }),
       ],
+    };
+  }
+
+  if (nodeId === 'project-portfolio') {
+    const projects = await loadProjects(client);
+    const active = projects.filter((p) => {
+      const status = getProjectStatus(p);
+      return status === 'active' || status === 'in_progress' || status === 'in progress';
+    });
+    const listed = active.length ? active : projects.slice(0, 10);
+    return {
+      parent_id: nodeId,
+      nodes: listed.map((project) => {
+        const projectId = getProjectId(project);
+        return treeNode({
+          id: `project-${projectId}`,
+          label: getProjectLabel(project),
+          type: 'project',
+          status: getProjectStatus(project),
+          hasChildren: true,
+        });
+      }),
     };
   }
 

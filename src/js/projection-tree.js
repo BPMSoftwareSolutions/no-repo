@@ -259,6 +259,7 @@ function getCurrentNodeId(currentUrl) {
   if (surface === 'operator.project_roadmap') return 'project-roadmap-group';
   if (type === 'operator.home') return 'operator-home';
   if (type === 'operator.project_catalog') return 'project-catalog';
+  if (type === 'operator.project_portfolio') return 'project-portfolio';
   if (type === 'operator.project_detail') return `project-${projectId}-detail`;
   if (type === 'operator.project_roadmap') return `project-${projectId}-roadmap`;
   if (type === 'operator.roadmap_item') return `project-${projectId}-roadmap-item-${itemKey}`;
@@ -292,7 +293,7 @@ function getAncestorPath(nodeId) {
   if (nodeId === 'projections') return [];
   const path = ['projections'];
 
-  if (['operator-home', 'project-catalog', 'project-detail-group', 'project-roadmap-group'].includes(nodeId)) {
+  if (['operator-home', 'project-catalog', 'project-portfolio', 'project-detail-group', 'project-roadmap-group'].includes(nodeId)) {
     return path;
   }
 

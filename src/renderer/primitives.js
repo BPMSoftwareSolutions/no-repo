@@ -217,6 +217,43 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     }).join('')}</section>`;
   }
 
+  if (block === 'portfolio_grid') {
+    if (!records.length) return '<section class="portfolio-grid"><p class="empty-state">No projects found.</p></section>';
+    return `<section class="portfolio-grid">${records.map((record) => {
+      const name = record.name || record.label || record.title || 'Untitled project';
+      const status = record.status || 'unknown';
+      const pct = parseFloat(record.completion_pct ?? record.completion ?? 0);
+      const safePct = Math.min(100, Math.max(0, Number.isFinite(pct) ? pct : 0));
+      const doneItems = record.done_items != null ? record.done_items : '';
+      const totalItems = record.total_items != null ? record.total_items : '';
+      const countLabel = doneItems !== '' && totalItems !== '' ? `${doneItems} of ${totalItems} tasks` : '';
+      const pctLabel = `${safePct.toFixed(0)}%`;
+      const tier = safePct >= 80 ? 'high' : safePct >= 30 ? 'mid' : 'low';
+      const activeItem = record.active_item && record.active_item !== 'None' ? record.active_item : '';
+      const blockers = record.blockers != null ? Number(record.blockers) : 0;
+      const lastRun = record.last_run ? formatRelativeTime(record.last_run) : '';
+      const projectId = record.project_id || record.id || '';
+      const href = projectId
+        ? `projection-detail.html?type=operator.project_detail&projectId=${encodeURIComponent(projectId)}`
+        : '#';
+      return `<a class="portfolio-project-card" href="${escapeHtml(href)}" data-status="${escapeHtml(status)}" data-tier="${escapeHtml(tier)}">
+  <div class="portfolio-project-card__header">
+    <strong class="portfolio-project-card__name">${escapeHtml(name)}</strong>
+    <span class="portfolio-project-card__status" data-status="${escapeHtml(status)}">${escapeHtml(status)}</span>
+  </div>
+  <div class="portfolio-progress" data-tier="${escapeHtml(tier)}" aria-label="${escapeHtml(pctLabel)} complete">
+    <div class="portfolio-progress__bar" style="width:${safePct.toFixed(2)}%"></div>
+  </div>
+  <div class="portfolio-project-card__meta">
+    <span class="portfolio-project-card__pct">${escapeHtml(pctLabel)}${countLabel ? ` &middot; ${escapeHtml(countLabel)}` : ''}</span>
+    ${blockers > 0 ? `<span class="portfolio-project-card__blockers">${blockers} blocked</span>` : ''}
+  </div>
+  ${activeItem ? `<div class="portfolio-project-card__active"><span class="portfolio-project-card__active-label">Active:</span> ${escapeHtml(activeItem)}</div>` : ''}
+  ${lastRun ? `<div class="portfolio-project-card__last-run">Last run ${escapeHtml(lastRun)}</div>` : ''}
+</a>`;
+    }).join('')}</section>`;
+  }
+
   if (['roadmap'].includes(block)) {
     return `<section class="loga-list ${escapeHtml(block)}">${records.map((record) => {
       const title = record.title || record.label || record.text || record.reminder || record.key || (record.turn ? `Turn ${record.turn}` : 'Untitled');
@@ -416,4 +453,19 @@ function renderTree(lines) {
   });
   if (openChildList) html.push('</ul></li>');
   return `<ul>${html.join('')}</ul>`;
+}
+
+function formatRelativeTime(iso) {
+  try {
+    const ms = Date.now() - new Date(iso).getTime();
+    if (ms < 0) return 'just now';
+    const mins = Math.floor(ms / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+  } catch {
+    return '';
+  }
 }

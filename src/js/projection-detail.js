@@ -59,6 +59,7 @@ function getSurfaceTitle(projType) {
   return {
     'operator.home': 'Operator Home',
     'operator.project_catalog': 'Project Catalog',
+    'operator.project_portfolio': 'Project Portfolio',
     'operator.project_detail': 'Project Detail',
     'operator.project_roadmap': 'Project Roadmap',
     'operator.roadmap_item': 'Roadmap Item',
@@ -77,6 +78,7 @@ function getSurfaceQuestion(projType) {
   return {
     'operator.home': 'What needs attention now?',
     'operator.project_catalog': 'What projects exist?',
+    'operator.project_portfolio': 'What is the delivery state across all projects?',
     'operator.project_detail': 'What is happening in this project?',
     'operator.project_roadmap': 'What should I care about right now?',
     'operator.roadmap_item': 'What is being worked right now?',
@@ -98,6 +100,11 @@ async function loadProjection({ projType, projectId, itemKey, taskKey, subtaskKe
 
   if (projType === 'operator.home') {
     return callAiEngine('getLogaOperatorHomeProjection');
+  }
+
+  if (projType === 'operator.project_portfolio') {
+    return callAiEngine('getLogaProjectPortfolioProjection')
+      .catch(() => loadLocalProjectionFixture(projType));
   }
 
   if (projType === 'operator.project_catalog') {
