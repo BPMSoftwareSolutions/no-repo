@@ -585,12 +585,14 @@ function buildTurnsChildren(parentId, projectId) {
 }
 
 function buildMemoryChildren(parentId) {
+  const projectId = parentId.replace(/^project-/, '').replace(/-memory$/, '');
+  const sessionHref = `projection-detail.html?type=operator.agent_session&projectId=${encodeURIComponent(projectId)}`;
   return {
     parent_id: parentId,
     nodes: [
-      treeNode({ id: `${parentId}-wrapper-authority`, label: 'Wrapper is the only mutation authority', type: 'memory', status: 'required' }),
-      treeNode({ id: `${parentId}-no-local-scripts`, label: 'No local scripts as authority', type: 'memory', status: 'required' }),
-      treeNode({ id: `${parentId}-sql-truth`, label: 'SQL is durable truth; markdown is projection', type: 'memory', status: 'required' }),
+      treeNode({ id: `${parentId}-wrapper-authority`, label: 'Wrapper is the only mutation authority', type: 'memory', status: 'required', contentHref: sessionHref }),
+      treeNode({ id: `${parentId}-no-local-scripts`, label: 'No local scripts as authority', type: 'memory', status: 'required', contentHref: sessionHref }),
+      treeNode({ id: `${parentId}-sql-truth`, label: 'SQL is durable truth; markdown is projection', type: 'memory', status: 'required', contentHref: sessionHref }),
     ],
   };
 }
@@ -697,12 +699,7 @@ async function loadProjects() {
 }
 
 function ensurePrimaryProject(projects) {
-  const hasAiEngine = projects.some((project) => {
-    const id = String(getProjectId(project)).toLowerCase();
-    const label = String(getProjectLabel(project)).toLowerCase();
-    return id === 'ai-engine' || label === 'ai engine';
-  });
-  return hasAiEngine ? projects : [fallbackProject(), ...projects];
+  return projects;
 }
 
 function getProjectId(project) {

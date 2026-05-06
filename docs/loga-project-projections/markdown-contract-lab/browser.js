@@ -334,6 +334,7 @@ primary_question: "What should I care about right now?"
     }
     if (block === 'filter_group' || block === 'filters') return `<div class="loga-chip-group">${records.map((record) => `<span class="loga-chip">${escapeHtml(record.label || 'Filter')}</span>`).join('')}</div>`;
     if (block === 'action_group' || block === 'actions') return `<div class="loga-action-group">${records.map((record) => `<button class="loga-action" type="button">${escapeHtml(record.label || 'Action')}</button>`).join('')}</div>`;
+    if (block === 'action') { const label = value('label') || attrs.label || lines.join(' ').trim() || 'Action'; const endpoint = value('endpoint') || attrs.endpoint || ''; const method = value('method') || attrs.method || 'GET'; return `<div class="loga-action-group"><button class="loga-action" type="button" data-endpoint="${escapeHtml(endpoint)}" data-method="${escapeHtml(method)}">${escapeHtml(label)}</button></div>`; }
     if (block === 'nav') return `<nav class="loga-nav">${records.map((record) => `<a class="loga-pill" href="${escapeHtml(record.target || record.projection_type || '#')}">${escapeHtml(record.label || 'Open')}</a>`).join('')}</nav>`;
     if (['roadmap', 'task_list', 'run_list', 'promotion_list', 'cicd_list', 'turn_list', 'memory', 'checklist'].includes(block)) {
       return `<section class="loga-list ${escapeHtml(block)}">${records.map((record) => {

@@ -85,6 +85,13 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     return `<div class="loga-action-group">${records.map((record) => `<button class="loga-action" type="button">${escapeHtml(record.label || 'Action')}</button>`).join('')}</div>`;
   }
 
+  if (block === 'action') {
+    const label = value('label') || attrs.label || lines.join(' ').trim() || 'Action';
+    const endpoint = value('endpoint') || attrs.endpoint || '';
+    const method = value('method') || attrs.method || 'GET';
+    return `<div class="loga-action-group"><button class="loga-action" type="button" data-endpoint="${escapeHtml(endpoint)}" data-method="${escapeHtml(method)}">${escapeHtml(label)}</button></div>`;
+  }
+
   if (block === 'status') {
     return `<span class="loga-toolbar__status">${escapeHtml(value('label') || value('status') || lines.join(' ').trim())}</span>`;
   }
