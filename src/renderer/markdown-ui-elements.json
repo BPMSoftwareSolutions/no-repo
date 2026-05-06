@@ -1012,7 +1012,7 @@
       "flexWrap": "nowrap",
       "minWidth": "0"
     },
-    ".loga-chip, .loga-nav a, .loga-actions button": {
+    ".loga-chip, .loga-nav a, .loga-actions button, .loga-action": {
       "display": "inline-flex",
       "alignItems": "center",
       "minHeight": "30px",
@@ -1023,7 +1023,14 @@
       "color": "var(--strong)",
       "fontSize": "12px",
       "fontWeight": "700",
-      "flex": "0 0 auto"
+      "flex": "0 0 auto",
+      "textDecoration": "none",
+      "cursor": "pointer"
+    },
+    ".loga-action:hover, .loga-action:focus-visible, .loga-actions button:hover, .loga-actions button:focus-visible": {
+      "borderColor": "var(--accent)",
+      "background": "rgba(124, 156, 255, 0.24)",
+      "color": "var(--text-strong)"
     },
     ".loga-focus, .loga-surface": {
       "margin": "22px 0 30px",
