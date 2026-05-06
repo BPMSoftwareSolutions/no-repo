@@ -204,8 +204,9 @@ function setExpanded(wrapper, expanded) {
 
 async function expandCurrentPath(container, currentNodeId) {
   const path = getAncestorPath(currentNodeId);
+  let searchScope = container;
   for (const nodeId of path) {
-    const wrapper = container.querySelector(`[data-node-id="${cssEscape(nodeId)}"]`);
+    const wrapper = searchScope.querySelector(`[data-node-id="${cssEscape(nodeId)}"]`);
     if (!wrapper) return;
 
     const payloadNode = getNodePayload(wrapper);
@@ -213,6 +214,9 @@ async function expandCurrentPath(container, currentNodeId) {
 
     await ensureChildren(wrapper, payloadNode, { currentNodeId });
     setExpanded(wrapper, true);
+
+    const childContainer = wrapper.querySelector(':scope > .projection-tree__children');
+    if (childContainer) searchScope = childContainer;
   }
 }
 
@@ -324,7 +328,7 @@ function getAncestorPath(nodeId) {
   }
 
   if (nodeId.includes(`project-${projectId}-roadmap-item-`)) {
-    path.push(`project-${projectId}-current-focus`);
+    path.push(`project-${projectId}-roadmap-items`);
     const itemKey = getRoadmapItemKey(nodeId, projectId);
     path.push(`project-${projectId}-roadmap-item-${itemKey}`);
 
