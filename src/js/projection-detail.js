@@ -343,6 +343,69 @@ async function injectCompletionGauge({ projType, params, container }) {
   }
 }
 
+function aggregateRoadmapPhases(items) {
+  const phaseMap = new Map();
+
+  items.forEach((item, index) => {
+    const key = item?.phase_key || item?.phase_title || `phase-${index}`;
+    if (!phaseMap.has(key)) {
+      phaseMap.set(key, {
+        key,
+        title: item?.phase_title || 'Phase',
+        total: 0,
+        done: 0,
+        inProgress: 0,
+        awaitingReview: 0,
+        blocked: 0,
+        notStarted: 0,
+        order: index,
+      });
+    }
+
+    const phase = phaseMap.get(key);
+    const status = String(item?.item_status || 'not_started').toLowerCase();
+    phase.total += 1;
+
+    if (status === 'done' || status === 'completed') {
+      phase.done += 1;
+    } else if (status === 'in_progress') {
+      phase.inProgress += 1;
+    } else if (status === 'awaiting_review') {
+      phase.awaitingReview += 1;
+    } else if (status === 'blocked') {
+      phase.blocked += 1;
+    } else {
+      phase.notStarted += 1;
+    }
+  });
+
+  return [...phaseMap.values()].sort((left, right) => left.order - right.order);
+}
+
+function summarizePhaseStatus(phase) {
+  if (!phase || !phase.total) return 'pending';
+  if (phase.blocked > 0) return 'blocked';
+  if (phase.inProgress > 0) return 'in progress';
+  if (phase.awaitingReview > 0) return 'awaiting review';
+  if (phase.done === phase.total) return 'done';
+  return 'pending';
+}
+
+function renderPhaseSummaryMarkdown(phases) {
+  return phases.map((phase) => `### ${phase.title}
+
+::panel type="phase_summary" status="${summarizePhaseStatus(phase)}"
+::
+
+::metric_row
+Total Items: ${phase.total}
+Done: ${phase.done}
+In Progress: ${phase.inProgress}
+Awaiting Review: ${phase.awaitingReview}
+Not Started: ${phase.notStarted}
+::`).join('\n\n');
+}
+
 // --- Page header ---
 
 function renderPageHeader(frontmatter) {
@@ -967,10 +1030,44 @@ async function loadProjection(projType, params) {
       });
       return def.fixtureFallback ? promise.catch(() => loadLocalProjectionFixture(projType)) : promise;
     }
-    return def.fixtureFallback ? apiCall().catch(() => loadLocalProjectionFixture(projType)) : apiCall();
+    const promise = apiCall().then((projection) => normalizeProjectionPayload(projType, projection, params));
+    return def.fixtureFallback ? promise.catch(() => loadLocalProjectionFixture(projType)) : promise;
   }
 
   return loadLocalProjectionFixture(projType);
+}
+
+async function normalizeProjectionPayload(projType, projection, params) {
+  if (projType !== 'operator.project_roadmap' || !projection?.text || !params?.projectId) return projection;
+
+  let report = null;
+  try {
+    report = await callAiEngine('getProjectImplementationRoadmapReport', params.projectId);
+  } catch {
+    return projection;
+  }
+
+  const phaseItems = Array.isArray(report?.roadmap_summary?.phases) ? report.roadmap_summary.phases : [];
+  if (!phaseItems.length) return projection;
+
+  const groupedPhases = aggregateRoadmapPhases(phaseItems);
+  const activeItemKey = report?.active_item?.active_item?.item_key || report?.active_item?.active_item?.stable_item_key || '';
+  let text = projection.text;
+
+  if (activeItemKey) {
+    const target = `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(params.projectId)}&itemKey=${encodeURIComponent(activeItemKey)}`;
+    text = text.replace(/(- label: "Open Item Detail"\s+target: ")([^"]+)(")/, `$1${target}$3`);
+  }
+
+  if (groupedPhases.length) {
+    const replacement = `## Phase Summary\n\n${renderPhaseSummaryMarkdown(groupedPhases)}\n\n## Roadmap Items`;
+    text = text.replace(/## Phase Summary[\s\S]*?## Roadmap Items/, replacement);
+  }
+
+  return {
+    ...projection,
+    text,
+  };
 }
 
 async function loadLocalProjectionFixture(projType) {
