@@ -951,11 +951,18 @@
       "background": "var(--accent)"
     },
     ".projection-shell--resizable.projection-shell--tree-collapsed": {
-      "gridTemplateColumns": "72px 0 minmax(0, 1fr)",
+      "gridTemplateColumns": "minmax(0, 1fr)",
       "gap": "20px"
     },
     ".projection-shell--resizable.projection-shell--tree-collapsed .projection-shell__tree": {
-      "paddingRight": "0"
+      "position": "fixed",
+      "top": "128px",
+      "left": "32px",
+      "zIndex": "18",
+      "maxHeight": "none",
+      "overflow": "visible",
+      "paddingRight": "0",
+      "borderRight": "0"
     },
     ".projection-shell--resizable.projection-shell--tree-collapsed #projection-tree": {
       "display": "none"
@@ -965,6 +972,10 @@
     },
     ".projection-shell--resizable.projection-shell--tree-collapsed .projection-shell__tree-header": {
       "justifyContent": "center"
+    },
+    ".projection-shell--resizable.projection-shell--tree-collapsed .projection-shell__tree-toggle": {
+      "margin": "0",
+      "boxShadow": "0 6px 18px rgba(0, 0, 0, 0.35)"
     },
     ".projection-shell--resizable.projection-shell--tree-collapsed .projection-shell__resizer": {
       "display": "none"
