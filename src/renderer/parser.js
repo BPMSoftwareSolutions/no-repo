@@ -1,9 +1,10 @@
 export function parseMarkdown(markdown) {
-  const frontmatterMatch = markdown.match(/^---\n([\s\S]*?)\n---\n?/);
+  const normalized = markdown.replace(/\r\n/g, '\n');
+  const frontmatterMatch = normalized.match(/^---\n([\s\S]*?)\n---\n?/);
   const frontmatter = {};
-  let body = markdown;
+  let body = normalized;
   if (frontmatterMatch) {
-    body = markdown.slice(frontmatterMatch[0].length);
+    body = normalized.slice(frontmatterMatch[0].length);
     frontmatterMatch[1].split(/\r?\n/).forEach((line) => {
       const match = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
       if (match) frontmatter[match[1]] = match[2];
