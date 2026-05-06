@@ -156,7 +156,68 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     }).join('')}</section>`;
   }
 
-  if (['roadmap', 'promotion_list', 'cicd_list', 'turn_list', 'memory', 'checklist'].includes(block)) {
+  if (block === 'promotion_list') {
+    return `<section class="loga-list promotion-list">${records.map((record) => {
+      const title = record.title || record.label || record.key || 'Untitled promotion';
+      const impact = record.impact || '';
+      const status = record.status || '';
+      const href = record.target || record.projection_type || record.key || '#';
+      const key = record.key || '';
+      const impactLine = impact ? `<span class="promotion-list__type">${escapeHtml(impact)}</span>` : '';
+      const statusBadge = status ? `<span class="promotion-list__meta">${escapeHtml(status)}</span>` : '<span class="promotion-list__meta">open</span>';
+      return `<a class="loga-list-item promotion-list__item" href="${escapeHtml(href)}" data-block="promotion_list" data-key="${escapeHtml(key)}"><span class="promotion-list__icon" aria-hidden="true">◆</span><span class="promotion-list__body"><strong>${escapeHtml(title)}</strong>${impactLine}</span>${statusBadge}</a>`;
+    }).join('')}</section>`;
+  }
+
+  if (block === 'cicd_list') {
+    return `<section class="loga-list cicd-list">${records.map((record) => {
+      const title = record.name || record.title || record.label || record.key || 'Untitled workflow';
+      const result = record.last_result || '';
+      const status = record.status || '';
+      const href = record.target || record.projection_type || record.key || '#';
+      const key = record.key || '';
+      const resultLine = result ? `<span class="cicd-list__type">${escapeHtml(result)}</span>` : '';
+      const statusBadge = status ? `<span class="cicd-list__meta">${escapeHtml(status)}</span>` : '<span class="cicd-list__meta">open</span>';
+      return `<a class="loga-list-item cicd-list__item" href="${escapeHtml(href)}" data-block="cicd_list" data-key="${escapeHtml(key)}"><span class="cicd-list__icon" aria-hidden="true">▣</span><span class="cicd-list__body"><strong>${escapeHtml(title)}</strong>${resultLine}</span>${statusBadge}</a>`;
+    }).join('')}</section>`;
+  }
+
+  if (block === 'turn_list') {
+    return `<section class="loga-list turn-list">${records.map((record) => {
+      const title = record.action || record.title || record.label || (record.turn ? `Turn ${record.turn}` : 'Turn');
+      const evidence = record.evidence || '';
+      const status = record.status || '';
+      const href = record.target || record.projection_type || (record.turn ? String(record.turn) : '') || '#';
+      const key = record.key || record.turn || '';
+      const evidenceLine = evidence ? `<span class="turn-list__type">${escapeHtml(evidence)}</span>` : '';
+      const statusBadge = status ? `<span class="turn-list__meta">${escapeHtml(status)}</span>` : '<span class="turn-list__meta">open</span>';
+      return `<a class="loga-list-item turn-list__item" href="${escapeHtml(href)}" data-block="turn_list" data-key="${escapeHtml(key)}"><span class="turn-list__icon" aria-hidden="true">↺</span><span class="turn-list__body"><strong>${escapeHtml(title)}</strong>${evidenceLine}</span>${statusBadge}</a>`;
+    }).join('')}</section>`;
+  }
+
+  if (block === 'memory') {
+    return `<section class="loga-list memory-list">${records.map((record) => {
+      const title = record.reminder || record.text || record.title || record.label || 'Memory reminder';
+      const tier = record.tier || '';
+      const href = record.target || record.projection_type || record.key || '#';
+      const key = record.key || '';
+      const tierBadge = tier ? `<span class="memory-list__meta">${escapeHtml(tier)}</span>` : '<span class="memory-list__meta">note</span>';
+      return `<a class="loga-list-item memory-list__item" href="${escapeHtml(href)}" data-block="memory" data-key="${escapeHtml(key)}"><span class="memory-list__icon" aria-hidden="true">◌</span><span class="memory-list__body"><strong>${escapeHtml(title)}</strong></span>${tierBadge}</a>`;
+    }).join('')}</section>`;
+  }
+
+  if (block === 'checklist') {
+    return `<section class="loga-list checklist-list">${records.map((record) => {
+      const title = record.text || record.title || record.label || record.reminder || 'Checklist item';
+      const status = record.status || '';
+      const href = record.target || record.projection_type || record.key || '#';
+      const key = record.key || '';
+      const statusBadge = status ? `<span class="checklist-list__meta">${escapeHtml(status)}</span>` : '<span class="checklist-list__meta">open</span>';
+      return `<a class="loga-list-item checklist-list__item" href="${escapeHtml(href)}" data-block="checklist" data-key="${escapeHtml(key)}"><span class="checklist-list__icon" aria-hidden="true">✓</span><span class="checklist-list__body"><strong>${escapeHtml(title)}</strong></span>${statusBadge}</a>`;
+    }).join('')}</section>`;
+  }
+
+  if (['roadmap'].includes(block)) {
     return `<section class="loga-list ${escapeHtml(block)}">${records.map((record) => {
       const title = record.title || record.label || record.text || record.reminder || record.key || (record.turn ? `Turn ${record.turn}` : 'Untitled');
       const status = [record.status, record.priority, record.progress, record.stage, record.tier].filter(Boolean).join(' | ');
