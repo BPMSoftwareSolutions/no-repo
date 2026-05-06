@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('evidence-content').textContent = JSON.stringify(proj.provenance || proj, null, 2);
       
       // Show live update badge for status and roadmap projections
-      if (projType === 'operator.project_status' || projType === 'operator.project_roadmap') {
+      if (projType === 'operator.project_status' || projType === 'operator.project_roadmap' || projType === 'operator.roadmap_items') {
         showLiveUpdateBadge();
       }
     } catch (error) {
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await renderProjectionContent();
 
   // Set up polling for status and roadmap projections (5 second interval)
-  if (projType === 'operator.project_status' || projType === 'operator.project_roadmap') {
+  if (projType === 'operator.project_status' || projType === 'operator.project_roadmap' || projType === 'operator.roadmap_items') {
     if (pollingInterval) clearInterval(pollingInterval);
     pollingInterval = setInterval(async () => {
       await renderProjectionContent();
@@ -462,6 +462,121 @@ ${roadmapItemsMarkdown}
         projectId,
         itemCount: items.length,
         enrichedItems,
+      },
+    };
+  },
+
+  async buildRoadmapItemsProjection(params) {
+    const projectId = params.projectId || 'ai-engine';
+    let report = {};
+
+    try {
+      report = await callAiEngine('getProjectImplementationRoadmapReport', projectId);
+    } catch (error) {
+      console.error('Error fetching implementation roadmap report:', error);
+    }
+
+    const summary = report?.roadmap_summary?.summary || {};
+    const rawItems = Array.isArray(report?.roadmap_summary?.phases) ? report.roadmap_summary.phases : [];
+    const quote = (value) => String(value ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const humanStatus = (value) => String(value || 'unknown').replace(/_/g, ' ');
+
+    const normalizeItemPct = (item) => {
+      const totalTasks = Number(item?.total_task_count || 0);
+      const openTasks = Number(item?.open_task_count || 0);
+      if (Number.isFinite(totalTasks) && totalTasks > 0) {
+        const completedTasks = Math.max(0, totalTasks - (Number.isFinite(openTasks) ? openTasks : 0));
+        const pct = Math.round((completedTasks / totalTasks) * 100);
+        return {
+          pct,
+          completedTasks,
+          totalTasks,
+        };
+      }
+
+      const status = String(item?.item_status || '').toLowerCase();
+      if (status === 'done' || status === 'completed') {
+        return { pct: 100, completedTasks: 1, totalTasks: 1 };
+      }
+      if (status === 'awaiting_review') {
+        return { pct: 90, completedTasks: 0, totalTasks: 0 };
+      }
+      if (status === 'in_progress') {
+        return { pct: 50, completedTasks: 0, totalTasks: 0 };
+      }
+      return { pct: 0, completedTasks: 0, totalTasks: 0 };
+    };
+
+    const cardModels = rawItems.map((item) => {
+      const progress = normalizeItemPct(item);
+      const itemKey = item?.item_key || item?.stable_item_key || '';
+      const target = itemKey
+        ? `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}`
+        : '#';
+      const phaseTitle = item?.phase_title || 'phase';
+      const completionLabel = progress.totalTasks > 0
+        ? `${progress.completedTasks} / ${progress.totalTasks} tasks complete`
+        : `${progress.pct}% from item status`;
+
+      return {
+        markdown: `- name: "${quote(item?.item_title || itemKey || 'Roadmap item')}"\n  status: "${quote(humanStatus(item?.item_status))}"\n  stage: "${quote(phaseTitle)}"\n  completion_pct: ${progress.pct}\n  done_items: ${progress.completedTasks}\n  total_items: ${progress.totalTasks}\n  progress: "${quote(completionLabel)}"\n  target: "${quote(target)}"`,
+        completedTasks: progress.completedTasks,
+        totalTasks: progress.totalTasks,
+      };
+    });
+
+    const cards = cardModels.map((entry) => entry.markdown).join('\n');
+
+    const projectName = report?.project?.project_name || report?.project?.name || 'Implementation Roadmap';
+    const completionPct = Number(summary?.completion_percentage || 0);
+    const completedTasks = Number(summary?.completed_tasks || cardModels.reduce((sum, entry) => sum + entry.completedTasks, 0));
+    const totalTasks = Number(summary?.total_tasks || cardModels.reduce((sum, entry) => sum + entry.totalTasks, 0));
+    const lastRefresh = new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+
+    const text = `---
+loga_contract: "ai-engine-ui/v1"
+interaction_contract: "loga-choreography/v1"
+navigation_contract: "loga-navigation/v1"
+projection_type: "operator.roadmap_items"
+projection_id: "project:${projectId}:roadmap-items"
+source_system: "ai-engine"
+source_truth: "sql"
+primary_question: "How far along is each roadmap item?"
+workspace_mode: "focus"
+surface_label: "All Roadmap Items"
+allowed_actions:
+  - open_roadmap_item
+  - refresh_projection
+---
+
+# All Roadmap Items
+
+## ${quote(projectName)}
+
+- Overall completion: ${completionPct.toFixed(1)}%
+- Task completion: ${completedTasks} of ${totalTasks} tasks complete
+
+::portfolio_grid
+${cards}
+::
+
+*Auto-refreshing - Last updated ${lastRefresh} (every 5 seconds)*`;
+
+    return {
+      text,
+      contentType: 'text/markdown; charset=utf-8',
+      projectionType: 'operator.roadmap_items',
+      sourceTruth: 'sql',
+      provenance: {
+        sourceTruth: 'sql',
+        projectionType: 'operator.roadmap_items',
+        projectId,
+        itemCount: rawItems.length,
       },
     };
   },

@@ -2153,6 +2153,11 @@
       "required": ["projectId"],
       "fixtureFallback": true
     },
+    "operator.roadmap_items": {
+      "params": ["projectId"],
+      "required": ["projectId"],
+      "transform": "buildRoadmapItemsProjection"
+    },
     "operator.roadmap_item": {
       "api": "getLogaRoadmapItemProjection",
       "params": ["projectId", "itemKey"],

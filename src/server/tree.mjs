@@ -355,7 +355,7 @@ function buildRoadmapChildren(parentId, projectId) {
         label: 'All Roadmap Items',
         type: 'item_group',
         hasChildren: true,
-        contentHref: `projection-detail.html?type=operator.project_roadmap&projectId=${encodeURIComponent(projectId)}`,
+        contentHref: `projection-detail.html?type=operator.roadmap_items&projectId=${encodeURIComponent(projectId)}`,
       }),
     ],
   };

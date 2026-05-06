@@ -266,6 +266,7 @@ function getCurrentNodeId(currentUrl) {
   if (type === 'operator.project_portfolio') return 'project-portfolio';
   if (type === 'operator.project_detail') return `project-${projectId}-detail`;
   if (type === 'operator.project_roadmap') return `project-${projectId}-roadmap`;
+  if (type === 'operator.roadmap_items') return `project-${projectId}-roadmap-items`;
   if (type === 'operator.roadmap_item') return `project-${projectId}-roadmap-item-${itemKey}`;
   if (type === 'operator.task_detail') {
     return taskKey

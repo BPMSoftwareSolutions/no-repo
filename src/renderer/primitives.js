@@ -249,9 +249,10 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock, d
       const blockers = record.blockers != null ? Number(record.blockers) : 0;
       const lastRun = record.last_run ? formatRelativeTime(record.last_run) : '';
       const projectId = record.project_id || record.id || '';
-      const href = projectId
-        ? `projection-detail.html?type=operator.project_detail&projectId=${encodeURIComponent(projectId)}`
-        : '#';
+      const href = record.target
+        || (projectId
+          ? `projection-detail.html?type=operator.project_detail&projectId=${encodeURIComponent(projectId)}`
+          : '#');
       return `<a class="portfolio-project-card" href="${escapeHtml(href)}" data-status="${escapeHtml(status)}" data-tier="${escapeHtml(tier)}">
   <div class="portfolio-project-card__header">
     <strong class="portfolio-project-card__name">${escapeHtml(name)}</strong>
