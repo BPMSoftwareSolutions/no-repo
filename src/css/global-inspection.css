@@ -1,9 +1,10 @@
 /* ==========================================================================
-   AI Engine Inspection — Global Styles
-   --------------------------------------------------------------------------
-   Editorial dark surface. Markdown rhythm. Minimal chrome.
-   One narrow column, one accent, generous spacing.
-   ========================================================================== */
+  Legacy inspection stylesheet.
+  --------------------------------------------------------------------------
+  Projection-detail UI is contract-driven and is styled via
+  src/renderer/markdown-ui-elements.json (injected at runtime).
+  Keep this file only for non-contract pages until they migrate.
+  ========================================================================== */
 
 
 * { box-sizing: border-box; }
