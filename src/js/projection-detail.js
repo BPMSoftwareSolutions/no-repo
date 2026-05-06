@@ -255,11 +255,37 @@ async function injectCompletionGauge({ projType, params, container }) {
 
   if (projType === 'operator.project_detail') {
     const activeItem = report?.active_item?.active_item;
-    if (!activeItem) return;
-    const progress = normalizeItemProgress(activeItem);
     const focus = container.querySelector('.loga-focus');
     if (!focus) return;
-    focus.insertAdjacentHTML('beforeend', `<section class="injected-completion-gauge"><p class="injected-completion-gauge__title">Active Item Completion</p>${renderGaugeMarkup(progress)}</section>`);
+
+    const gaugeBlocks = [];
+
+    if (activeItem) {
+      const activeProgress = normalizeItemProgress(activeItem);
+      gaugeBlocks.push(`<section class="injected-completion-gauge"><p class="injected-completion-gauge__title">Active Item Completion</p>${renderGaugeMarkup(activeProgress)}</section>`);
+    }
+
+    const summary = report?.roadmap_summary?.summary || {};
+    const totalItems = Number(summary?.total_items || 0);
+    const doneItems = Number(summary?.done_count || 0);
+    const inProgressItems = Number(summary?.in_progress_count || 0);
+    const blockedItems = Number(summary?.blocked_count || 0);
+    const awaitingItems = Number(summary?.awaiting_review_count || 0);
+    const overallPct = Number(summary?.completion_percentage || (totalItems > 0 ? (doneItems / totalItems) * 100 : 0));
+
+    const overallProgress = {
+      pct: overallPct,
+      completed: doneItems,
+      total: totalItems,
+      inProgress: inProgressItems,
+      blocked: blockedItems,
+      awaiting: awaitingItems,
+    };
+
+    gaugeBlocks.push(`<section class="injected-completion-gauge"><p class="injected-completion-gauge__title">Overall Roadmap Completion</p>${renderGaugeMarkup(overallProgress)}</section>`);
+    if (gaugeBlocks.length) {
+      focus.insertAdjacentHTML('beforeend', `<div class="injected-completion-gauge-grid">${gaugeBlocks.join('')}</div>`);
+    }
   }
 }
 
