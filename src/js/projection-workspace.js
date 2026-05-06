@@ -86,7 +86,7 @@ const SUGGESTIONS = [
   },
 ];
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('workspace-chrome:mounted', () => {
   const toolbar = document.querySelector('.workspace-toolbar');
   const tree = document.getElementById('projection-tree');
   if (!toolbar || !tree) return;

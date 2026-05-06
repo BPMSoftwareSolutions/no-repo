@@ -1,5 +1,7 @@
 import { callAiEngine, renderMarkdownProjection } from './api-client.js';
 import { renderProjectionTree } from './projection-tree.js';
+import { renderWorkspaceChrome } from '../renderer/chrome.js';
+import { parseMarkdown } from '../renderer/parser.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -20,8 +22,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   titleEl.textContent = getSurfaceTitle(projType);
   questionEl.textContent = getSurfaceQuestion(projType);
 
+  mountWorkspaceChrome({});
   renderPersistentTree(tree);
-  
+
   try {
     const proj = await loadProjection({
       projType,
@@ -33,13 +36,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       evidencePacketKey,
       target,
     });
-    
+
+    const { frontmatter } = parseMarkdown(proj.text || '');
+    mountWorkspaceChrome(frontmatter);
+
     container.innerHTML = renderMarkdownProjection(proj.text);
     document.getElementById('evidence-content').textContent = JSON.stringify(proj.provenance || proj, null, 2);
   } catch (error) {
     container.innerHTML = `<p style="color: var(--red)">Error loading projection: ${error.message}</p>`;
   }
 });
+
+async function mountWorkspaceChrome(overrides) {
+  const slot = document.getElementById('workspace-chrome');
+  if (!slot) return;
+  try {
+    const res = await fetch('/fixtures/projections/operator.workspace_chrome.md');
+    if (!res.ok) throw new Error(`Chrome fixture not found (${res.status})`);
+    const markdown = await res.text();
+    slot.innerHTML = renderWorkspaceChrome(markdown, overrides);
+    document.dispatchEvent(new CustomEvent('workspace-chrome:mounted', { detail: { overrides } }));
+  } catch (error) {
+    console.warn('Workspace chrome could not be rendered:', error.message);
+  }
+}
 
 async function renderPersistentTree(tree) {
   try {
@@ -168,6 +188,8 @@ projection_type: "operator.subtask_detail"
 projection_id: "subtask:${subtask.key}"
 source_truth: "sql"
 primary_question: "What is the next concrete step?"
+workspace_mode: "focus"
+active_surfaces: "roadmap"
 ---
 
 # Subtask
@@ -270,6 +292,8 @@ projection_type: "operator.project_detail"
 projection_id: "project:${projectId}"
 source_truth: "sql"
 primary_question: "What is happening in this project?"
+workspace_mode: "focus"
+active_surfaces: "roadmap,promotions,workflows,memory"
 ---
 
 # ${title}
@@ -340,6 +364,8 @@ projection_type: "operator.task_detail"
 projection_id: "task:${task.key}"
 source_truth: "sql"
 primary_question: "What needs to happen?"
+workspace_mode: "execution"
+active_surfaces: "roadmap,workflows"
 ---
 
 # Task
@@ -414,6 +440,9 @@ projection_type: "operator.agent_session"
 projection_id: "turn:${projectId}:${turn}"
 source_truth: "sql"
 primary_question: "What happened in this turn?"
+workspace_mode: "evidence"
+active_surfaces: "memory,evidence"
+agent_href: "projection-detail.html?type=operator.agent_session&projectId=${projectId}"
 ---
 
 # Agent Turn ${turn}
@@ -460,6 +489,8 @@ projection_type: "operator.promotions"
 projection_id: "promotion:${projectId}:${promotionKey}"
 source_truth: "sql"
 primary_question: "What does this promotion enable?"
+workspace_mode: "evolution"
+active_surfaces: "promotions,cicd"
 ---
 
 # Promotion
