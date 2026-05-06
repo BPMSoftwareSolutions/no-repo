@@ -159,6 +159,27 @@
       "paddingTop": "56px",
       "paddingBottom": "14px"
     },
+    "#page-header": {
+      "position": "relative",
+      "overflow": "hidden",
+      "isolation": "isolate"
+    },
+    "#page-header::before": {
+      "position": "absolute",
+      "inset": "0",
+      "backgroundImage": "url('/images/ai_engine_logo.svg')",
+      "backgroundRepeat": "no-repeat",
+      "backgroundPosition": "left 0 center",
+      "backgroundSize": "auto 100%",
+      "opacity": "0.14",
+      "pointerEvents": "none",
+      "content": "\"\"",
+      "zIndex": "0"
+    },
+    "#page-header > *": {
+      "position": "relative",
+      "zIndex": "1"
+    },
     "body > main": {
       "paddingBottom": "56px"
     },
@@ -2132,6 +2153,11 @@
     "@media (max-width: 760px)": {
       ".loga-toolbar--linear .loga-toolbar__context .eyebrow, .loga-toolbar--linear .loga-toolbar__zone[data-name=\"navigation\"] .loga-pill:nth-child(n+4)": {
         "display": "none"
+      },
+      "#page-header::before": {
+        "backgroundPosition": "left 0 center",
+        "backgroundSize": "auto 100%",
+        "opacity": "0.1"
       },
       ".projection-shell-page > header, .projection-shell-page > main": {
         "width": "calc(100% - 32px)"

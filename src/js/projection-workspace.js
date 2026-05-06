@@ -6,90 +6,33 @@ import {
   renderProjectionTree,
 } from './projection-tree.js';
 
-const SUGGESTIONS = [
-  {
-    label: 'Generic Wrapper Runtime',
-    type: 'Roadmap Item',
-    context: 'AI Engine',
-    status: 'In progress',
-    surfaces: ['roadmap'],
-    attention: ['needs-attention', 'high-priority'],
-    nodeId: 'project-ai-engine-roadmap-item-generic-wrapper-runtime',
-    href: 'projection-detail.html?type=operator.roadmap_item&projectId=ai-engine&itemKey=generic-wrapper-runtime',
-    tokens: 'wrap wrapper generic runtime roadmap current focus',
-  },
-  {
-    label: 'Replace hard-coded wrapper scripts',
-    type: 'Task',
-    context: 'Generic Wrapper Runtime',
-    status: 'Blocked',
-    surfaces: ['roadmap'],
-    attention: ['needs-attention', 'blocked-only', 'high-priority'],
-    nodeId: 'project-ai-engine-roadmap-item-generic-wrapper-runtime-tasks-replace-hard-coded-scripts',
-    href: 'projection-detail.html?type=operator.task_detail&projectId=ai-engine&itemKey=generic-wrapper-runtime&taskKey=replace-hard-coded-scripts',
-    tokens: 'wrap wrapper scripts task blocked hard coded',
-  },
-  {
-    label: 'Wrapper Evidence',
-    type: 'Evidence Packet',
-    context: 'AI Engine',
-    status: 'Awaiting wrapper run',
-    surfaces: ['evidence'],
-    attention: ['needs-attention'],
-    nodeId: 'project-ai-engine-roadmap-item-generic-wrapper-runtime-evidence',
-    href: 'projection-detail.html?type=operator.evidence_packet&projectId=ai-engine&evidencePacketKey=generic-wrapper-runtime',
-    tokens: 'wrap wrapper evidence trust packet',
-  },
-  {
-    label: 'executeGovernedRefactorWrapper',
-    type: 'SDK Promotion',
-    context: 'AI Engine',
-    status: 'Needed',
-    surfaces: ['promotions'],
-    attention: ['needs-attention', 'high-priority'],
-    nodeId: 'project-ai-engine-promotions-executeGovernedRefactorWrapper',
-    href: 'projection-detail.html?type=operator.promotions&projectId=ai-engine&promotionKey=executeGovernedRefactorWrapper',
-    tokens: 'wrap wrapper sdk promotion execute governed refactor',
-  },
-  {
-    label: 'Generic Wrapper Runtime Refactor',
-    type: 'Workflow Run',
-    context: 'AI Engine',
-    status: 'Running',
-    surfaces: ['workflows'],
-    attention: ['needs-attention'],
-    nodeId: 'project-ai-engine-workflow-runs-refactor-runtime',
-    href: 'projection-detail.html?type=operator.workflow_run&workflowRunId=refactor-runtime',
-    tokens: 'wrap wrapper workflow run refactor running',
-  },
-  {
-    label: 'Bind operation records to SQL-backed wrapper evidence',
-    type: 'Subtask',
-    context: 'Replace hard-coded wrapper scripts',
-    status: 'Blocked',
-    surfaces: ['roadmap', 'evidence'],
-    attention: ['needs-attention', 'blocked-only'],
-    nodeId: 'project-ai-engine-roadmap-item-generic-wrapper-runtime-tasks-replace-hard-coded-scripts-bind-sql-evidence',
-    href: 'projection-detail.html?type=operator.subtask_detail&projectId=ai-engine&itemKey=generic-wrapper-runtime&taskKey=replace-hard-coded-scripts&subtaskKey=bind-sql-evidence',
-    tokens: 'wrap wrapper evidence sql subtask blocked bind operation records',
-  },
-  {
-    label: 'DB Turn 3: propose contract',
-    type: 'DB Turn',
-    context: 'Agent Memory + DB Turns',
-    status: 'Pending',
-    surfaces: ['memory'],
-    attention: ['needs-attention'],
-    nodeId: 'project-ai-engine-turns-3',
-    href: 'projection-detail.html?type=operator.agent_session&projectId=ai-engine&turn=3',
-    tokens: 'turn db memory agent propose contract pending',
-  },
-];
+let projectSearchIndex = null;
+
+async function ensureProjectSearchIndex() {
+  if (projectSearchIndex) return;
+  try {
+    const res = await fetch('/api/loga/tree/nodes/project-portfolio/children');
+    if (!res.ok) throw new Error(`${res.status}`);
+    const data = await res.json();
+    projectSearchIndex = (data.nodes || []).map((node) => ({
+      label: node.label || node.id,
+      type: 'Project',
+      status: node.status || node.meta || '',
+      nodeId: node.id,
+      href: node.contentHref || '',
+      surfaces: ['roadmap', 'promotions', 'workflows', 'memory'],
+    }));
+  } catch {
+    projectSearchIndex = [];
+  }
+}
 
 document.addEventListener('workspace-chrome:mounted', () => {
   const toolbar = document.querySelector('.workspace-toolbar');
   const tree = document.getElementById('projection-tree');
   if (!toolbar || !tree) return;
+
+  ensureProjectSearchIndex();
 
   const state = {
     query: '',
@@ -108,21 +51,21 @@ document.addEventListener('workspace-chrome:mounted', () => {
   search?.addEventListener('input', () => {
     state.query = search.value.trim().toLowerCase();
     state.activeSuggestion = 0;
-    renderSuggestions({ suggestions, state });
+    renderSuggestions({ suggestions, state, tree });
     applyTreeFilters(tree, state);
   });
 
   search?.addEventListener('keydown', (event) => {
-    const items = visibleSuggestions(state);
+    const items = visibleSuggestions(state, tree);
     if (!items.length) return;
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       state.activeSuggestion = Math.min(state.activeSuggestion + 1, items.length - 1);
-      renderSuggestions({ suggestions, state });
+      renderSuggestions({ suggestions, state, tree });
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       state.activeSuggestion = Math.max(state.activeSuggestion - 1, 0);
-      renderSuggestions({ suggestions, state });
+      renderSuggestions({ suggestions, state, tree });
     } else if (event.key === 'Enter') {
       event.preventDefault();
       openSuggestion(items[state.activeSuggestion]);
@@ -144,7 +87,7 @@ document.addEventListener('workspace-chrome:mounted', () => {
     tree.dataset.mode = state.mode;
     applyModePreset(toolbar, state);
     applyModeHint(toolbar, state.mode);
-    renderSuggestions({ suggestions, state });
+    renderSuggestions({ suggestions, state, tree });
     applyTreeFilters(tree, state);
   });
 
@@ -155,7 +98,7 @@ document.addEventListener('workspace-chrome:mounted', () => {
       else state.surfaces.add(surface);
       button.classList.toggle('active', state.surfaces.has(surface));
       button.setAttribute('aria-pressed', String(state.surfaces.has(surface)));
-      renderSuggestions({ suggestions, state });
+      renderSuggestions({ suggestions, state, tree });
       applyTreeFilters(tree, state);
     });
   });
@@ -168,7 +111,7 @@ document.addEventListener('workspace-chrome:mounted', () => {
         item.classList.toggle('active', active);
         item.setAttribute('aria-pressed', String(active));
       });
-      renderSuggestions({ suggestions, state });
+      renderSuggestions({ suggestions, state, tree });
       applyTreeFilters(tree, state);
     });
   });
@@ -182,9 +125,9 @@ document.addEventListener('workspace-chrome:mounted', () => {
   applyTreeFilters(tree, state);
 });
 
-function renderSuggestions({ suggestions, state }) {
+function renderSuggestions({ suggestions, state, tree }) {
   if (!suggestions) return;
-  const items = visibleSuggestions(state);
+  const items = visibleSuggestions(state, tree);
   suggestions.innerHTML = '';
   suggestions.hidden = !state.query || !items.length;
   items.forEach((item, index) => {
@@ -193,20 +136,71 @@ function renderSuggestions({ suggestions, state }) {
     button.className = `workspace-toolbar__button search-suggestion${index === state.activeSuggestion ? ' is-active' : ''}`;
     button.innerHTML = `
       <strong>${escapeHtml(item.label)}</strong>
-      <span>${escapeHtml(item.type)} · ${escapeHtml(item.context)} · ${escapeHtml(item.status)}</span>
+      <span>${escapeHtml(item.type)}${item.status ? ' · ' + escapeHtml(item.status) : ''}</span>
     `;
     button.addEventListener('click', () => openSuggestion(item));
     suggestions.appendChild(button);
   });
 }
 
-function visibleSuggestions(state) {
+function visibleSuggestions(state, tree) {
   if (!state.query) return [];
-  return SUGGESTIONS
-    .filter((item) => item.tokens.toLowerCase().includes(state.query) || item.label.toLowerCase().includes(state.query))
-    .filter((item) => item.surfaces.some((surface) => state.surfaces.has(surface)))
-    .filter((item) => state.attention === 'needs-attention' || item.attention.includes(state.attention))
+  const query = state.query.toLowerCase();
+
+  // Merge project index (all active projects) with loaded tree nodes (roadmap items, tasks, etc.)
+  const seen = new Set();
+  const candidates = [...(projectSearchIndex || []), ...buildTreeSuggestions(tree)];
+
+  return candidates
+    .filter((item) => {
+      if (seen.has(item.nodeId)) return false;
+      seen.add(item.nodeId);
+      return item.label.toLowerCase().includes(query);
+    })
+    .filter((item) => !item.surfaces.length || item.surfaces.some((s) => state.surfaces.has(s)))
     .slice(0, 7);
+}
+
+function buildTreeSuggestions(tree) {
+  const results = [];
+  tree.querySelectorAll('.projection-tree__node').forEach((node) => {
+    const row = node.querySelector(':scope > .projection-tree__summary');
+    if (!row || !row.dataset.label) return;
+    const payload = (() => { try { return JSON.parse(node.dataset.nodePayload || '{}'); } catch { return {}; } })();
+    if (!payload.contentHref) return;
+    results.push({
+      label: row.dataset.label,
+      type: formatNodeType(row.dataset.type),
+      status: row.dataset.status || '',
+      nodeId: node.dataset.nodeId || '',
+      href: payload.contentHref,
+      surfaces: surfacesForType(row.dataset.type),
+    });
+  });
+  return results;
+}
+
+function formatNodeType(type) {
+  return {
+    project: 'Project',
+    roadmap_item: 'Roadmap Item',
+    task_group: 'Tasks',
+    item_group: 'Roadmap',
+    focus: 'Current Focus',
+    evidence_group: 'Evidence',
+    runtime_surface: 'Workflow Runs',
+    projection_surface: 'Surface',
+  }[type] || type || 'Item';
+}
+
+function surfacesForType(type) {
+  if (/roadmap_item|task/.test(type)) return ['roadmap'];
+  if (/promotion/.test(type)) return ['promotions'];
+  if (/runtime|workflow/.test(type)) return ['workflows'];
+  if (/evidence/.test(type)) return ['evidence'];
+  if (/memory|turn|agent/.test(type)) return ['memory'];
+  if (/project/.test(type)) return ['roadmap', 'promotions', 'workflows', 'memory'];
+  return [];
 }
 
 async function openSuggestion(item) {
