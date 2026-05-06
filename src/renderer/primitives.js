@@ -116,10 +116,11 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     if (!records.length) return '';
     return `<section class="loga-list related-documents">${records.map((record) => {
       const title = record.label || record.title || record.projection_type || record.target || 'Related document';
-      const status = [record.relation, record.projection_type].filter(Boolean).join(' | ');
+      const relation = record.relation || '';
+      const projectionType = record.projection_type || '';
       const key = record.projection_id || record.key || '';
       const href = record.target || record.projection_type || '#';
-      return `<a class="loga-list-item" href="${escapeHtml(href)}" data-block="related_documents" data-key="${escapeHtml(key)}"><strong>${escapeHtml(title)}</strong>${status ? `<span>${escapeHtml(status)}</span>` : ''}</a>`;
+      return `<a class="loga-list-item related-documents__item" href="${escapeHtml(href)}" data-block="related_documents" data-key="${escapeHtml(key)}"${relation ? ` data-relation="${escapeHtml(relation)}"` : ''}><span class="related-documents__icon" aria-hidden="true">↗</span><span class="related-documents__body"><strong>${escapeHtml(title)}</strong>${projectionType ? `<span class="related-documents__type">${escapeHtml(projectionType)}</span>` : ''}</span>${relation ? `<span class="related-documents__meta">${escapeHtml(relation)}</span>` : ''}</a>`;
     }).join('')}</section>`;
   }
 
@@ -127,7 +128,35 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     return `<section class="loga-focus"><p class="eyebrow">${escapeHtml(value('status') || 'focus')}</p><p class="question">${inline(value('question') || 'What matters?')}</p><p class="answer">${inline(value('answer'))}</p></section>`;
   }
 
-  if (['roadmap', 'task_list', 'run_list', 'promotion_list', 'cicd_list', 'turn_list', 'memory', 'checklist'].includes(block)) {
+  if (block === 'task_list') {
+    return `<section class="loga-list task-list">${records.map((record) => {
+      const title = record.title || record.label || record.text || record.key || 'Untitled task';
+      const owner = record.owner || '';
+      const status = record.status || '';
+      const priority = record.priority || '';
+      const progress = record.progress || '';
+      const href = record.target || record.projection_type || record.key || '#';
+      const key = record.key || '';
+      const typeLine = owner ? `<span class="task-list__type">owner: ${escapeHtml(owner)}</span>` : '';
+      const badges = [status, priority, progress].filter(Boolean).map((entry) => `<span class="task-list__meta">${escapeHtml(entry)}</span>`).join('');
+      return `<a class="loga-list-item task-list__item" href="${escapeHtml(href)}" data-block="task_list" data-key="${escapeHtml(key)}"><span class="task-list__icon" aria-hidden="true">●</span><span class="task-list__body"><strong>${escapeHtml(title)}</strong>${typeLine}</span>${badges || '<span class="task-list__meta">open</span>'}</a>`;
+    }).join('')}</section>`;
+  }
+
+  if (block === 'run_list') {
+    return `<section class="loga-list run-list">${records.map((record) => {
+      const title = record.title || record.label || record.key || 'Untitled run';
+      const stage = record.stage || '';
+      const status = record.status || '';
+      const href = record.target || record.projection_type || record.key || '#';
+      const key = record.key || '';
+      const stageLine = stage ? `<span class="run-list__type">${escapeHtml(stage)}</span>` : '';
+      const statusBadge = status ? `<span class="run-list__meta">${escapeHtml(status)}</span>` : '<span class="run-list__meta">open</span>';
+      return `<a class="loga-list-item run-list__item" href="${escapeHtml(href)}" data-block="run_list" data-key="${escapeHtml(key)}"><span class="run-list__icon" aria-hidden="true">▶</span><span class="run-list__body"><strong>${escapeHtml(title)}</strong>${stageLine}</span>${statusBadge}</a>`;
+    }).join('')}</section>`;
+  }
+
+  if (['roadmap', 'promotion_list', 'cicd_list', 'turn_list', 'memory', 'checklist'].includes(block)) {
     return `<section class="loga-list ${escapeHtml(block)}">${records.map((record) => {
       const title = record.title || record.label || record.text || record.reminder || record.key || (record.turn ? `Turn ${record.turn}` : 'Untitled');
       const status = [record.status, record.priority, record.progress, record.stage, record.tier].filter(Boolean).join(' | ');

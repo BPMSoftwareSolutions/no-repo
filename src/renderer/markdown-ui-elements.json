@@ -1071,6 +1071,120 @@
       "fontFamily": "var(--mono)",
       "fontSize": "12px"
     },
+    ".related-documents": {
+      "gap": "10px"
+    },
+    ".related-documents .related-documents__item": {
+      "display": "grid",
+      "gridTemplateColumns": "22px minmax(0, 1fr) auto",
+      "alignItems": "center",
+      "gap": "10px",
+      "minHeight": "40px",
+      "padding": "8px 12px"
+    },
+    ".related-documents__icon": {
+      "display": "inline-flex",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "width": "20px",
+      "height": "20px",
+      "border": "1px solid rgba(124, 156, 255, 0.38)",
+      "borderRadius": "999px",
+      "background": "rgba(124, 156, 255, 0.12)",
+      "color": "var(--accent-2)",
+      "fontSize": "11px",
+      "lineHeight": "1"
+    },
+    ".related-documents__body": {
+      "display": "grid",
+      "gap": "2px",
+      "minWidth": "0"
+    },
+    ".related-documents__body strong": {
+      "overflow": "hidden",
+      "textOverflow": "ellipsis",
+      "whiteSpace": "nowrap",
+      "color": "var(--text-strong)"
+    },
+    ".related-documents__type": {
+      "overflow": "hidden",
+      "textOverflow": "ellipsis",
+      "whiteSpace": "nowrap",
+      "color": "var(--muted)",
+      "fontFamily": "var(--mono)",
+      "fontSize": "11px"
+    },
+    ".related-documents__meta": {
+      "display": "inline-flex",
+      "alignItems": "center",
+      "minHeight": "22px",
+      "padding": "2px 8px",
+      "border": "1px solid rgba(124, 156, 255, 0.32)",
+      "borderRadius": "999px",
+      "background": "rgba(124, 156, 255, 0.1)",
+      "color": "var(--accent-2)",
+      "fontFamily": "var(--mono)",
+      "fontSize": "11px",
+      "letterSpacing": "0.03em",
+      "textTransform": "uppercase"
+    },
+    ".task-list, .run-list": {
+      "gap": "10px"
+    },
+    ".task-list .task-list__item, .run-list .run-list__item": {
+      "display": "grid",
+      "gridTemplateColumns": "22px minmax(0, 1fr) auto",
+      "alignItems": "center",
+      "gap": "10px",
+      "minHeight": "40px",
+      "padding": "8px 12px"
+    },
+    ".task-list__icon, .run-list__icon": {
+      "display": "inline-flex",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "width": "20px",
+      "height": "20px",
+      "border": "1px solid rgba(124, 156, 255, 0.28)",
+      "borderRadius": "999px",
+      "background": "rgba(124, 156, 255, 0.08)",
+      "color": "var(--accent-2)",
+      "fontSize": "10px",
+      "lineHeight": "1"
+    },
+    ".task-list__body, .run-list__body": {
+      "display": "grid",
+      "gap": "2px",
+      "minWidth": "0"
+    },
+    ".task-list__body strong, .run-list__body strong": {
+      "overflow": "hidden",
+      "textOverflow": "ellipsis",
+      "whiteSpace": "nowrap",
+      "color": "var(--text-strong)"
+    },
+    ".task-list__type, .run-list__type": {
+      "overflow": "hidden",
+      "textOverflow": "ellipsis",
+      "whiteSpace": "nowrap",
+      "color": "var(--muted)",
+      "fontFamily": "var(--mono)",
+      "fontSize": "11px"
+    },
+    ".task-list__meta, .run-list__meta": {
+      "display": "inline-flex",
+      "alignItems": "center",
+      "minHeight": "22px",
+      "padding": "2px 8px",
+      "border": "1px solid rgba(124, 156, 255, 0.32)",
+      "borderRadius": "999px",
+      "background": "rgba(124, 156, 255, 0.1)",
+      "color": "var(--accent-2)",
+      "fontFamily": "var(--mono)",
+      "fontSize": "11px",
+      "letterSpacing": "0.03em",
+      "textTransform": "uppercase"
+    },
     ".loga-primitive": {
       "marginBlock": "12px",
       "border": "1px solid var(--line)",
@@ -1530,6 +1644,22 @@
         "letterSpacing": "0.04em",
         "textTransform": "uppercase",
         "content": "attr(data-label)"
+      },
+      ".related-documents .related-documents__item": {
+        "gridTemplateColumns": "22px minmax(0, 1fr)",
+        "alignItems": "start"
+      },
+      ".related-documents__meta": {
+        "gridColumn": "2",
+        "justifySelf": "start"
+      },
+      ".task-list .task-list__item, .run-list .run-list__item": {
+        "gridTemplateColumns": "22px minmax(0, 1fr)",
+        "alignItems": "start"
+      },
+      ".task-list__meta, .run-list__meta": {
+        "gridColumn": "2",
+        "justifySelf": "start"
       },
       ".projection-card": {
         "gridTemplateColumns": "34px minmax(0, 1fr)"
