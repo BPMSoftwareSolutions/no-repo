@@ -230,15 +230,16 @@ function renderGaugeMarkup({ pct, completed, total, inProgress, blocked, awaitin
 
 async function injectCompletionGauge({ projType, params, container }) {
   if (!container || !params?.projectId) return;
-  if (projType !== 'operator.roadmap_item' && projType !== 'operator.project_detail') return;
+  if (projType !== 'operator.roadmap_item' && projType !== 'operator.project_detail' && projType !== 'operator.project_roadmap') return;
 
   container.querySelectorAll('.injected-completion-gauge').forEach((el) => el.remove());
+  container.querySelectorAll('.injected-completion-gauge-grid').forEach((el) => el.remove());
 
-  let report;
+  let report = null;
   try {
     report = await callAiEngine('getProjectImplementationRoadmapReport', params.projectId);
   } catch {
-    return;
+    // fall through and use DOM-based fallback where possible
   }
 
   const allItems = Array.isArray(report?.roadmap_summary?.phases) ? report.roadmap_summary.phases : [];
@@ -253,10 +254,12 @@ async function injectCompletionGauge({ projType, params, container }) {
     return;
   }
 
-  if (projType === 'operator.project_detail') {
+  if (projType === 'operator.project_detail' || projType === 'operator.project_roadmap') {
     const activeItem = report?.active_item?.active_item;
-    const focus = container.querySelector('.loga-focus');
-    if (!focus) return;
+    const host = projType === 'operator.project_detail'
+      ? container.querySelector('.loga-focus')
+      : (container.querySelector('h2') || container.querySelector('h1'));
+    if (!host) return;
 
     const gaugeBlocks = [];
 
@@ -283,8 +286,47 @@ async function injectCompletionGauge({ projType, params, container }) {
     };
 
     gaugeBlocks.push(`<section class="injected-completion-gauge"><p class="injected-completion-gauge__title">Overall Roadmap Completion</p>${renderGaugeMarkup(overallProgress)}</section>`);
-    if (gaugeBlocks.length) {
-      focus.insertAdjacentHTML('beforeend', `<div class="injected-completion-gauge-grid">${gaugeBlocks.join('')}</div>`);
+
+    // For roadmap page, keep gauges visible during live polling even if report endpoint is transiently unavailable.
+    if (projType === 'operator.project_roadmap' && !report) {
+      const tables = [...container.querySelectorAll('table')];
+      const itemsTable = tables.find((table) => {
+        const headers = [...table.querySelectorAll('thead th')].map((th) => (th.textContent || '').trim().toLowerCase());
+        return headers.includes('item key') && headers.includes('status');
+      });
+
+      if (itemsTable) {
+        const rows = [...itemsTable.querySelectorAll('tbody tr')];
+        const statuses = rows.map((row) => {
+          const cells = row.querySelectorAll('td');
+          return (cells[2]?.textContent || '').trim().toLowerCase().replace(/\s+/g, '_');
+        });
+
+        const total = statuses.length;
+        const done = statuses.filter((s) => s === 'done' || s === 'completed').length;
+        const inProgress = statuses.filter((s) => s === 'in_progress').length;
+        const blocked = statuses.filter((s) => s === 'blocked').length;
+        const awaiting = statuses.filter((s) => s === 'awaiting_review').length;
+        const pct = total > 0 ? (done / total) * 100 : 0;
+
+        const activeStatus = statuses.find((s) => s === 'in_progress')
+          || statuses.find((s) => s === 'awaiting_review')
+          || statuses.find((s) => s === 'blocked')
+          || statuses[0]
+          || 'not_started';
+
+        gaugeBlocks.length = 0;
+        gaugeBlocks.push(`<section class="injected-completion-gauge"><p class="injected-completion-gauge__title">Active Item Completion</p>${renderGaugeMarkup(normalizeItemProgress({ item_status: activeStatus }))}</section>`);
+        gaugeBlocks.push(`<section class="injected-completion-gauge"><p class="injected-completion-gauge__title">Overall Roadmap Completion</p>${renderGaugeMarkup({ pct, completed: done, total, inProgress, blocked, awaiting })}</section>`);
+      }
+    }
+
+    if (!gaugeBlocks.length) return;
+    const gridMarkup = `<div class="injected-completion-gauge-grid">${gaugeBlocks.join('')}</div>`;
+    if (projType === 'operator.project_detail') {
+      host.insertAdjacentHTML('beforeend', gridMarkup);
+    } else {
+      host.insertAdjacentHTML('afterend', gridMarkup);
     }
   }
 }
