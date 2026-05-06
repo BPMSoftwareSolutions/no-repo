@@ -6,28 +6,28 @@
   <title>Repository Detail</title>
   <link rel="stylesheet" href="../css/global-inspection.css">
 </head>
-<body>
-  <header>
+<body class="inspection-page">
+  <header class="inspection-page__header">
     <p><a href="index.html">Inspection Home</a> / <a href="repositories.html">Repository Explorer</a></p>
     <h1>Repository Detail: ai-engine</h1>
     <p><strong>Primary question:</strong> What code area should we inspect?</p>
   </header>
 
-  <main>
-    <section aria-labelledby="areas-title">
+  <main class="inspection-page__main">
+    <section class="inspection-section" aria-labelledby="areas-title">
       <h2 id="areas-title">Project Areas</h2>
-      <ul>
-        <li>orchestration</li>
-        <li>persistence/sql</li>
-        <li>web</li>
-        <li>capabilities</li>
-        <li>reporting</li>
+      <ul class="inspection-list">
+        <li class="inspection-list-item">orchestration</li>
+        <li class="inspection-list-item">persistence/sql</li>
+        <li class="inspection-list-item">web</li>
+        <li class="inspection-list-item">capabilities</li>
+        <li class="inspection-list-item">reporting</li>
       </ul>
     </section>
 
-    <section aria-labelledby="large-files-title">
+    <section class="inspection-section" aria-labelledby="large-files-title">
       <h2 id="large-files-title">Candidate Files</h2>
-      <table>
+      <table class="inspection-table">
         <thead>
           <tr>
             <th scope="col">File</th>
@@ -39,18 +39,18 @@
         </thead>
         <tbody>
           <tr>
-            <td>workflow_store_implementation.py</td>
-            <td>1655</td>
-            <td>30</td>
-            <td>Large mixed-responsibility risk</td>
-            <td><a href="file-detail.html">Open</a></td>
+            <td data-label="File">workflow_store_implementation.py</td>
+            <td data-label="LOC">1655</td>
+            <td data-label="Symbols">30</td>
+            <td data-label="Signal">Large mixed-responsibility risk</td>
+            <td data-label="Open"><a href="file-detail.html">Open</a></td>
           </tr>
           <tr>
-            <td>workflow_run_service.py</td>
-            <td>1347</td>
-            <td>59</td>
-            <td>God-file candidate</td>
-            <td><a href="file-detail.html">Open</a></td>
+            <td data-label="File">workflow_run_service.py</td>
+            <td data-label="LOC">1347</td>
+            <td data-label="Symbols">59</td>
+            <td data-label="Signal">God-file candidate</td>
+            <td data-label="Open"><a href="file-detail.html">Open</a></td>
           </tr>
         </tbody>
       </table>

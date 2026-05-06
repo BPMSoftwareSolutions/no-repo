@@ -30,16 +30,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     for (const file of files) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${file.path || 'Unknown'}</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td><a href="file-detail.html?id=${file.id}">Open</a></td>
+        <td data-label="File">${file.path || 'Unknown'}</td>
+        <td data-label="LOC">-</td>
+        <td data-label="Symbols">-</td>
+        <td data-label="Signal">-</td>
+        <td data-label="Open"><a href="file-detail.html?id=${file.id}">Open</a></td>
       `;
       tbody.appendChild(tr);
     }
     
   } catch (error) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color: var(--red)">Error loading files: ${error.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="loga-error-row">Error loading files: ${error.message}</td></tr>`;
   }
 });

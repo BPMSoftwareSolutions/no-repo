@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     container.innerHTML = renderMarkdownProjection(proj.text);
     document.getElementById('evidence-content').textContent = JSON.stringify(proj.provenance || proj, null, 2);
   } catch (error) {
-    container.innerHTML = `<p style="color: var(--red)">Error loading projection: ${error.message}</p>`;
+    container.innerHTML = `<p class="loga-error">Error loading projection: ${error.message}</p>`;
   }
 });
 
@@ -51,7 +51,7 @@ async function renderPersistentTree(tree) {
   try {
     renderProjectionTree(tree);
   } catch (error) {
-    tree.innerHTML = `<p style="color: var(--red)">Error loading projection tree: ${error.message}</p>`;
+    tree.innerHTML = `<p class="loga-error">Error loading projection tree: ${error.message}</p>`;
   }
 }
 

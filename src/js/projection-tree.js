@@ -19,7 +19,7 @@ export function renderProjectionTree(container, { currentUrl = window.location.h
       notifyTreeChanged(container);
     })
     .catch((error) => {
-      container.innerHTML = `<p style="color: var(--red)">Error loading projection tree: ${escapeHtml(error.message)}</p>`;
+      container.innerHTML = `<p class="loga-error">Error loading projection tree: ${escapeHtml(error.message)}</p>`;
     });
 }
 
@@ -187,7 +187,7 @@ async function ensureChildren(wrapper, node, { currentNodeId, refresh = false })
     wrapper.dataset.childrenLoaded = 'true';
     notifyTreeChanged(activeContainer);
   } catch (error) {
-    childContainer.innerHTML = `<p style="color: var(--red)">Error loading children: ${escapeHtml(error.message)}</p>`;
+    childContainer.innerHTML = `<p class="loga-error">Error loading children: ${escapeHtml(error.message)}</p>`;
   }
 }
 

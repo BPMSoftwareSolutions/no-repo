@@ -16,18 +16,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     for (const repo of repos) {
+      const repositoryId = repo.code_repository_id || repo.repository_id || repo.id || '';
+      const projects = Number.isFinite(repo.project_count) ? repo.project_count : '-';
+      const files = Number.isFinite(repo.file_count) ? repo.file_count : '-';
+      const symbols = Number.isFinite(repo.symbol_count) ? repo.symbol_count : '-';
+      const openCell = repositoryId
+        ? `<a href="repository-detail.html?id=${encodeURIComponent(repositoryId)}">Open</a>`
+        : '<span class="loga-error-detail">Unavailable</span>';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${repo.name || repo.id || 'Unknown'}</td>
-        <td>-</td>
-        <td>-</td>
-        <td>-</td>
-        <td><a href="repository-detail.html?id=${repo.id}">Open</a></td>
+        <td data-label="Repository">${repo.name || repo.id || 'Unknown'}</td>
+        <td data-label="Projects">${projects}</td>
+        <td data-label="Files">${files}</td>
+        <td data-label="Symbols">${symbols}</td>
+        <td data-label="Open">${openCell}</td>
       `;
       tbody.appendChild(tr);
     }
     
   } catch (error) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color: var(--red)">Error loading repositories: ${error.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="loga-error-row">Error loading repositories: ${error.message}</td></tr>`;
   }
 });

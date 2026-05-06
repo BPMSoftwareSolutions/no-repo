@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       attention.appendChild(li);
     });
   } catch (error) {
-    list.innerHTML = `<p style="color: var(--red)">Error loading projection group: ${error.message}</p>`;
+    list.innerHTML = `<p class="loga-error">Error loading projection group: ${error.message}</p>`;
   }
 });
 

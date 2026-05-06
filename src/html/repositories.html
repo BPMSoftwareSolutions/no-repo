@@ -6,17 +6,17 @@
   <title>Repository Explorer</title>
   <link rel="stylesheet" href="../css/global-inspection.css">
 </head>
-<body>
-  <header>
+<body class="inspection-page">
+  <header class="inspection-page__header">
     <p><a href="index.html">Inspection Home</a></p>
     <h1>Repository Explorer</h1>
     <p><strong>Primary question:</strong> Where is the code shape I need to inspect?</p>
   </header>
 
-  <main>
-    <section aria-labelledby="repos-title">
+  <main class="inspection-page__main">
+    <section class="inspection-section" aria-labelledby="repos-title">
       <h2 id="repos-title">Repositories</h2>
-      <table>
+      <table class="inspection-table">
         <thead>
           <tr>
             <th scope="col">Repository</th>
@@ -28,18 +28,18 @@
         </thead>
         <tbody>
           <tr>
-            <td>ai-engine</td>
-            <td>14</td>
-            <td>312</td>
-            <td>2841</td>
-            <td><a href="repository-detail.html">Open</a></td>
+            <td data-label="Repository">ai-engine</td>
+            <td data-label="Projects">14</td>
+            <td data-label="Files">312</td>
+            <td data-label="Symbols">2841</td>
+            <td data-label="Open"><a href="repository-detail.html">Open</a></td>
           </tr>
           <tr>
-            <td>loga</td>
-            <td>5</td>
-            <td>148</td>
-            <td>904</td>
-            <td><a href="repository-detail.html">Open</a></td>
+            <td data-label="Repository">loga</td>
+            <td data-label="Projects">5</td>
+            <td data-label="Files">148</td>
+            <td data-label="Symbols">904</td>
+            <td data-label="Open"><a href="repository-detail.html">Open</a></td>
           </tr>
         </tbody>
       </table>

@@ -6,15 +6,15 @@
   <title>Symbol Detail</title>
   <link rel="stylesheet" href="../css/global-inspection.css">
 </head>
-<body>
-  <header>
+<body class="inspection-page">
+  <header class="inspection-page__header">
     <p><a href="index.html">Inspection Home</a> / <a href="code-intelligence.html">Code Intelligence</a></p>
     <h1>Symbol Detail: derive_checkpoint_evidence</h1>
     <p><strong>Primary question:</strong> Why does this symbol matter?</p>
   </header>
 
-  <main>
-    <dl>
+  <main class="inspection-page__main">
+    <dl class="inspection-def-list">
       <dt>Defined in</dt>
       <dd>src/orchestration/workflow_run_service.py</dd>
       <dt>Responsibility</dt>
@@ -23,20 +23,20 @@
       <dd>Mixes lifecycle, evidence, and persistence concerns</dd>
     </dl>
 
-    <section aria-labelledby="relationships-title">
+    <section class="inspection-section" aria-labelledby="relationships-title">
       <h2 id="relationships-title">Relationships</h2>
 
       <h3>Calls</h3>
-      <ul>
-        <li>load_checkpoint</li>
-        <li>build_evidence_packet</li>
-        <li>persist_gate_evidence</li>
+      <ul class="inspection-list">
+        <li class="inspection-list-item">load_checkpoint</li>
+        <li class="inspection-list-item">build_evidence_packet</li>
+        <li class="inspection-list-item">persist_gate_evidence</li>
       </ul>
 
       <h3>Called By</h3>
-      <ul>
-        <li>complete_workflow_step</li>
-        <li>advance_workflow_gate</li>
+      <ul class="inspection-list">
+        <li class="inspection-list-item">complete_workflow_step</li>
+        <li class="inspection-list-item">advance_workflow_gate</li>
       </ul>
     </section>
 

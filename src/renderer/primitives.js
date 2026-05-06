@@ -107,6 +107,22 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock })
     return `<section class="loga-surface"><p class="eyebrow">${escapeHtml([type.replaceAll('_', ' '), priority].filter(Boolean).join(' / '))}</p>${summary ? `<p class="answer">${inline(summary)}</p>` : ''}</section>`;
   }
 
+  if (block === 'empty_state') {
+    const message = value('message') || lines.map((line) => line.trim()).filter(Boolean).join(' ') || 'No data available.';
+    return `<section class="empty-state"><p>${inline(message)}</p></section>`;
+  }
+
+  if (block === 'related_documents') {
+    if (!records.length) return '';
+    return `<section class="loga-list related-documents">${records.map((record) => {
+      const title = record.label || record.title || record.projection_type || record.target || 'Related document';
+      const status = [record.relation, record.projection_type].filter(Boolean).join(' | ');
+      const key = record.projection_id || record.key || '';
+      const href = record.target || record.projection_type || '#';
+      return `<a class="loga-list-item" href="${escapeHtml(href)}" data-block="related_documents" data-key="${escapeHtml(key)}"><strong>${escapeHtml(title)}</strong>${status ? `<span>${escapeHtml(status)}</span>` : ''}</a>`;
+    }).join('')}</section>`;
+  }
+
   if (block === 'focus') {
     return `<section class="loga-focus"><p class="eyebrow">${escapeHtml(value('status') || 'focus')}</p><p class="question">${inline(value('question') || 'What matters?')}</p><p class="answer">${inline(value('answer'))}</p></section>`;
   }

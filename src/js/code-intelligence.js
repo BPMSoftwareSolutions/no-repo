@@ -34,15 +34,15 @@ document.addEventListener('DOMContentLoaded', () => {
       for (const sym of symbols) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${sym.name || sym.qualifiedName || 'Unknown'}</td>
-          <td>${sym.kind || 'Unknown kind'}</td>
-          <td><a href="symbol-detail.html?name=${encodeURIComponent(sym.qualifiedName || sym.name)}">Open</a></td>
+          <td data-label="Candidate">${sym.name || sym.qualifiedName || 'Unknown'}</td>
+          <td data-label="Why Matched">${sym.kind || 'Unknown kind'}</td>
+          <td data-label="Open"><a href="symbol-detail.html?name=${encodeURIComponent(sym.qualifiedName || sym.name)}">Open</a></td>
         `;
         tbody.appendChild(tr);
       }
       
     } catch (error) {
-      tbody.innerHTML = `<tr><td colspan="3" style="color: var(--red)">Error searching symbols: ${error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="3" class="loga-error-row">Error searching symbols: ${error.message}</td></tr>`;
     }
   }
 });

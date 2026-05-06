@@ -36,6 +36,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
   } catch (error) {
-    dl.innerHTML = `<dt style="color: var(--red)">Error</dt><dd style="color: var(--red)">${error.message}</dd>`;
+    dl.innerHTML = `<dt class="loga-error-term">Error</dt><dd class="loga-error-detail">${error.message}</dd>`;
   }
 });

@@ -40,8 +40,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       attentionList.appendChild(li);
     });
   } catch (error) {
-    surfaceList.innerHTML = `<p style="color: var(--red)">Error loading operator surfaces: ${error.message}</p>`;
-    tree.innerHTML = `<p style="color: var(--red)">Error loading projection tree: ${error.message}</p>`;
+    surfaceList.innerHTML = `<p class="loga-error">Error loading operator surfaces: ${error.message}</p>`;
+    tree.innerHTML = `<p class="loga-error">Error loading projection tree: ${error.message}</p>`;
   }
 });
 
