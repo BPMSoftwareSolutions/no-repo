@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       await injectCompletionGauge({ projType, params, container });
       document.getElementById('evidence-content').textContent = JSON.stringify(proj.provenance || proj, null, 2);
       
-      // Show live update badge for status and roadmap projections
-      if (projType === 'operator.project_status' || projType === 'operator.project_roadmap' || projType === 'operator.roadmap_items') {
+      // Show live update badge for live status projections
+      if (projType === 'operator.project_status' || projType === 'operator.roadmap_items') {
         showLiveUpdateBadge();
       }
     } catch (error) {
@@ -58,8 +58,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initial load
   await renderProjectionContent();
 
-  // Set up polling for status and roadmap projections (5 second interval)
-  if (projType === 'operator.project_status' || projType === 'operator.project_roadmap' || projType === 'operator.roadmap_items') {
+  // Set up polling for live status projections (5 second interval)
+  if (projType === 'operator.project_status' || projType === 'operator.roadmap_items') {
     if (pollingInterval) clearInterval(pollingInterval);
     pollingInterval = setInterval(async () => {
       await renderProjectionContent();
