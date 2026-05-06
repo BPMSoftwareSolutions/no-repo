@@ -160,15 +160,15 @@ async function injectRegistryStyles() {
     const registry = await res.json();
     const style = document.createElement('style');
     style.id = 'markdown-ui-registry-styles';
-    style.textContent = generateCss(registry.styles);
+    style.textContent = generateCss(registry.styles, registry.media);
     document.head.appendChild(style);
   } catch (err) {
     console.warn('Could not inject markdown UI registry styles:', err);
   }
 }
 
-function generateCss(styles) {
-  return Object.entries(styles).map(([selector, props]) => {
+function generateCss(styles, media = {}) {
+  const baseCss = Object.entries(styles).map(([selector, props]) => {
     if (selector.startsWith('@')) {
       const inner = Object.entries(props)
         .map(([sel, p]) => `${sel}{${propsToDeclarations(p)}}`)
@@ -177,6 +177,15 @@ function generateCss(styles) {
     }
     return `${selector}{${propsToDeclarations(props)}}`;
   }).join('');
+
+  const mediaCss = Object.entries(media).map(([query, rules]) => {
+    const inner = Object.entries(rules)
+      .map(([selector, props]) => `${selector}{${propsToDeclarations(props)}}`)
+      .join('');
+    return `${query}{${inner}}`;
+  }).join('');
+
+  return `${baseCss}${mediaCss}`;
 }
 
 function propsToDeclarations(props) {

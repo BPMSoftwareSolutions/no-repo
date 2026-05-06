@@ -7,12 +7,12 @@ export function renderProjectionTree(container, { currentUrl = window.location.h
   activeContainer = container;
   activeCurrentNodeId = currentNodeId;
 
-  container.innerHTML = '<p class="tree-loading">Loading root nodes...</p>';
+  container.innerHTML = '<p class="projection-tree__loading">Loading root nodes...</p>';
   loadTreeRoot()
     .then((payload) => {
       container.innerHTML = '';
       const root = document.createElement('div');
-      root.className = 'tree-root';
+      root.className = 'projection-tree__root';
       payload.nodes.forEach((node) => root.appendChild(renderNode(node, { currentNodeId })));
       container.appendChild(root);
       expandCurrentPath(container, currentNodeId);
@@ -25,7 +25,7 @@ export function renderProjectionTree(container, { currentUrl = window.location.h
 
 export function collapseProjectionTree(container = activeContainer) {
   if (!container) return;
-  container.querySelectorAll('.tree-node[data-expanded="true"]').forEach((node) => setExpanded(node, false));
+  container.querySelectorAll('.projection-tree__node[data-expanded="true"]').forEach((node) => setExpanded(node, false));
   notifyTreeChanged(container);
 }
 
@@ -36,10 +36,10 @@ export async function expandFocusPath(container = activeContainer) {
 
 export async function refreshSelectedBranch(container = activeContainer) {
   if (!container) return;
-  const current = container.querySelector('.tree-summary.is-current')?.closest('.tree-node');
-  const branch = current?.querySelector(':scope > .tree-children')
+  const current = container.querySelector('.projection-tree__summary.is-current')?.closest('.projection-tree__node');
+  const branch = current?.querySelector(':scope > .projection-tree__children')
     ? current
-    : current?.parentElement?.closest('.tree-node');
+    : current?.parentElement?.closest('.projection-tree__node');
   if (!branch) return;
   const node = getNodePayload(branch);
   if (!node?.hasChildren) return;
@@ -83,7 +83,7 @@ async function loadChildren(node, { refresh = false } = {}) {
 
 function renderNode(node, { currentNodeId }) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'tree-node';
+  wrapper.className = 'projection-tree__node';
   wrapper.dataset.nodeId = node.id;
   wrapper.dataset.nodePayload = JSON.stringify(node);
   wrapper.dataset.childrenLoaded = 'false';
@@ -105,7 +105,7 @@ function renderNode(node, { currentNodeId }) {
   if (node.id === currentNodeId) row.setAttribute('aria-current', 'page');
 
   const caret = document.createElement('button');
-  caret.className = 'tree-caret';
+  caret.className = 'projection-tree__caret';
   caret.type = 'button';
   caret.disabled = !node.hasChildren;
   caret.setAttribute('aria-label', `${node.hasChildren ? 'Expand' : 'Open'} ${node.label}`);
@@ -117,7 +117,7 @@ function renderNode(node, { currentNodeId }) {
   });
 
   const label = node.contentHref ? document.createElement('a') : document.createElement('button');
-  label.className = 'tree-label-action';
+  label.className = 'projection-tree__label-action';
   if (node.contentHref) {
     label.href = node.contentHref;
   } else {
@@ -127,7 +127,7 @@ function renderNode(node, { currentNodeId }) {
   label.innerHTML = renderTreeLabel(node);
 
   const refresh = document.createElement('button');
-  refresh.className = 'tree-refresh';
+  refresh.className = 'projection-tree__refresh';
   refresh.type = 'button';
   refresh.textContent = 'Refresh this branch';
   refresh.hidden = !node.hasChildren;
@@ -142,7 +142,7 @@ function renderNode(node, { currentNodeId }) {
 
   if (node.hasChildren) {
     const childContainer = document.createElement('div');
-    childContainer.className = 'tree-children';
+    childContainer.className = 'projection-tree__children';
     childContainer.hidden = true;
     wrapper.appendChild(childContainer);
   }
@@ -174,9 +174,9 @@ async function refreshBranch(wrapper, node, { currentNodeId }) {
 async function ensureChildren(wrapper, node, { currentNodeId, refresh = false }) {
   if (!refresh && wrapper.dataset.childrenLoaded === 'true') return;
 
-  const childContainer = wrapper.querySelector(':scope > .tree-children');
+  const childContainer = wrapper.querySelector(':scope > .projection-tree__children');
   childContainer.hidden = false;
-  childContainer.innerHTML = '<p class="tree-loading">loading children...</p>';
+  childContainer.innerHTML = '<p class="projection-tree__loading">loading children...</p>';
 
   try {
     const payload = await loadChildren(node, { refresh });
@@ -193,9 +193,9 @@ async function ensureChildren(wrapper, node, { currentNodeId, refresh = false })
 
 function setExpanded(wrapper, expanded) {
   wrapper.dataset.expanded = String(expanded);
-  const row = wrapper.querySelector(':scope > .tree-summary');
-  const childContainer = wrapper.querySelector(':scope > .tree-children');
-  const caret = wrapper.querySelector(':scope > .tree-summary > .tree-caret');
+  const row = wrapper.querySelector(':scope > .projection-tree__summary');
+  const childContainer = wrapper.querySelector(':scope > .projection-tree__children');
+  const caret = wrapper.querySelector(':scope > .projection-tree__summary > .projection-tree__caret');
 
   row?.setAttribute('aria-expanded', String(expanded));
   if (childContainer) childContainer.hidden = !expanded;
@@ -223,8 +223,8 @@ function getNodePayload(wrapper) {
 
 function getRowClassName(node, currentNodeId) {
   return [
-    'tree-summary',
-    node.hasChildren ? 'tree-branch' : 'tree-leaf',
+    'projection-tree__summary',
+    node.hasChildren ? 'projection-tree__branch' : 'projection-tree__leaf',
     node.id === currentNodeId ? 'is-current' : '',
     getAncestorPath(currentNodeId).includes(node.id) ? 'is-active-branch' : '',
   ].filter(Boolean).join(' ');
@@ -232,9 +232,9 @@ function getRowClassName(node, currentNodeId) {
 
 function renderTreeLabel(node) {
   return `
-    <span class="tree-copy">
-      <span class="tree-label">${escapeHtml(node.label)}</span>
-      ${node.meta || node.status ? `<span class="tree-meta">${escapeHtml(node.meta || node.status)}</span>` : ''}
+    <span class="projection-tree__copy">
+      <span class="projection-tree__label">${escapeHtml(node.label)}</span>
+      ${node.meta || node.status ? `<span class="projection-tree__meta">${escapeHtml(node.meta || node.status)}</span>` : ''}
     </span>
   `;
 }

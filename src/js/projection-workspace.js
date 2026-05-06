@@ -217,13 +217,13 @@ async function openSuggestion(item) {
 function applyTreeFilters(tree, state) {
   const query = state.query;
   const activeSurfaces = state.surfaces;
-  tree.querySelectorAll('.tree-node').forEach((node) => {
-    const row = node.querySelector(':scope > .tree-summary');
+  tree.querySelectorAll('.projection-tree__node').forEach((node) => {
+    const row = node.querySelector(':scope > .projection-tree__summary');
     if (!row) return;
     const text = row.dataset.searchText || row.textContent.toLowerCase();
     const surface = surfaceFor(row.dataset.type, text);
     const status = (row.dataset.status || '').toLowerCase();
-    const isBranch = row.classList.contains('tree-branch');
+    const isBranch = row.classList.contains('projection-tree__branch');
     const matchesQuery = !query || isBranch || text.includes(query);
     const matchesSurface = !surface || activeSurfaces.has(surface);
     const matchesScope = isBranch || state.scope !== 'system-surfaces' || /system|workflow|promotion|cicd|agent|memory|turn|repository|pattern/.test(text);

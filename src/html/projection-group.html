@@ -6,7 +6,7 @@
   <title>Projection Group</title>
   <link rel="stylesheet" href="../css/global-inspection.css">
 </head>
-<body>
+<body class="projection-shell-page">
   <header>
     <p><a href="index.html">Inspection Home</a> / <a href="projections.html">Projection Inspection</a></p>
     <h1 id="group-title">Projection Group</h1>
@@ -15,22 +15,22 @@
 
   <div id="workspace-chrome"></div>
 
-  <main class="projection-workspace">
-    <aside class="projection-tree-panel" aria-labelledby="tree-title">
-      <h2 id="tree-title">Knowledge Tree</h2>
+  <main class="projection-shell">
+    <aside class="projection-shell__tree" aria-labelledby="tree-title">
+      <h2 id="tree-title" class="projection-shell__title">Knowledge Tree</h2>
       <div id="projection-tree" class="projection-tree" aria-live="polite">
         <p>Loading projection tree...</p>
       </div>
     </aside>
 
-    <section class="projection-surface-panel" aria-labelledby="group-list-title">
+    <section class="projection-shell__surface" aria-labelledby="group-list-title">
       <h2 id="group-list-title">Available Projections</h2>
-      <div id="group-list" class="surface-list" aria-live="polite">
+      <div id="group-list" class="projection-list" aria-live="polite">
         <p>Loading projections...</p>
       </div>
 
-      <aside class="attention" aria-labelledby="group-attention-title">
-        <h2 id="group-attention-title">Recent Attention</h2>
+      <aside class="projection-aside" aria-labelledby="group-attention-title">
+        <h2 id="group-attention-title" class="projection-aside__title">Recent Attention</h2>
         <ul id="group-attention">
           <li>Loading grouped projection context.</li>
         </ul>

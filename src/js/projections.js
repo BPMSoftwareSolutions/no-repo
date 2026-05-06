@@ -110,17 +110,17 @@ function buildSurfaceGroups({ hasHome, hasCatalog, projects }) {
 
 function renderSurface(surface, index) {
   const card = document.createElement('a');
-  card.className = 'surface-card';
+  card.className = 'projection-card';
   card.href = surface.href;
   card.innerHTML = `
-    <span class="surface-number">${String(index).padStart(2, '0')}</span>
-    <span class="surface-copy">
+    <span class="projection-card__number">${String(index).padStart(2, '0')}</span>
+    <span class="projection-card__copy">
       <strong>${escapeHtml(surface.label)}</strong>
       <span>${escapeHtml(surface.question)}</span>
       <em>${escapeHtml(surface.count)} &middot; ${escapeHtml(surface.status)}</em>
     </span>
-    <span class="surface-meaning">${escapeHtml(surface.meaning)}</span>
-    <span class="surface-open">Open</span>
+    <span class="projection-card__meaning">${escapeHtml(surface.meaning)}</span>
+    <span class="projection-card__open">Open</span>
   `;
   return card;
 }

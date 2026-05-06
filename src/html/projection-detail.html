@@ -6,7 +6,7 @@
   <title>Projection Detail</title>
   <link rel="stylesheet" href="../css/global-inspection.css">
 </head>
-<body>
+<body class="projection-shell-page">
   <header>
     <p><a href="index.html">Inspection Home</a> / <a href="projections.html">Projection Inspection</a></p>
     <h1 id="detail-title">Projection Detail</h1>
@@ -15,15 +15,15 @@
 
   <div id="workspace-chrome"></div>
 
-  <main class="projection-workspace">
-    <aside class="projection-tree-panel" aria-labelledby="tree-title">
-      <h2 id="tree-title">Knowledge Tree</h2>
+  <main class="projection-shell">
+    <aside class="projection-shell__tree" aria-labelledby="tree-title">
+      <h2 id="tree-title" class="projection-shell__title">Knowledge Tree</h2>
       <div id="projection-tree" class="projection-tree" aria-live="polite">
         <p>Loading projection tree...</p>
       </div>
     </aside>
 
-    <article class="projection-surface-panel">
+    <article class="projection-shell__surface">
       <div id="projection-content" class="markdown-body" aria-live="polite">
         <p>Loading projection...</p>
       </div>

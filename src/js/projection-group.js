@@ -68,17 +68,17 @@ function renderProjectProjection(project, config, index) {
   const status = project.status || project.process_status || project.charter_status || 'Active';
 
   const card = document.createElement('a');
-  card.className = 'surface-card';
+  card.className = 'projection-card';
   card.href = config.href(projectId);
   card.innerHTML = `
-    <span class="surface-number">${String(index).padStart(2, '0')}</span>
-    <span class="surface-copy">
+    <span class="projection-card__number">${String(index).padStart(2, '0')}</span>
+    <span class="projection-card__copy">
       <strong>${escapeHtml(title)}</strong>
       <span>${escapeHtml(summary)}</span>
       <em>${escapeHtml(status)} · Open</em>
     </span>
-    <span class="surface-meaning">${escapeHtml(config.itemQuestion)}</span>
-    <span class="surface-open">Open</span>
+    <span class="projection-card__meaning">${escapeHtml(config.itemQuestion)}</span>
+    <span class="projection-card__open">Open</span>
   `;
   return card;
 }
