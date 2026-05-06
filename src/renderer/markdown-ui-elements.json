@@ -773,6 +773,16 @@
       "display": "grid",
       "minWidth": "190px"
     },
+    ".workspace-toolbar__logo": {
+      "display": "block",
+      "width": "152px",
+      "height": "28px",
+      "marginBottom": "6px",
+      "objectFit": "contain"
+    },
+    ".workspace-toolbar__brand-text": {
+      "display": "grid"
+    },
     ".workspace-toolbar__title": {
       "color": "var(--text-strong)",
       "fontSize": "16px",

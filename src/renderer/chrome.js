@@ -86,8 +86,11 @@ function renderBrandZone(zoneValues, merged) {
   const context = escapeHtml(merged.context || zoneValues.context || 'Projection Graph');
   return `
     <div class="workspace-toolbar__brand loga-toolbar__context">
-      <span class="eyebrow">${eyebrow}</span>
-      <strong class="workspace-toolbar__title">${context}</strong>
+      <img class="workspace-toolbar__logo" src="/images/ai_engine_logo.svg" alt="AI Engine logo" width="152" height="28">
+      <div class="workspace-toolbar__brand-text">
+        <span class="eyebrow">${eyebrow}</span>
+        <strong class="workspace-toolbar__title">${context}</strong>
+      </div>
     </div>
   `;
 }
