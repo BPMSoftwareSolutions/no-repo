@@ -370,12 +370,12 @@ async function buildCurrentFocusChildren(parentId, projectId, { client }) {
     return {
       parent_id: parentId,
       nodes: display.map((item) => treeNode({
-        id: `project-${projectId}-roadmap-item-${item.item_key}`,
-        label: item.item_title,
+        id: `project-${projectId}-roadmap-item-${getRoadmapItemKey(item)}`,
+        label: getRoadmapItemLabel(item),
         type: 'roadmap_item',
         meta: item.item_status,
         hasChildren: true,
-        contentHref: `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(item.item_key)}`,
+        contentHref: `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(getRoadmapItemKey(item))}`,
       })),
     };
   } catch {
@@ -392,13 +392,13 @@ async function buildRoadmapItemsChildren(parentId, projectId, { client }) {
     return {
       parent_id: parentId,
       nodes: display.map((item) => treeNode({
-        id: `project-${projectId}-roadmap-item-${item.item_key}`,
-        label: item.item_title,
+        id: `project-${projectId}-roadmap-item-${getRoadmapItemKey(item)}`,
+        label: getRoadmapItemLabel(item),
         type: 'roadmap_item',
         status: item.item_status,
         meta: item.total_task_count > 0 ? `${item.open_task_count} / ${item.total_task_count} tasks` : undefined,
         hasChildren: true,
-        contentHref: `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(item.item_key)}`,
+        contentHref: `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(getRoadmapItemKey(item))}`,
       })),
     };
   } catch {
@@ -540,14 +540,15 @@ async function buildTasksChildren(parentId, projectId, { client }) {
     return {
       parent_id: parentId,
       nodes: topLevel.map((task) => {
-        const hasSubtasks = allTasks.some((t) => t.parent_task_id === task.implementation_item_task_id);
+        const taskId = getTaskId(task);
+        const hasSubtasks = allTasks.some((t) => t.parent_task_id === taskId);
         return treeNode({
-          id: `${parentId}-task-${task.implementation_item_task_id}`,
-          label: task.title,
+          id: `${parentId}-task-${taskId}`,
+          label: getTaskLabel(task),
           type: 'task',
           status: task.status,
           hasChildren: hasSubtasks,
-          contentHref: `projection-detail.html?type=operator.task_detail&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}&taskKey=${encodeURIComponent(task.implementation_item_task_id)}`,
+          contentHref: `projection-detail.html?type=operator.task_detail&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}&taskKey=${encodeURIComponent(taskId)}`,
         });
       }),
     };
@@ -563,11 +564,11 @@ async function buildSubtaskListChildren(parentId, taskId, { client }) {
     return {
       parent_id: parentId,
       nodes: subtasks.map((subtask) => treeNode({
-        id: `${parentId}-subtask-${subtask.implementation_item_task_id || subtask.id}`,
-        label: subtask.title,
+        id: `${parentId}-subtask-${getTaskId(subtask)}`,
+        label: getSubtaskLabel(subtask),
         type: 'subtask',
         status: subtask.status,
-        contentHref: `projection-detail.html?type=operator.subtask_detail&taskId=${encodeURIComponent(taskId)}&subtaskId=${encodeURIComponent(subtask.implementation_item_task_id || subtask.id)}`,
+        contentHref: `projection-detail.html?type=operator.subtask_detail&taskId=${encodeURIComponent(taskId)}&subtaskId=${encodeURIComponent(getTaskId(subtask))}`,
       })),
     };
   } catch {
@@ -677,4 +678,78 @@ function getProjectStatus(project) {
 
 function fallbackProject() {
   return { id: 'ai-engine', name: 'AI Engine', status: 'active' };
+}
+
+function firstNonEmpty(...values) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return '';
+}
+
+function shortDescription(value) {
+  const line = String(value || '').split('\n').find((part) => part.trim()) || '';
+  return line.trim();
+}
+
+function getRoadmapItemLabel(item) {
+  const key = getRoadmapItemKey(item);
+  return firstNonEmpty(
+    item?.item_title,
+    item?.title,
+    item?.name,
+    key ? prettifySlug(key) : '',
+    item?.implementation_item_id,
+    'Untitled roadmap item'
+  );
+}
+
+function getRoadmapItemKey(item) {
+  return firstNonEmpty(
+    item?.item_key,
+    item?.key,
+    item?.slug,
+    item?.implementation_item_id,
+    'unknown-item'
+  );
+}
+
+function getTaskLabel(task) {
+  const key = firstNonEmpty(task?.task_key, task?.key);
+  return firstNonEmpty(
+    task?.title,
+    task?.task_title,
+    task?.name,
+    key ? prettifySlug(key) : '',
+    shortDescription(task?.description),
+    task?.implementation_item_task_id,
+    task?.id,
+    'Untitled task'
+  );
+}
+
+function getSubtaskLabel(subtask) {
+  const key = firstNonEmpty(subtask?.task_key, subtask?.key, subtask?.subtask_key);
+  return firstNonEmpty(
+    subtask?.title,
+    subtask?.task_title,
+    subtask?.name,
+    key ? prettifySlug(key) : '',
+    shortDescription(subtask?.description),
+    subtask?.implementation_item_task_id,
+    subtask?.id,
+    'Untitled subtask'
+  );
+}
+
+function getTaskId(task) {
+  return firstNonEmpty(task?.implementation_item_task_id, task?.id, task?.task_id, task?.task_key, 'unknown-task');
+}
+
+function prettifySlug(value) {
+  return String(value || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }

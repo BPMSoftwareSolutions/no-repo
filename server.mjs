@@ -25,6 +25,26 @@ const MIME_TYPES = {
   '.md': 'text/markdown',
 };
 
+const CONTRACT_PREPAINT_STYLE_ID = 'contract-prepaint-bg';
+const CONTRACT_PREPAINT_CSS = `
+:root{
+  --bg:#090d14;
+  --text:#d6deeb;
+  --sans:"Inter", "Segoe UI", "SF Pro Text", "Roboto", sans-serif;
+}
+html{
+  background:var(--bg);
+  color:var(--text);
+}
+body{
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(circle at top left, rgba(124, 156, 255, 0.14), transparent 34rem), var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+}
+`;
+
 const proxyHandler = createProxyHandler(createAiEngineClient);
 
 const server = http.createServer(async (req, res) => {
@@ -75,6 +95,14 @@ const server = http.createServer(async (req, res) => {
     if (stat.isDirectory()) filePath = path.join(filePath, 'index.html');
     const ext = path.extname(filePath);
     const content = await fs.readFile(filePath);
+
+    if (ext === '.html') {
+      const html = injectPrepaintStyle(content.toString('utf8'));
+      res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'text/plain' });
+      res.end(html);
+      return;
+    }
+
     res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'text/plain' });
     res.end(content);
   } catch (error) {
@@ -92,6 +120,15 @@ server.listen(PORT, () => {
 function sendJson(res, payload) {
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(payload));
+}
+
+function injectPrepaintStyle(html) {
+  if (html.includes(`id="${CONTRACT_PREPAINT_STYLE_ID}"`)) return html;
+  const styleTag = `<style id="${CONTRACT_PREPAINT_STYLE_ID}">${CONTRACT_PREPAINT_CSS}</style>`;
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${styleTag}\n</head>`);
+  }
+  return `${styleTag}\n${html}`;
 }
 
 function createAiEngineClient(req) {
