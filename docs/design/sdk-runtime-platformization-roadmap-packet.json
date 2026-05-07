@@ -1,0 +1,274 @@
+{
+  "packetType": "implementation_plan_packet",
+  "packetVersion": "1.0",
+  "packetId": "impl-ai-engine-sdk-projection-runtime-platformization-v1",
+  "title": "AI Engine SDK Projection Runtime Platformization",
+  "status": "draft",
+  "governance": {
+    "requiredGates": [
+      "intent",
+      "structure",
+      "promotion"
+    ]
+  },
+  "phases": [
+    {
+      "phaseKey": "phase_1_foundation",
+      "title": "Foundation",
+      "items": [
+        {
+          "itemKey": "baseline-current-runtime-capabilities",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "analysis",
+          "description": "Capture capability baseline from the working repo example, including template features, transform semantics, and contract wiring behavior.",
+          "acceptanceChecks": [
+            {
+              "text": "Baseline matrix maps current behavior for each, dot lookup, fallback chains, dataMap mapping, and derive rules."
+            },
+            {
+              "text": "Known edge cases are documented with expected behavior examples."
+            }
+          ]
+        },
+        {
+          "itemKey": "define-sdk-runtime-contract",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "platform_design",
+          "description": "Define reusable SDK projection runtime contract and feature boundaries for loops, nested token resolution, fallback chains, dataMap mapping, and derive evaluation.",
+          "acceptanceChecks": [
+            {
+              "text": "Runtime contract schema is versioned and documented."
+            },
+            {
+              "text": "Compatibility guarantees for existing scalar token syntax are declared."
+            }
+          ]
+        },
+        {
+          "itemKey": "define-transform-contract-schema",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "platform_design",
+          "description": "Define declarative transform schema for template, dataMap, and derive sections including rule precedence and interpolation pipes.",
+          "acceptanceChecks": [
+            {
+              "text": "Schema supports each loops, fallback chaining, gt comparator, and encode pipe semantics."
+            },
+            {
+              "text": "Schema validation errors return actionable field-level diagnostics."
+            }
+          ]
+        },
+        {
+          "itemKey": "design-backward-compatibility-guardrails",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "platform_design",
+          "description": "Define compatibility and rollout guardrails to prevent regressions for existing consumers during runtime platformization.",
+          "acceptanceChecks": [
+            {
+              "text": "Compatibility contract includes explicit no-break guarantees for existing scalar token behavior."
+            },
+            {
+              "text": "Feature flags or staged rollout controls are defined for runtime adoption."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phaseKey": "phase_2_implementation",
+      "title": "Implementation",
+      "items": [
+        {
+          "itemKey": "implement-sdk-token-resolver-core",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "implementation",
+          "description": "Implement core token resolver behavior for nested lookup and fallback chain semantics.",
+          "acceptanceChecks": [
+            {
+              "text": "Resolver supports arbitrary-depth dot notation token access."
+            },
+            {
+              "text": "Fallback chains resolve first non-empty value deterministically."
+            }
+          ]
+        },
+        {
+          "itemKey": "implement-sdk-each-renderer",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "implementation",
+          "description": "Implement collection iteration support for each blocks within the shared template runtime.",
+          "acceptanceChecks": [
+            {
+              "text": "Each renderer expands list entries in stable source order."
+            },
+            {
+              "text": "Each renderer supports nested token substitution in item scope."
+            }
+          ]
+        },
+        {
+          "itemKey": "implement-sdk-datamap-filter-engine",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "implementation",
+          "description": "Implement dataMap application and filtering behavior including string matches and gt comparisons.",
+          "acceptanceChecks": [
+            {
+              "text": "dataMap maps scalar and collection sources into token payloads."
+            },
+            {
+              "text": "Filter engine supports array includes and gt comparison semantics."
+            }
+          ]
+        },
+        {
+          "itemKey": "implement-sdk-derive-engine",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "implementation",
+          "description": "Implement derive evaluation for ordered rules and template interpolation with encode pipe support.",
+          "acceptanceChecks": [
+            {
+              "text": "Rule chains evaluate in priority order with default fallback."
+            },
+            {
+              "text": "Template interpolation supports encode pipe for URL-safe output."
+            }
+          ]
+        },
+        {
+          "itemKey": "implement-sdk-runtime-engine",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "implementation",
+          "description": "Implement shared SDK runtime for template rendering, token resolution, dataMap processing, and derive evaluation.",
+          "acceptanceChecks": [
+            {
+              "text": "SDK runtime executes declarative contracts without app-specific transform code."
+            },
+            {
+              "text": "Parity tests pass for the declarative portfolio projection reference."
+            }
+          ]
+        },
+        {
+          "itemKey": "integrate-sdk-runtime-into-operator-projections",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "integration",
+          "description": "Wire the new shared runtime into operator projection flows to remove app-specific transform logic where contracts exist.",
+          "acceptanceChecks": [
+            {
+              "text": "Portfolio projection resolves via contract runtime path without bespoke transform logic."
+            },
+            {
+              "text": "Legacy fallback behavior remains functional for non-migrated projections."
+            }
+          ]
+        },
+        {
+          "itemKey": "integrate-platform-transform-executor",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "implementation",
+          "description": "Integrate backend platform transform execution surfaces with governed projection metadata and provenance outputs.",
+          "acceptanceChecks": [
+            {
+              "text": "Backend transform endpoints return contract metadata and provenance fields consistently."
+            },
+            {
+              "text": "Error responses include actionable transform validation details instead of opaque failures."
+            }
+          ]
+        },
+        {
+          "itemKey": "harden-mutation-and-governance-paths",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "hardening",
+          "description": "Stabilize charter/roadmap mutation surfaces and runtime query dependencies required for project bootstrap and packet import.",
+          "acceptanceChecks": [
+            {
+              "text": "Missing runtime query contract blocker is resolved for project bootstrap flow."
+            },
+            {
+              "text": "Charter and roadmap creation endpoints complete without HTTP 500 responses in integration tests."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phaseKey": "phase_3_validation_and_adoption",
+      "title": "Validation and Adoption",
+      "items": [
+        {
+          "itemKey": "build-runtime-unit-test-suite",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "verification",
+          "description": "Build unit test coverage for resolver, each rendering, dataMap filtering, and derive rule behavior.",
+          "acceptanceChecks": [
+            {
+              "text": "Unit tests cover positive and negative cases for all runtime primitives."
+            },
+            {
+              "text": "Test fixtures include real-world examples from the working portfolio projection."
+            }
+          ]
+        },
+        {
+          "itemKey": "establish-parity-verification-suite",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "verification",
+          "description": "Establish parity verification for loops, fallback chains, derive rules, and output shape between legacy runtime and SDK runtime.",
+          "acceptanceChecks": [
+            {
+              "text": "Parity suite passes for pilot projection outputs and metadata."
+            },
+            {
+              "text": "Snapshot comparison validates markdown output equivalence for reference projections."
+            }
+          ]
+        },
+        {
+          "itemKey": "validate-backend-provenance-contract",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "verification",
+          "description": "Verify backend responses publish required projection metadata and provenance contract fields.",
+          "acceptanceChecks": [
+            {
+              "text": "Responses include loga contract headers, projection type, source truth, and correlation metadata."
+            },
+            {
+              "text": "Contract validation tests fail fast when metadata fields are missing."
+            }
+          ]
+        },
+        {
+          "itemKey": "publish-migration-guidance-and-onboard",
+          "originDomain": "backend-platform",
+          "targetDomain": "backend-platform",
+          "type": "adoption",
+          "description": "Publish migration guidance and onboard at least two application consumers to the SDK runtime.",
+          "acceptanceChecks": [
+            {
+              "text": "At least two applications adopt the shared runtime without app-local transform logic."
+            },
+            {
+              "text": "Migration runbook includes rollback and feature-flag guidance."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
