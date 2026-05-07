@@ -1,0 +1,56 @@
+---
+loga_contract: "ai-engine-ui/v1"
+interaction_contract: "loga-choreography/v1"
+navigation_contract: "loga-navigation/v1"
+projection_type: "operator.project_portfolio"
+projection_id: "operator-project-portfolio"
+source_system: "ai-engine"
+source_truth: "sql"
+primary_question: "What is the delivery state across all projects?"
+workspace_mode: "focus"
+surface_label: "Project Portfolio"
+allowed_actions:
+  - refresh_projection
+---
+
+# Project Portfolio
+
+::surface type="project_portfolio" priority="high" summary="Portfolio completion is {{completion.completion_percentage}}% across {{completion.total_roadmap_items}} roadmap items."
+::
+
+## Portfolio Completion
+
+::portfolio_gauge
+completion_pct: {{completion.completion_percentage}}
+completed_items: {{completion.completed_roadmap_items}}
+total_items: {{completion.total_roadmap_items}}
+in_progress: {{completion.in_progress_items}}
+blocked: {{completion.blocked_items}}
+awaiting_review: {{completion.awaiting_review_items}}
+::
+
+## Portfolio Snapshot
+
+::metric_row
+Total Projects: {{summary.total_projects}}
+Open Items: {{completion.open_roadmap_items}}
+Blocked Items: {{completion.blocked_items}}
+Approval Backlog: {{summary.approval_backlog_count}}
+::
+
+## Active Projects
+
+::portfolio_grid
+{{#each activeProjects}}
+- name: "{{project_name}}"
+  project_id: "{{project_id}}"
+  target: "{{$target}}"
+  status: "{{$status}}"
+  completion_pct: {{completion_pct}}
+  done_items: {{done_items}}
+  total_items: {{total_items}}
+  active_item: "{{active_item_title}}"
+  blockers: {{blocker_count}}
+  last_run: "{{last_activity_at||last_updated_at}}"
+{{/each}}
+::

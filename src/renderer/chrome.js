@@ -103,8 +103,10 @@ function renderSearchZone(children) {
   return `
     <label class="workspace-toolbar__field loga-control loga-control--search">
       <span>Search</span>
-      <input data-workspace-search type="search" placeholder="${escapeHtml(placeholder)}" autocomplete="off">
-      <div data-search-suggestions class="search-suggestions" hidden></div>
+      <div class="workspace-toolbar__search-wrap">
+        <input data-workspace-search type="search" placeholder="${escapeHtml(placeholder)}" autocomplete="off">
+        <div data-search-suggestions class="search-suggestions" hidden></div>
+      </div>
     </label>
   `;
 }

@@ -485,124 +485,197 @@ async function loadTemplate(name) {
 }
 
 function applyTemplate(template, tokens) {
-  return template.replace(/\{\{([^}]+)\}\}/g, (_, key) => {
-    const parts = key.trim().split('.');
-    let val = tokens;
-    for (const p of parts) val = val?.[p];
-    return val != null ? String(val) : '';
+  const eachPattern = /\{\{#each\s+([^}]+)\}\}([\s\S]*?)\{\{\/each\}\}/g;
+  const withEach = template.replace(eachPattern, (_, collectionExpr, body) => {
+    const collection = resolveTokenValue(tokens, collectionExpr);
+    if (!Array.isArray(collection) || !collection.length) return '';
+    return collection.map((item) => {
+      const itemTokens = (item && typeof item === 'object') ? item : { value: item };
+      return applyTemplate(body, { ...tokens, ...itemTokens });
+    }).join('');
   });
+
+  return withEach.replace(/\{\{([^}]+)\}\}/g, (_, expression) => {
+    const value = resolveTokenValue(tokens, expression);
+    return value != null ? String(value) : '';
+  });
+}
+
+function resolveTokenValue(tokens, expression) {
+  const candidates = String(expression || '')
+    .split('||')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (!candidates.length) return undefined;
+
+  for (const candidate of candidates) {
+    const value = resolvePathValue(tokens, candidate);
+    if (value !== undefined && value !== null && value !== '') return value;
+  }
+
+  return resolvePathValue(tokens, candidates[candidates.length - 1]);
+}
+
+function resolvePathValue(source, path) {
+  const segments = String(path || '')
+    .split('.')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  let current = source;
+  for (const segment of segments) {
+    current = current?.[segment];
+  }
+  return current;
+}
+
+function applyDataMap(apiData, dataMap) {
+  const mapped = {};
+  for (const [target, mapDef] of Object.entries(dataMap || {})) {
+    if (typeof mapDef === 'string') {
+      mapped[target] = resolvePathValue(apiData, mapDef);
+      continue;
+    }
+
+    if (!mapDef || typeof mapDef !== 'object') {
+      mapped[target] = mapDef;
+      continue;
+    }
+
+    if (typeof mapDef.source === 'string') {
+      const sourceValue = resolvePathValue(apiData, mapDef.source);
+      if (Array.isArray(sourceValue)) {
+        mapped[target] = mapDef.filter
+          ? sourceValue.filter((item) => matchFilter(item, mapDef.filter))
+          : sourceValue;
+      } else {
+        mapped[target] = sourceValue;
+      }
+      continue;
+    }
+
+    if (typeof mapDef.path === 'string') {
+      mapped[target] = resolvePathValue(apiData, mapDef.path);
+      continue;
+    }
+
+    mapped[target] = mapDef;
+  }
+  return mapped;
+}
+
+function matchFilter(item, filterDef) {
+  return Object.entries(filterDef || {}).every(([field, expected]) => {
+    const actual = resolvePathValue(item, field);
+
+    if (Array.isArray(expected)) {
+      const normalizedActual = typeof actual === 'string' ? actual.toLowerCase() : actual;
+      return expected.some((entry) => {
+        const normalizedEntry = typeof entry === 'string' ? entry.toLowerCase() : entry;
+        return normalizedEntry === normalizedActual;
+      });
+    }
+
+    if (expected && typeof expected === 'object') {
+      if (Object.prototype.hasOwnProperty.call(expected, 'gt')) {
+        return Number(actual) > Number(expected.gt);
+      }
+      return false;
+    }
+
+    if (typeof expected === 'string') {
+      return String(actual || '').toLowerCase() === expected.toLowerCase();
+    }
+
+    return actual === expected;
+  });
+}
+
+function evaluateDerived(item, deriveSpec) {
+  const derived = {};
+  for (const [field, spec] of Object.entries(deriveSpec || {})) {
+    if (!spec || typeof spec !== 'object') continue;
+
+    let value = '';
+    if (Array.isArray(spec.rules)) {
+      value = evaluateRules(item, spec.rules);
+    } else if (typeof spec.template === 'string') {
+      value = renderDerivedTemplate(spec.template, item);
+    }
+
+    if ((value === '' || value == null) && Object.prototype.hasOwnProperty.call(spec, 'fallback')) {
+      value = spec.fallback;
+    }
+
+    derived[field] = value;
+  }
+  return derived;
+}
+
+function evaluateRules(item, rules) {
+  for (const rule of rules) {
+    if (!rule || typeof rule !== 'object') continue;
+    if (Object.prototype.hasOwnProperty.call(rule, 'default')) return rule.default;
+
+    if (matchFilter(item, rule.if || {})) {
+      return rule.value ?? '';
+    }
+  }
+  return '';
+}
+
+function renderDerivedTemplate(template, item) {
+  return String(template || '').replace(/\{([^}|]+)(\|[^}]+)?\}/g, (_, rawField, rawPipe = '') => {
+    const value = resolvePathValue(item, rawField.trim());
+    let result = value != null ? String(value) : '';
+
+    const pipe = rawPipe.trim().replace(/^\|/, '');
+    if (pipe === 'encode') result = encodeURIComponent(result);
+
+    return result;
+  });
+}
+
+async function applyContractTransform(transformName, params, apiData, projectionType) {
+  const contractTransforms = MARKDOWN_UI_REGISTRY.transforms || {};
+  const spec = contractTransforms[transformName];
+  if (!spec) throw new Error(`Unknown contract transform: ${transformName}`);
+
+  const mappedTokens = applyDataMap(apiData || {}, spec.dataMap || {});
+  const tokens = { ...mappedTokens };
+
+  if (spec.derive) {
+    for (const [key, value] of Object.entries(tokens)) {
+      if (!Array.isArray(value)) continue;
+      tokens[key] = value.map((item) => {
+        if (!item || typeof item !== 'object') return item;
+        return { ...item, ...evaluateDerived(item, spec.derive) };
+      });
+    }
+  }
+
+  const template = await loadTemplate(spec.template);
+  const text = applyTemplate(template, tokens);
+
+  return {
+    text,
+    contentType: 'text/markdown; charset=utf-8',
+    projectionType: projectionType || transformName,
+    sourceTruth: 'sql',
+    provenance: {
+      sourceTruth: 'sql',
+      projectionType: projectionType || transformName,
+      transform: transformName,
+    },
+  };
 }
 
 // --- Transforms (registry-named, async, load templates from files) ---
 
 const TRANSFORMS = {
   async buildProjectPortfolioProjection(params, apiData) {
-    const payload = apiData || {};
-    const projects = Array.isArray(payload?.projects) ? payload.projects : [];
-    const completion = payload?.portfolio_completion || {};
-    const summary = payload?.summary || {};
-
-    const toNum = (value, fallback = 0) => {
-      const n = Number(value);
-      return Number.isFinite(n) ? n : fallback;
-    };
-    const quote = (value) => String(value ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const cardStatus = (project) => {
-      const process = String(project?.process_status || '').toLowerCase();
-      const activeStatus = String(project?.active_item_status || '').toLowerCase();
-      if (process === 'completed') return 'completed';
-      if (activeStatus === 'blocked' || toNum(project?.blocker_count, 0) > 0) return 'blocked';
-      if (process === 'cancelled') return 'inactive';
-      return 'active';
-    };
-
-    const activeProjects = projects.filter((project) => {
-      const process = String(project?.process_status || '').toLowerCase();
-      return process === 'active' || process === 'completed';
-    });
-
-    const cards = activeProjects.map((project) => {
-      const projectId = project?.project_id || '';
-      const name = project?.project_name || projectId || 'Untitled project';
-      const completionPct = toNum(project?.completion_pct, 0);
-      const doneItems = toNum(project?.done_items, 0);
-      const totalItems = toNum(project?.total_items, 0);
-      const activeItem = project?.active_item_title || 'None';
-      const blockers = toNum(project?.blocker_count, 0);
-      const lastRun = project?.last_activity_at || project?.last_updated_at || '';
-      const status = cardStatus(project);
-      const target = projectId
-        ? `projection-detail.html?type=operator.project_detail&projectId=${encodeURIComponent(projectId)}`
-        : '#';
-
-      return `- name: "${quote(name)}"\n  project_id: "${quote(projectId)}"\n  target: "${quote(target)}"\n  status: "${quote(status)}"\n  completion_pct: ${completionPct.toFixed(2)}\n  done_items: ${doneItems}\n  total_items: ${totalItems}\n  active_item: "${quote(activeItem)}"\n  blockers: ${blockers}\n  last_run: "${quote(lastRun)}"`;
-    }).join('\n\n');
-
-    const completionPct = toNum(completion?.completion_percentage, 0);
-    const completedItems = toNum(completion?.completed_roadmap_items, 0);
-    const totalItems = toNum(completion?.total_roadmap_items, 0);
-    const openItems = toNum(completion?.open_roadmap_items, Math.max(0, totalItems - completedItems));
-    const blockedItems = toNum(completion?.blocked_items, 0);
-    const inProgressItems = toNum(completion?.in_progress_items, 0);
-    const awaitingReviewItems = toNum(completion?.awaiting_review_items, 0);
-
-    const text = `---
-loga_contract: "ai-engine-ui/v1"
-interaction_contract: "loga-choreography/v1"
-navigation_contract: "loga-navigation/v1"
-projection_type: "operator.project_portfolio"
-projection_id: "operator-project-portfolio"
-source_system: "ai-engine"
-source_truth: "sql"
-primary_question: "What is the delivery state across all projects?"
-workspace_mode: "focus"
-surface_label: "Project Portfolio"
-allowed_actions:
-  - refresh_projection
----
-
-# Project Portfolio
-
-::surface type="project_portfolio" priority="high" summary="Portfolio completion is ${completionPct.toFixed(2)}% across ${totalItems} roadmap items."
-::
-
-## Portfolio Completion
-
-::portfolio_gauge
-completion_pct: ${completionPct.toFixed(2)}
-completed_items: ${completedItems}
-total_items: ${totalItems}
-in_progress: ${inProgressItems}
-blocked: ${blockedItems}
-awaiting_review: ${awaitingReviewItems}
-::
-
-## Portfolio Snapshot
-
-::metric_row
-Total Projects: ${toNum(summary?.total_projects, projects.length)}
-Open Items: ${openItems}
-Blocked Items: ${blockedItems}
-Approval Backlog: ${toNum(summary?.approval_backlog_count, 0)}
-::
-
-## Active Projects
-
-::portfolio_grid
-${cards}
-::`;
-
-    return {
-      text,
-      contentType: 'text/markdown; charset=utf-8',
-      projectionType: 'operator.project_portfolio',
-      sourceTruth: 'sql',
-      provenance: {
-        sourceTruth: 'sql',
-        projectionType: 'operator.project_portfolio',
-        projectCount: projects.length,
-      },
-    };
+    return applyContractTransform('buildProjectPortfolioProjection', params, apiData, 'operator.project_portfolio');
   },
 
   async buildProjectDetailProjection(params, apiData) {
@@ -1138,6 +1211,7 @@ ${cards}
 
 async function loadProjection(projType, params) {
   const routes = MARKDOWN_UI_REGISTRY.routes || {};
+  const contractTransforms = MARKDOWN_UI_REGISTRY.transforms || {};
   const def = routes[projType];
 
   if (!def) return loadLocalProjectionFixture(projType);
@@ -1148,11 +1222,19 @@ async function loadProjection(projType, params) {
 
   const paramValues = (def.params || []).map(p => params[p]);
   const allParamsPresent = paramValues.every(Boolean);
+  const applyTransform = (apiData) => {
+    if (!def.transform) throw new Error(`No transform configured for ${projType}.`);
+    if (contractTransforms[def.transform]) {
+      return applyContractTransform(def.transform, params, apiData, projType);
+    }
+    if (!TRANSFORMS[def.transform]) throw new Error(`Unknown transform: ${def.transform}`);
+    return TRANSFORMS[def.transform](params, apiData);
+  };
 
   // Transform-only route (no API)
   if (def.transform && !def.api) {
     if (!allParamsPresent && def.fixtureFallback) return loadLocalProjectionFixture(projType);
-    return TRANSFORMS[def.transform](params);
+    return applyTransform();
   }
 
   // API route (with optional transform)
@@ -1163,7 +1245,7 @@ async function loadProjection(projType, params) {
     if (def.transform) {
       const promise = apiCall().then(data => {
         const apiData = def.transformDataPath ? (data[def.transformDataPath] || data) : data;
-        return TRANSFORMS[def.transform](params, apiData);
+        return applyTransform(apiData);
       });
       return def.fixtureFallback ? promise.catch(() => loadLocalProjectionFixture(projType)) : promise;
     }

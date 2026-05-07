@@ -825,11 +825,17 @@
       "textOverflow": "ellipsis",
       "whiteSpace": "nowrap"
     },
+    ".workspace-toolbar__search-wrap": {
+      "position": "relative"
+    },
+    ".workspace-toolbar__search-wrap input": {
+      "width": "100%"
+    },
     ".search-suggestions": {
       "position": "absolute",
       "left": "0",
       "right": "0",
-      "top": "calc(100% + 8px)",
+      "top": "calc(100% + 4px)",
       "zIndex": "30",
       "display": "grid",
       "gap": "4px",
@@ -2331,6 +2337,60 @@
       "api": "getLogaEvidencePacketProjection",
       "params": ["evidencePacketKey"],
       "fixtureFallback": true
+    }
+  },
+  "transforms": {
+    "buildProjectPortfolioProjection": {
+      "template": "operator.project_portfolio",
+      "dataMap": {
+        "completion": "portfolio_completion",
+        "summary": "summary",
+        "activeProjects": {
+          "source": "projects",
+          "filter": {
+            "process_status": ["active", "completed"]
+          }
+        }
+      },
+      "derive": {
+        "$status": {
+          "rules": [
+            {
+              "if": {
+                "process_status": "completed"
+              },
+              "value": "completed"
+            },
+            {
+              "if": {
+                "active_item_status": "blocked"
+              },
+              "value": "blocked"
+            },
+            {
+              "if": {
+                "blocker_count": {
+                  "gt": 0
+                }
+              },
+              "value": "blocked"
+            },
+            {
+              "if": {
+                "process_status": "cancelled"
+              },
+              "value": "inactive"
+            },
+            {
+              "default": "active"
+            }
+          ]
+        },
+        "$target": {
+          "template": "projection-detail.html?type=operator.project_detail&projectId={project_id|encode}",
+          "fallback": "#"
+        }
+      }
     }
   },
   "shell": {
