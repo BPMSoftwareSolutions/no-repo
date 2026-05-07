@@ -662,6 +662,10 @@ async function applyContractTransform(transformName, params, apiData, projection
   const mappedTokens = applyDataMap(apiData || {}, spec.dataMap || {});
   const tokens = { ...mappedTokens };
 
+  if (transformName === 'buildProjectPortfolioProjection') {
+    assertPortfolioDataIntegrity(tokens);
+  }
+
   if (spec.derive) {
     for (const [key, value] of Object.entries(tokens)) {
       if (!Array.isArray(value)) continue;
@@ -686,6 +690,31 @@ async function applyContractTransform(transformName, params, apiData, projection
       transform: transformName,
     },
   };
+}
+
+function assertPortfolioDataIntegrity(tokens) {
+  const projects = Array.isArray(tokens?.activeProjects) ? tokens.activeProjects : null;
+  if (!projects || projects.length === 0) {
+    throw new Error('Project portfolio cards require DB-backed projects. No active projects were returned by getPortfolioBundle.');
+  }
+
+  const requiredFields = ['project_id', 'project_name', 'completion_pct', 'done_items', 'total_items'];
+  const missing = [];
+
+  projects.forEach((project, index) => {
+    const missingFields = requiredFields.filter((field) => {
+      const value = project?.[field];
+      return value === undefined || value === null || value === '';
+    });
+
+    if (missingFields.length) {
+      missing.push(`card ${index + 1} (${project?.project_id || 'unknown_project'}): ${missingFields.join(', ')}`);
+    }
+  });
+
+  if (missing.length) {
+    throw new Error(`Project portfolio cards missing DB fields: ${missing.join(' | ')}`);
+  }
 }
 
 // --- Transforms (registry-named, async, load templates from files) ---

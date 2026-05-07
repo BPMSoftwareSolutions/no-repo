@@ -2275,8 +2275,7 @@
     },
     "operator.project_portfolio": {
       "api": "getPortfolioBundle",
-      "transform": "buildProjectPortfolioProjection",
-      "fixtureFallback": true
+      "transform": "buildProjectPortfolioProjection"
     },
     "operator.project_catalog": {
       "api": "getLogaProjectCatalogProjection"
