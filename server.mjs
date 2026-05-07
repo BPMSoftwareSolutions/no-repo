@@ -85,8 +85,10 @@ const server = http.createServer(async (req, res) => {
       filePath = path.join(SRC_DIR, 'html', pathname);
     } else if (pathname.endsWith('.css') && !pathname.startsWith('/css') && !pathname.startsWith('/renderer/')) {
       filePath = path.join(SRC_DIR, 'css', pathname);
-    } else if (pathname.endsWith('.js') && !pathname.startsWith('/js') && !pathname.startsWith('/renderer/')) {
+    } else if (pathname.endsWith('.js') && !pathname.startsWith('/js') && !pathname.startsWith('/renderer/') && !pathname.startsWith('/shared/')) {
       filePath = path.join(SRC_DIR, 'js', pathname);
+    } else if (pathname.startsWith('/shared/')) {
+      filePath = path.join(SRC_DIR, pathname);
     }
   }
 

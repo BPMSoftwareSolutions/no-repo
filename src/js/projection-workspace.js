@@ -6,6 +6,7 @@ import {
   renderProjectionTree,
 } from './projection-tree.js';
 import { aiEngineFetch } from './api-client.js';
+import { DEFAULT_PROJECT_ID, WORKSPACE_SCHEMA, normalizeStatus } from '../shared/projection-schema.js';
 
 let projectSearchIndex = null;
 
@@ -37,7 +38,7 @@ document.addEventListener('workspace-chrome:mounted', () => {
 
   const state = {
     query: '',
-    scope: 'ai-engine',
+    scope: DEFAULT_PROJECT_ID,
     mode: 'focus',
     surfaces: new Set(['roadmap', 'promotions', 'workflows', 'memory']),
     attention: 'needs-attention',
@@ -182,26 +183,11 @@ function buildTreeSuggestions(tree) {
 }
 
 function formatNodeType(type) {
-  return {
-    project: 'Project',
-    roadmap_item: 'Roadmap Item',
-    task_group: 'Tasks',
-    item_group: 'Roadmap',
-    focus: 'Current Focus',
-    evidence_group: 'Evidence',
-    runtime_surface: 'Workflow Runs',
-    projection_surface: 'Surface',
-  }[type] || type || 'Item';
+  return WORKSPACE_SCHEMA.nodeTypeLabels[type] || type || 'Item';
 }
 
 function surfacesForType(type) {
-  if (/roadmap_item|task/.test(type)) return ['roadmap'];
-  if (/promotion/.test(type)) return ['promotions'];
-  if (/runtime|workflow/.test(type)) return ['workflows'];
-  if (/evidence/.test(type)) return ['evidence'];
-  if (/memory|turn|agent/.test(type)) return ['memory'];
-  if (/project/.test(type)) return ['roadmap', 'promotions', 'workflows', 'memory'];
-  return [];
+  return WORKSPACE_SCHEMA.surfaceByType[type] || [];
 }
 
 async function openSuggestion(item) {
@@ -218,13 +204,14 @@ function applyTreeFilters(tree, state) {
     const text = row.dataset.searchText || row.textContent.toLowerCase();
     const surface = surfaceFor(row.dataset.type, text);
     const status = (row.dataset.status || '').toLowerCase();
+    const statusLabel = normalizeStatus(row.dataset.status || row.dataset.state || '').replace(/_/g, ' ');
     const isBranch = row.classList.contains('projection-tree__branch');
     const matchesQuery = !query || isBranch || text.includes(query);
     const matchesSurface = !surface || activeSurfaces.has(surface);
     const matchesScope = isBranch || state.scope !== 'system-surfaces' || /system|workflow|promotion|cicd|agent|memory|turn|repository|pattern/.test(text);
     const matchesAttention = state.attention === 'needs-attention'
-      || (state.attention === 'blocked-only' && /blocked|failed|waiting|pending/.test(status))
-      || (state.attention === 'high-priority' && /high|critical|2 \/ 4|needed/.test(status + ' ' + text));
+      || (state.attention === 'blocked-only' && /blocked|failed|waiting|pending/.test(`${status} ${statusLabel}`))
+      || (state.attention === 'high-priority' && /high|critical|needed/.test(`${status} ${statusLabel} ${text}`));
     node.hidden = !(matchesQuery && matchesSurface && matchesScope && matchesAttention);
   });
 }
@@ -243,24 +230,11 @@ function surfaceFor(type = '', text = '') {
 function applyModeHint(toolbar, mode) {
   const hint = toolbar.querySelector('[data-mode-hint]');
   if (!hint) return;
-  hint.textContent = {
-    focus: 'Current focus and active roadmap item',
-    execution: 'Tasks, workflow runs, and active work',
-    diagnostic: 'Blocked, failed, and waiting items',
-    evidence: 'Evidence packets, gates, and trust material',
-    evolution: 'Promotions, SDK changes, and release posture',
-  }[mode] || '';
+  hint.textContent = WORKSPACE_SCHEMA.modeHints[mode] || '';
 }
 
 function applyModePreset(toolbar, state) {
-  const presets = {
-    focus: ['roadmap', 'memory'],
-    execution: ['roadmap', 'workflows'],
-    diagnostic: ['roadmap', 'workflows', 'cicd', 'evidence'],
-    evidence: ['evidence', 'memory', 'workflows'],
-    evolution: ['promotions', 'cicd'],
-  };
-  state.surfaces = new Set(presets[state.mode] || presets.focus);
+  state.surfaces = new Set(WORKSPACE_SCHEMA.modePresets[state.mode] || WORKSPACE_SCHEMA.modePresets.focus);
   toolbar.querySelectorAll('[data-surface]').forEach((button) => {
     const active = state.surfaces.has(button.dataset.surface);
     button.classList.toggle('active', active);

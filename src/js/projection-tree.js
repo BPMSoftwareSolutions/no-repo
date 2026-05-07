@@ -1,4 +1,11 @@
-import { aiEngineFetch } from './api-client.js';
+import { callAiEngine, aiEngineFetch } from './api-client.js';
+import {
+  DEFAULT_ITEM_KEY,
+  DEFAULT_PROJECT_ID,
+  buildFocusNodeId,
+  getItemKey,
+  getProjectId,
+} from '../shared/projection-schema.js';
 
 const childrenCache = new Map();
 let activeContainer = null;
@@ -33,7 +40,18 @@ export function collapseProjectionTree(container = activeContainer) {
 
 export async function expandFocusPath(container = activeContainer) {
   if (!container) return;
-  await expandPathToNode('project-ai-engine-roadmap-item-generic-wrapper-runtime', container);
+  const { projectId, itemKey } = getProjectedFocusContext();
+  let nodeId = buildFocusNodeId(projectId, itemKey);
+  try {
+    const activeItem = await callAiEngine('getProjectRoadmapActiveItem', projectId);
+    const activeItemKey = getCurrentRoadmapItemKey(activeItem);
+    if (activeItemKey) {
+      nodeId = buildFocusNodeId(projectId, activeItemKey);
+    }
+  } catch {
+    // Fall back to the current URL context if the engine cannot resolve the active item yet.
+  }
+  await expandPathToNode(nodeId, container);
 }
 
 export async function refreshSelectedBranch(container = activeContainer) {
@@ -253,8 +271,8 @@ function getCurrentNodeId(currentUrl) {
   const url = new URL(currentUrl, window.location.href);
   const type = url.searchParams.get('type');
   const surface = url.searchParams.get('surface');
-  const projectId = url.searchParams.get('projectId') || 'ai-engine';
-  const itemKey = url.searchParams.get('itemKey') || 'generic-wrapper-runtime';
+  const projectId = getProjectId(url.searchParams.get('projectId'));
+  const itemKey = getItemKey(url.searchParams.get('itemKey'));
   const taskKey = url.searchParams.get('taskKey');
   const subtaskKey = url.searchParams.get('subtaskKey');
   const promotionKey = url.searchParams.get('promotionKey');
@@ -293,6 +311,27 @@ function getCurrentNodeId(currentUrl) {
       : `project-${projectId}-agent-session`;
   }
   return 'projections';
+}
+
+function getProjectedFocusContext() {
+  if (!globalThis.window?.location) {
+    return { projectId: DEFAULT_PROJECT_ID, itemKey: DEFAULT_ITEM_KEY };
+  }
+  const url = new URL(globalThis.window.location.href);
+  return {
+    projectId: getProjectId(url.searchParams.get('projectId')),
+    itemKey: getItemKey(url.searchParams.get('itemKey')),
+  };
+}
+
+function getCurrentRoadmapItemKey(item) {
+  return String(
+    item?.item_key
+    || item?.key
+    || item?.slug
+    || item?.implementation_item_id
+    || ''
+  ).trim();
 }
 
 function getAncestorPath(nodeId) {

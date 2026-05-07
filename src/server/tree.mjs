@@ -1,3 +1,8 @@
+import {
+  DEFAULT_ITEM_KEY,
+  DEFAULT_PROJECT_ID,
+} from '../shared/projection-schema.js';
+
 export function buildLogaTreeRoot() {
   return {
     tree_id: 'ai-engine-inspection',
@@ -178,7 +183,7 @@ export async function buildLogaTreeChildren(nodeId, { client }) {
 
   if (nodeId.startsWith('project-') && nodeId.endsWith('-tasks')) {
     const scoped = parseRoadmapItemScopedNode(nodeId, 'tasks');
-    return buildTasksChildren(nodeId, scoped?.projectId || 'ai-engine', { client });
+    return buildTasksChildren(nodeId, scoped?.projectId || DEFAULT_PROJECT_ID, { client });
   }
 
   // UUID-based individual task expansion — must come before the slug-based -tasks- check
@@ -205,16 +210,16 @@ export async function buildLogaTreeChildren(nodeId, { client }) {
       parent_id: nodeId,
       nodes: [
         treeNode({
-          id: 'project-ai-engine-workflow-runs',
+          id: `project-${DEFAULT_PROJECT_ID}-workflow-runs`,
           label: 'Active Runs',
           type: 'runtime_surface',
-          contentHref: 'projection-detail.html?type=operator.workflow_runs&projectId=ai-engine',
+          contentHref: `projection-detail.html?type=operator.workflow_runs&projectId=${encodeURIComponent(DEFAULT_PROJECT_ID)}`,
         }),
         treeNode({
-          id: 'project-ai-engine-completed-runs',
+          id: `project-${DEFAULT_PROJECT_ID}-completed-runs`,
           label: 'Completed Runs',
           type: 'runtime_surface',
-          contentHref: 'projection-detail.html?type=operator.workflow_runs&projectId=ai-engine',
+          contentHref: `projection-detail.html?type=operator.workflow_runs&projectId=${encodeURIComponent(DEFAULT_PROJECT_ID)}`,
         }),
       ],
     };
@@ -225,22 +230,22 @@ export async function buildLogaTreeChildren(nodeId, { client }) {
       parent_id: nodeId,
       nodes: [
         treeNode({
-          id: 'project-ai-engine-promotions',
+          id: `project-${DEFAULT_PROJECT_ID}-promotions`,
           label: 'Promotions',
           type: 'promotion_surface',
-          contentHref: 'projection-detail.html?type=operator.promotions&projectId=ai-engine',
+          contentHref: `projection-detail.html?type=operator.promotions&projectId=${encodeURIComponent(DEFAULT_PROJECT_ID)}`,
         }),
         treeNode({
-          id: 'project-ai-engine-cicd',
+          id: `project-${DEFAULT_PROJECT_ID}-cicd`,
           label: 'CI/CD',
           type: 'runtime_surface',
-          contentHref: 'projection-detail.html?type=operator.cicd_status&projectId=ai-engine',
+          contentHref: `projection-detail.html?type=operator.cicd_status&projectId=${encodeURIComponent(DEFAULT_PROJECT_ID)}`,
         }),
         treeNode({
-          id: 'project-ai-engine-agent-session',
+          id: `project-${DEFAULT_PROJECT_ID}-agent-session`,
           label: 'Agent Sessions',
           type: 'runtime_surface',
-          contentHref: 'projection-detail.html?type=operator.agent_session&projectId=ai-engine',
+          contentHref: `projection-detail.html?type=operator.agent_session&projectId=${encodeURIComponent(DEFAULT_PROJECT_ID)}`,
         }),
       ],
     };
@@ -408,8 +413,8 @@ async function buildRoadmapItemsChildren(parentId, projectId, { client }) {
 
 function buildRoadmapItemChildren(parentId) {
   const match = parentId.match(/^project-(.+)-roadmap-item-(.+)$/);
-  const projectId = match?.[1] || 'ai-engine';
-  const itemKey = match?.[2] || 'generic-wrapper-runtime';
+  const projectId = match?.[1] || DEFAULT_PROJECT_ID;
+  const itemKey = match?.[2] || DEFAULT_ITEM_KEY;
   return {
     parent_id: parentId,
     nodes: [
@@ -578,8 +583,8 @@ async function buildSubtaskListChildren(parentId, taskId, { client }) {
 
 function buildSubtasksChildren(parentId) {
   const scoped = parseRoadmapItemScopedNode(parentId, 'tasks-replace-hard-coded-scripts');
-  const projectId = scoped?.projectId || 'ai-engine';
-  const itemKey = scoped?.itemKey || 'generic-wrapper-runtime';
+  const projectId = scoped?.projectId || DEFAULT_PROJECT_ID;
+  const itemKey = scoped?.itemKey || DEFAULT_ITEM_KEY;
   const taskKey = 'replace-hard-coded-scripts';
   return {
     parent_id: parentId,
@@ -665,7 +670,7 @@ async function loadProjects(client) {
 }
 
 function getProjectId(project) {
-  return project.project_id || project.id || 'ai-engine';
+  return project.project_id || project.id || DEFAULT_PROJECT_ID;
 }
 
 function getProjectLabel(project) {
@@ -677,7 +682,7 @@ function getProjectStatus(project) {
 }
 
 function fallbackProject() {
-  return { id: 'ai-engine', name: 'AI Engine', status: 'active' };
+  return { id: DEFAULT_PROJECT_ID, name: 'AI Engine', status: 'active' };
 }
 
 function firstNonEmpty(...values) {

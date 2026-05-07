@@ -1,8 +1,11 @@
 import { parseMarkdown } from '../renderer/parser.js';
 import { renderMarkdown } from '../renderer/renderer.js';
+import { DEFAULT_ITEM_KEY, DEFAULT_PROJECT_ID } from '../shared/projection-schema.js';
 
 const AI_ENGINE_API_KEY_STORAGE_KEY = 'ai-engine.api-key';
 const AI_ENGINE_API_KEY_HEADER = 'X-AI-Engine-Api-Key';
+const AI_ENGINE_API_KEY_MODAL_ID = 'ai-engine-api-key-modal';
+let apiKeyPromptPromise = null;
 
 function getStoredAiEngineApiKey() {
   try {
@@ -32,26 +35,111 @@ async function ensureAiEngineApiKey({ forcePrompt = false, reason = '' } = {}) {
   const storedApiKey = getStoredAiEngineApiKey();
   if (storedApiKey && !forcePrompt) return storedApiKey;
 
-  if (typeof window?.prompt !== 'function') {
-    throw new Error('AI Engine API key is required, but prompting is unavailable in this environment.');
-  }
+  const apiKey = (await promptForAiEngineApiKey({
+    initialValue: storedApiKey,
+    reason,
+  })).trim();
 
-  const promptLabel = reason
-    ? `Enter your AI Engine API key. ${reason}`
-    : 'Enter your AI Engine API key.';
-  const promptedValue = window.prompt(promptLabel, storedApiKey);
-
-  if (promptedValue === null) {
-    throw new Error('AI Engine API key entry was cancelled.');
-  }
-
-  const apiKey = promptedValue.trim();
   if (!apiKey) {
     throw new Error('AI Engine API key is required.');
   }
 
   storeAiEngineApiKey(apiKey);
   return apiKey;
+}
+
+async function promptForAiEngineApiKey({ initialValue = '', reason = '' } = {}) {
+  if (apiKeyPromptPromise) return apiKeyPromptPromise;
+
+  if (typeof document === 'undefined') {
+    if (typeof window?.prompt === 'function') {
+      const fallback = window.prompt(buildApiKeyPromptText(reason), initialValue);
+      if (fallback === null) throw new Error('AI Engine API key entry was cancelled.');
+      return fallback;
+    }
+    throw new Error('AI Engine API key is required, but prompting is unavailable in this environment.');
+  }
+
+  apiKeyPromptPromise = openApiKeyModal({ initialValue, reason });
+  try {
+    return await apiKeyPromptPromise;
+  } finally {
+    apiKeyPromptPromise = null;
+  }
+}
+
+function buildApiKeyPromptText(reason) {
+  return reason
+    ? `Enter your AI Engine API key. ${reason}`
+    : 'Enter your AI Engine API key.';
+}
+
+function openApiKeyModal({ initialValue = '', reason = '' } = {}) {
+  return new Promise((resolve, reject) => {
+    const existing = document.getElementById(AI_ENGINE_API_KEY_MODAL_ID);
+    existing?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = AI_ENGINE_API_KEY_MODAL_ID;
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'ai-engine-api-key-title');
+    overlay.innerHTML = `
+      <div style="position:fixed;inset:0;background:rgba(3,7,18,0.72);backdrop-filter:blur(6px);z-index:9998;"></div>
+      <form style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(92vw,480px);background:#111c2b;color:#d6deeb;border:1px solid rgba(124,156,255,0.24);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,0.45);padding:24px;z-index:9999;display:grid;gap:14px;">
+        <div>
+          <h2 id="ai-engine-api-key-title" style="margin:0 0 8px;font:600 22px/1.1 'Segoe UI',sans-serif;color:#f8fbff;">AI Engine API Key</h2>
+          <p style="margin:0;color:#a8b6cc;font:14px/1.5 'Segoe UI',sans-serif;">${escapeHtml(buildApiKeyPromptText(reason))}</p>
+        </div>
+        <label style="display:grid;gap:8px;font:600 13px/1.4 'Segoe UI',sans-serif;color:#d6deeb;">
+          API key
+          <input id="ai-engine-api-key-input" type="password" value="${escapeHtml(initialValue)}" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1px solid rgba(124,156,255,0.24);background:rgba(3,7,18,0.72);color:#f8fbff;font:14px/1.4 Consolas,monospace;">
+        </label>
+        <div id="ai-engine-api-key-error" style="min-height:1.2em;color:#fca5a5;font:13px/1.4 'Segoe UI',sans-serif;"></div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button type="button" data-action="cancel" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.14);background:transparent;color:#d6deeb;font:600 13px/1 'Segoe UI',sans-serif;cursor:pointer;">Cancel</button>
+          <button type="submit" style="padding:10px 14px;border-radius:10px;border:0;background:#7c9cff;color:#08111d;font:700 13px/1 'Segoe UI',sans-serif;cursor:pointer;">Continue</button>
+        </div>
+      </form>
+    `;
+
+    const cleanup = () => overlay.remove();
+    const form = overlay.querySelector('form');
+    const input = overlay.querySelector('#ai-engine-api-key-input');
+    const error = overlay.querySelector('#ai-engine-api-key-error');
+    const cancel = overlay.querySelector('[data-action="cancel"]');
+
+    cancel?.addEventListener('click', () => {
+      cleanup();
+      reject(new Error('AI Engine API key entry was cancelled.'));
+    });
+
+    form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const value = String(input?.value || '').trim();
+      if (!value) {
+        if (error) error.textContent = 'API key is required.';
+        input?.focus();
+        return;
+      }
+      cleanup();
+      resolve(value);
+    });
+
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        cleanup();
+        reject(new Error('AI Engine API key entry was cancelled.'));
+      }
+    });
+
+    document.body.appendChild(overlay);
+    queueMicrotask(() => {
+      input?.focus();
+      input?.setSelectionRange?.(0, String(input.value || '').length);
+    });
+  });
 }
 
 export async function aiEngineFetch(input, init = {}, { retryOnAuthFailure = true } = {}) {
@@ -174,8 +262,8 @@ function currentSearchParams() {
 
 function resolveListItemHref(block, key) {
   const params = currentSearchParams();
-  const projectId = params.get('projectId') || 'ai-engine';
-  const itemKey = params.get('itemKey') || 'generic-wrapper-runtime';
+  const projectId = params.get('projectId') || DEFAULT_PROJECT_ID;
+  const itemKey = params.get('itemKey') || DEFAULT_ITEM_KEY;
 
   if (block === 'task_list' && key) {
     return `projection-detail.html?type=operator.task_detail&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}&taskKey=${encodeURIComponent(key)}`;

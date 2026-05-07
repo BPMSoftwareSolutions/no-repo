@@ -3,6 +3,16 @@ import { renderProjectionTree } from './projection-tree.js';
 import { parseMarkdown } from '../renderer/parser.js';
 import { mountWorkspaceChrome } from './workspace-chrome.js';
 import { MARKDOWN_UI_REGISTRY } from '../renderer/element-registry.js';
+import {
+  DEFAULT_TASK_KEY,
+  DEFAULT_SUBTASK_KEY,
+  getItemCompletionPct,
+  getItemKey,
+  getItemStatus,
+  getProjectId,
+  getTaskKey,
+  normalizeStatus,
+} from '../shared/projection-schema.js';
 
 let pollingInterval = null;
 let gaugeRefreshInFlight = false;
@@ -202,17 +212,24 @@ function normalizeItemProgress(item) {
       pct,
       completed: doneTasks,
       total: totalTasks,
-      inProgress: String(item?.item_status || '').toLowerCase() === 'in_progress' ? 1 : 0,
-      blocked: String(item?.item_status || '').toLowerCase() === 'blocked' ? 1 : 0,
-      awaiting: String(item?.item_status || '').toLowerCase() === 'awaiting_review' ? 1 : 0,
+      inProgress: getItemStatus(item) === 'in_progress' ? 1 : 0,
+      blocked: getItemStatus(item) === 'blocked' ? 1 : 0,
+      awaiting: getItemStatus(item) === 'awaiting_review' ? 1 : 0,
     };
   }
 
-  const status = String(item?.item_status || '').toLowerCase();
-  if (status === 'done' || status === 'completed') return { pct: 100, completed: 1, total: 1, inProgress: 0, blocked: 0, awaiting: 0 };
-  if (status === 'awaiting_review') return { pct: 90, completed: 0, total: 0, inProgress: 0, blocked: 0, awaiting: 1 };
-  if (status === 'in_progress') return { pct: 50, completed: 0, total: 0, inProgress: 1, blocked: 0, awaiting: 0 };
-  if (status === 'blocked') return { pct: 25, completed: 0, total: 0, inProgress: 0, blocked: 1, awaiting: 0 };
+  const status = getItemStatus(item);
+  const pct = getItemCompletionPct(item);
+  if (pct > 0 || status) {
+    return {
+      pct,
+      completed: pct >= 100 ? 1 : 0,
+      total: pct >= 100 ? 1 : 0,
+      inProgress: status === 'in_progress' ? 1 : 0,
+      blocked: status === 'blocked' ? 1 : 0,
+      awaiting: status === 'awaiting_review' ? 1 : 0,
+    };
+  }
   return { pct: 0, completed: 0, total: 0, inProgress: 0, blocked: 0, awaiting: 0 };
 }
 
@@ -680,7 +697,7 @@ const TRANSFORMS = {
 
   async buildProjectDetailProjection(params, apiData) {
     const summary = apiData || {};
-    const projectId = params.projectId || 'ai-engine';
+    const projectId = getProjectId(params.projectId);
     const rawTitle = summary.implementation_packet_title || projectId;
     const title = rawTitle.replace(/\s*Implementation Roadmap\s*$/i, '').trim();
     const tokens = {
@@ -708,7 +725,7 @@ const TRANSFORMS = {
   },
 
   async buildProjectStatusProjection(params) {
-    const projectId = params.projectId || 'ai-engine';
+    const projectId = getProjectId(params.projectId);
     
     // Fetch roadmap with full task lists
     let roadmap = {};
@@ -721,7 +738,7 @@ const TRANSFORMS = {
     const items = Array.isArray(roadmap?.items) ? roadmap.items : [];
     
     // Enrich each item with task counts and detailed status
-    const enrichedItems = await Promise.all(items.map(async (item, idx) => {
+    const enrichedItems = await Promise.all(items.map(async (item) => {
       let tasks = [];
       try {
         const tasksRes = await callAiEngine('listImplementationTasks', item.implementation_item_id);
@@ -731,27 +748,13 @@ const TRANSFORMS = {
       }
       
       const tasksByStatus = {
-        open: tasks.filter(t => t.status === 'open').length,
-        in_progress: tasks.filter(t => t.status === 'in_progress').length,
-        completed: tasks.filter(t => t.status === 'completed').length,
-        blocked: tasks.filter(t => t.status === 'blocked').length,
+        open: tasks.filter((t) => normalizeStatus(t.status) === 'open').length,
+        in_progress: tasks.filter((t) => normalizeStatus(t.status) === 'in_progress').length,
+        completed: tasks.filter((t) => normalizeStatus(t.status) === 'completed' || normalizeStatus(t.status) === 'done').length,
+        blocked: tasks.filter((t) => normalizeStatus(t.status) === 'blocked').length,
       };
       
-      // Infer item status from task states and sequence
-      let inferredStatus = item.status;
-      if (!inferredStatus) {
-        // If explicit status not set, infer from tasks
-        if (tasksByStatus.completed === tasks.length && tasks.length > 0) {
-          inferredStatus = 'completed';
-        } else if (tasksByStatus.in_progress > 0 || tasksByStatus.blocked > 0 || tasksByStatus.completed > 0) {
-          inferredStatus = 'in_progress';
-        } else if (idx === 0 || items.slice(0, idx).some(i => !i.status)) {
-          // If first item or previous items aren't explicitly complete, mark as active
-          inferredStatus = 'in_progress';
-        } else {
-          inferredStatus = 'open';
-        }
-      }
+      const inferredStatus = normalizeStatus(item?.status || item?.item_status || 'open') || 'open';
       
       return {
         ...item,
@@ -764,18 +767,21 @@ const TRANSFORMS = {
 
     // Calculate aggregate stats based on inferred status
     const totalItems = enrichedItems.length;
-    const completedItems = enrichedItems.filter(i => i.status === 'completed');
-    const inProgressItems = enrichedItems.filter(i => i.status === 'in_progress');
-    const notStartedItems = enrichedItems.filter(i => i.status === 'open');
-    const blockedItems = enrichedItems.filter(i => i.status === 'blocked');
+    const completedItems = enrichedItems.filter((i) => normalizeStatus(i.status) === 'completed' || normalizeStatus(i.status) === 'done');
+    const inProgressItems = enrichedItems.filter((i) => normalizeStatus(i.status) === 'in_progress');
+    const notStartedItems = enrichedItems.filter((i) => normalizeStatus(i.status) === 'open');
+    const blockedItems = enrichedItems.filter((i) => normalizeStatus(i.status) === 'blocked');
     
     const allTasks = enrichedItems.flatMap(i => i.allTasks || []);
     const totalTasks = allTasks.length;
-    const completedTasks = allTasks.filter(t => t.status === 'completed').length;
-    const completionPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    const completedTasks = allTasks.filter((t) => normalizeStatus(t.status) === 'completed' || normalizeStatus(t.status) === 'done').length;
+    const roadmapCompletion = Number(roadmap?.completion_pct ?? roadmap?.completion_percentage);
+    const completionPercent = Number.isFinite(roadmapCompletion)
+      ? roadmapCompletion
+      : (totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0);
     
     const activeItem = inProgressItems[0] || notStartedItems[0] || completedItems[0];
-    const blockedCount = allTasks.filter(t => t.status === 'blocked').length;
+    const blockedCount = allTasks.filter((t) => normalizeStatus(t.status) === 'blocked').length;
 
     const lastRefresh = new Date().toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -821,7 +827,7 @@ const TRANSFORMS = {
   },
 
   async buildProjectRoadmapProjection(params) {
-    const projectId = params.projectId || 'ai-engine';
+    const projectId = getProjectId(params.projectId);
     
     // Fetch roadmap with full task lists
     let roadmap = {};
@@ -834,7 +840,7 @@ const TRANSFORMS = {
     const items = Array.isArray(roadmap?.items) ? roadmap.items : [];
     
     // Enrich each item with task counts
-    const enrichedItems = await Promise.all(items.map(async (item, idx) => {
+    const enrichedItems = await Promise.all(items.map(async (item) => {
       let tasks = [];
       try {
         const tasksRes = await callAiEngine('listImplementationTasks', item.implementation_item_id);
@@ -844,29 +850,19 @@ const TRANSFORMS = {
       }
       
       const tasksByStatus = {
-        open: tasks.filter(t => t.status === 'open').length,
-        in_progress: tasks.filter(t => t.status === 'in_progress').length,
-        completed: tasks.filter(t => t.status === 'completed').length,
-        blocked: tasks.filter(t => t.status === 'blocked').length,
+        open: tasks.filter((t) => normalizeStatus(t.status) === 'open').length,
+        in_progress: tasks.filter((t) => normalizeStatus(t.status) === 'in_progress').length,
+        completed: tasks.filter((t) => normalizeStatus(t.status) === 'completed' || normalizeStatus(t.status) === 'done').length,
+        blocked: tasks.filter((t) => normalizeStatus(t.status) === 'blocked').length,
       };
       
-      // Infer item status from task states
-      let inferredStatus = item.status;
-      if (!inferredStatus) {
-        if (tasksByStatus.completed === tasks.length && tasks.length > 0) {
-          inferredStatus = 'completed';
-        } else if (tasksByStatus.in_progress > 0 || tasksByStatus.blocked > 0 || tasksByStatus.completed > 0) {
-          inferredStatus = 'in_progress';
-        } else if (idx === 0 || items.slice(0, idx).some(i => !i.status)) {
-          inferredStatus = 'in_progress';
-        } else {
-          inferredStatus = 'open';
-        }
-      }
+      const inferredStatus = normalizeStatus(item?.status || item?.item_status || 'open') || 'open';
       
       const completedTasks = tasksByStatus.completed;
       const totalTasks = tasks.length;
-      const completionPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      const completionPercent = Number.isFinite(Number(item?.completion_pct ?? item?.completion_percentage))
+        ? Number(item?.completion_pct ?? item?.completion_percentage)
+        : (totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0);
       
       return {
         ...item,
@@ -900,8 +896,8 @@ const TRANSFORMS = {
     const totalTasks = enrichedItems.reduce((sum, item) => sum + item.totalTasks, 0);
     const completedTasks = enrichedItems.reduce((sum, item) => sum + item.completedTasks, 0);
     const blockedTasks = enrichedItems.reduce((sum, item) => sum + item.tasksByStatus.blocked, 0);
-    const inProgressItems = enrichedItems.filter((item) => item.status === 'in_progress');
-    const completedItems = enrichedItems.filter((item) => item.status === 'completed');
+    const inProgressItems = enrichedItems.filter((item) => normalizeStatus(item.status) === 'in_progress');
+    const completedItems = enrichedItems.filter((item) => normalizeStatus(item.status) === 'completed' || normalizeStatus(item.status) === 'done');
     const activeItem = inProgressItems[0] || enrichedItems[0] || null;
     const projectTitle = roadmap.implementation_packet_title || 'Implementation Roadmap';
     const focusTitle = activeItem?.title || humanizeKey(activeItem?.item_key) || 'Implementation roadmap';
@@ -990,7 +986,7 @@ ${roadmapItemsMarkdown}
   },
 
   async buildRoadmapItemsProjection(params) {
-    const projectId = params.projectId || 'ai-engine';
+    const projectId = getProjectId(params.projectId);
     let report = {};
 
     try {
@@ -1003,8 +999,22 @@ ${roadmapItemsMarkdown}
     const rawItems = Array.isArray(report?.roadmap_summary?.phases) ? report.roadmap_summary.phases : [];
     const quote = (value) => String(value ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     const humanStatus = (value) => String(value || 'unknown').replace(/_/g, ' ');
+    const humanizeKey = (value) => String(value || 'untitled item')
+      .split(/[-_]/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
 
     const normalizeItemPct = (item) => {
+      const explicitPct = Number(item?.completion_pct ?? item?.completion_percentage);
+      if (Number.isFinite(explicitPct)) {
+        return {
+          pct: explicitPct,
+          completedTasks: Number(item?.completed_tasks ?? item?.completed_items ?? 0),
+          totalTasks: Number(item?.total_tasks ?? item?.total_task_count ?? 0),
+        };
+      }
+
       const totalTasks = Number(item?.total_task_count || 0);
       const openTasks = Number(item?.open_task_count || 0);
       if (Number.isFinite(totalTasks) && totalTasks > 0) {
@@ -1017,22 +1027,18 @@ ${roadmapItemsMarkdown}
         };
       }
 
-      const status = String(item?.item_status || '').toLowerCase();
-      if (status === 'done' || status === 'completed') {
-        return { pct: 100, completedTasks: 1, totalTasks: 1 };
-      }
-      if (status === 'awaiting_review') {
-        return { pct: 90, completedTasks: 0, totalTasks: 0 };
-      }
-      if (status === 'in_progress') {
-        return { pct: 50, completedTasks: 0, totalTasks: 0 };
-      }
-      return { pct: 0, completedTasks: 0, totalTasks: 0 };
+      const pct = getItemCompletionPct(item);
+      return {
+        pct,
+        completedTasks: pct >= 100 ? 1 : 0,
+        totalTasks: pct >= 100 ? 1 : 0,
+      };
     };
 
     const cardModels = rawItems.map((item) => {
       const progress = normalizeItemPct(item);
-      const itemKey = item?.item_key || item?.stable_item_key || '';
+      const itemKey = item?.item_key || item?.stable_item_key || item?.implementation_item_id || '';
+      const itemLabel = item?.item_title || item?.title || item?.name || humanizeKey(itemKey);
       const target = itemKey
         ? `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}`
         : '#';
@@ -1042,7 +1048,7 @@ ${roadmapItemsMarkdown}
         : `${progress.pct}% from item status`;
 
       return {
-        markdown: `- name: "${quote(item?.item_title || itemKey || 'Roadmap item')}"\n  status: "${quote(humanStatus(item?.item_status))}"\n  stage: "${quote(phaseTitle)}"\n  completion_pct: ${progress.pct}\n  done_items: ${progress.completedTasks}\n  total_items: ${progress.totalTasks}\n  progress: "${quote(completionLabel)}"\n  target: "${quote(target)}"`,
+        markdown: `- name: "${quote(itemLabel)}"\n  status: "${quote(humanStatus(item?.item_status))}"\n  stage: "${quote(phaseTitle)}"\n  completion_pct: ${progress.pct}\n  done_items: ${progress.completedTasks}\n  total_items: ${progress.totalTasks}\n  progress: "${quote(completionLabel)}"\n  target: "${quote(target)}"`,
         completedTasks: progress.completedTasks,
         totalTasks: progress.totalTasks,
       };
@@ -1105,48 +1111,10 @@ ${cards}
   },
 
   async buildTaskProjection(params) {
-    const projectId = params.projectId || 'ai-engine';
-    const itemKey = params.itemKey || 'generic-wrapper-runtime';
-    const taskKey = params.taskKey || '';
-
-    // If taskKey looks like a UUID, fetch live data from the SDK
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(taskKey);
-    let task = null;
-    if (isUuid) {
-      try {
-        // Resolve the implementation_item_id for this itemKey via the roadmap
-        let implementationItemId = null;
-        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) {
-          const roadmap = await callAiEngine('getProjectRoadmap', projectId);
-          const items = Array.isArray(roadmap?.items) ? roadmap.items : [];
-          const found = items.find(i => i.item_key === itemKey || i.implementation_item_id === itemKey);
-          implementationItemId = found?.implementation_item_id || null;
-        }
-        if (implementationItemId) {
-          const tasksRes = await callAiEngine('listImplementationTasks', implementationItemId);
-          const tasks = Array.isArray(tasksRes?.tasks) ? tasksRes.tasks : [];
-          const raw = tasks.find(t =>
-            t.implementation_item_task_id === taskKey || t.id === taskKey
-          );
-          if (raw) {
-            const fullDescription = raw.description || raw.summary || '';
-            // summary must be single-line (used inside YAML-like directive values)
-            const firstLine = fullDescription.split('\n')[0].replace(/"/g, "'").trim();
-            task = {
-              key:                raw.implementation_item_task_id || raw.id || taskKey,
-              title:              raw.title || taskKey,
-              status:             raw.status || 'unknown',
-              summary:            firstLine || 'No detailed projection has been published for this task yet.',
-              acceptanceCriteria: parseDescriptionSection(fullDescription, 'Acceptance Criteria'),
-              deliverables:       parseDescriptionSection(fullDescription, 'Deliverables'),
-            };
-          }
-        }
-      } catch {
-        // fall through to fixture lookup
-      }
-    }
-
+    const projectId = getProjectId(params.projectId);
+    const itemKey = getItemKey(params.itemKey);
+    const taskKey = getTaskKey(params.taskKey);
+    let task = await resolveLiveTaskProjection({ projectId, itemKey, taskKey });
     if (!task) task = getTask(taskKey);
 
     const template = await loadTemplate('operator.task_detail');
@@ -1161,10 +1129,11 @@ ${cards}
   },
 
   async buildSubtaskProjection(params) {
-    const projectId = params.projectId || 'ai-engine';
-    const itemKey = params.itemKey || 'generic-wrapper-runtime';
-    const taskKey = params.taskKey || 'replace-hard-coded-scripts';
-    const subtask = getSubtask(params.subtaskKey || '');
+    const projectId = getProjectId(params.projectId);
+    const itemKey = getItemKey(params.itemKey);
+    const taskKey = getTaskKey(params.taskKey || DEFAULT_TASK_KEY);
+    const subtaskKey = String(params.subtaskKey || DEFAULT_SUBTASK_KEY).trim();
+    const subtask = await resolveLiveSubtaskProjection({ projectId, itemKey, taskKey, subtaskKey }) || getSubtask(subtaskKey);
     const template = await loadTemplate('operator.subtask_detail');
     const text = applyTemplate(template, { projectId, itemKey, taskKey, subtask });
     return {
@@ -1177,9 +1146,9 @@ ${cards}
   },
 
   async buildTurnProjection(params) {
-    const projectId = params.projectId || 'ai-engine';
+    const projectId = getProjectId(params.projectId);
     const turn = params.turn || '';
-    const turnData = getTurn(turn);
+    const turnData = await resolveLiveTurnProjection({ projectId, turn, workflowRunId: params.workflowRunId }) || getTurn(turn);
     const template = await loadTemplate('operator.turn_detail');
     const text = applyTemplate(template, { projectId, turn, turnData });
     return {
@@ -1192,9 +1161,9 @@ ${cards}
   },
 
   async buildPromotionProjection(params) {
-    const projectId = params.projectId || 'ai-engine';
+    const projectId = getProjectId(params.projectId);
     const promotionKey = params.promotionKey || '';
-    const promo = getPromotion(promotionKey);
+    const promo = await resolveLivePromotionProjection({ projectId, promotionKey }) || getPromotion(promotionKey);
     const template = await loadTemplate('operator.promotion_detail');
     const text = applyTemplate(template, { projectId, promotionKey, promo });
     return {
@@ -1335,79 +1304,196 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// --- Live resolvers ---
+
+async function resolveLiveTaskProjection({ projectId, itemKey, taskKey }) {
+  try {
+    const roadmap = await callAiEngine('getProjectRoadmap', projectId);
+    const items = Array.isArray(roadmap?.items) ? roadmap.items : [];
+    const roadmapItem = findByLookupKey(items, itemKey, ['item_key', 'key', 'slug', 'implementation_item_id']);
+    const implementationItemId = roadmapItem?.implementation_item_id || roadmapItem?.id || roadmapItem?.key;
+    if (!implementationItemId) return null;
+
+    const result = await callAiEngine('listImplementationTasks', implementationItemId);
+    const tasks = normalizeCollection(result, ['tasks', 'items', 'data']);
+    const rawTask = findByLookupKey(tasks, taskKey, [
+      'implementation_item_task_id',
+      'task_key',
+      'key',
+      'slug',
+      'id',
+      'title',
+    ]);
+    return rawTask ? mapTaskRecord(rawTask, projectId, itemKey) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveLiveSubtaskProjection({ projectId, itemKey, taskKey, subtaskKey }) {
+  try {
+    const task = await resolveLiveTaskProjection({ projectId, itemKey, taskKey });
+    const taskId = task?.implementation_item_task_id || task?.id || task?.taskId || task?.key;
+    if (!taskId) return null;
+
+    const result = await callAiEngine('listImplementationSubtasks', taskId);
+    const subtasks = normalizeCollection(result, ['subtasks', 'tasks', 'items', 'data']);
+    const rawSubtask = findByLookupKey(subtasks, subtaskKey, [
+      'implementation_item_subtask_id',
+      'subtask_key',
+      'key',
+      'slug',
+      'id',
+      'title',
+    ]);
+    return rawSubtask ? mapSubtaskRecord(rawSubtask, taskId) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveLiveTurnProjection({ workflowRunId, turn }) {
+  if (!workflowRunId) return null;
+  try {
+    const substrate = await callAiEngine('getWorkflowRunSubstrate', workflowRunId);
+    const rawTurn = findTurnRecord(substrate, turn);
+    return rawTurn ? mapTurnRecord(rawTurn, turn) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveLivePromotionProjection({ promotionKey }) {
+  if (!promotionKey) return null;
+  try {
+    const candidate = await callAiEngine('getPromotionCandidate', promotionKey);
+    return candidate ? mapPromotionRecord(candidate, promotionKey) : null;
+  } catch {
+    try {
+      const candidates = await callAiEngine('listPromotionCandidates', { limit: 100 });
+      const list = normalizeCollection(candidates, ['candidates', 'promotion_candidates', 'items', 'data']);
+      const match = findByLookupKey(list, promotionKey, ['candidate_key', 'promotion_key', 'key', 'slug', 'id', 'title']);
+      return match ? mapPromotionRecord(match, promotionKey) : null;
+    } catch {
+      return null;
+    }
+  }
+}
+
+function normalizeCollection(value, keys) {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') {
+    for (const key of keys) {
+      if (Array.isArray(value[key])) return value[key];
+    }
+  }
+  return [];
+}
+
+function normalizeLookupValue(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function findByLookupKey(items, lookupKey, fields = []) {
+  const target = normalizeLookupValue(lookupKey);
+  if (!target) return null;
+  return items.find((item) => fields.some((field) => normalizeLookupValue(item?.[field]) === target)) || null;
+}
+
+function mapTaskRecord(raw, projectId, itemKey) {
+  const description = raw?.description || raw?.summary || raw?.details || '';
+  const summary = description.split('\n').find((line) => line.trim())?.trim() || raw?.title || 'No detailed projection has been published for this task yet.';
+  const taskId = raw?.implementation_item_task_id || raw?.id || raw?.key || raw?.task_key || '';
+  return {
+    key: taskId || raw?.title || DEFAULT_TASK_KEY,
+    id: taskId || undefined,
+    taskId: taskId || undefined,
+    title: raw?.title || raw?.name || taskId || 'Task',
+    status: normalizeStatus(raw?.status || raw?.item_status || 'unknown') || 'unknown',
+    summary,
+    acceptanceCriteria: parseDescriptionSection(description, 'Acceptance Criteria'),
+    deliverables: parseDescriptionSection(description, 'Deliverables'),
+    projectId,
+    itemKey,
+    implementation_item_task_id: raw?.implementation_item_task_id || undefined,
+  };
+}
+
+function mapSubtaskRecord(raw, taskId) {
+  const description = raw?.description || raw?.summary || raw?.details || '';
+  const summary = description.split('\n').find((line) => line.trim())?.trim() || raw?.title || 'No detailed projection has been published for this subtask yet.';
+  const subtaskId = raw?.implementation_item_subtask_id || raw?.id || raw?.key || raw?.subtask_key || '';
+  return {
+    key: subtaskId || raw?.title || DEFAULT_SUBTASK_KEY,
+    id: subtaskId || undefined,
+    title: raw?.title || raw?.name || subtaskId || 'Subtask',
+    status: normalizeStatus(raw?.status || raw?.item_status || 'unknown') || 'unknown',
+    summary,
+    taskId,
+  };
+}
+
+function mapTurnRecord(raw, turn) {
+  const action = raw?.action || raw?.step || raw?.name || `Turn ${turn}`;
+  const status = normalizeStatus(raw?.status || raw?.turn_status || 'unknown') || 'unknown';
+  const evidence = raw?.evidence || raw?.note || raw?.artifact || raw?.summary || 'none';
+  const summary = raw?.summary || raw?.detail || raw?.description || evidence || `No detail has been published for turn ${turn} yet.`;
+  return {
+    action,
+    status,
+    evidence,
+    summary,
+  };
+}
+
+function mapPromotionRecord(raw, promotionKey) {
+  const status = normalizeStatus(raw?.status || raw?.promotion_status || 'unknown') || 'unknown';
+  const impact = raw?.impact || raw?.summary || raw?.benefit || 'No detail available.';
+  const description = raw?.description || raw?.detail || raw?.rationale || `No promotion detail has been published for ${promotionKey} yet.`;
+  return {
+    status,
+    impact,
+    description,
+  };
+}
+
+function findTurnRecord(value, turn) {
+  const target = normalizeLookupValue(turn);
+  const queue = [value];
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current) continue;
+    if (Array.isArray(current)) {
+      queue.push(...current);
+      continue;
+    }
+    if (typeof current !== 'object') continue;
+    const turnValue = normalizeLookupValue(current.turn ?? current.turn_number ?? current.turn_index ?? current.index ?? current.id);
+    if (turnValue && (turnValue === target || turnValue === normalizeLookupValue(`turn ${turn}`))) {
+      return current;
+    }
+    queue.push(...Object.values(current));
+  }
+  return null;
+}
+
 // --- Data lookup tables ---
 
 function getSubtask(subtaskKey) {
+  const key = String(subtaskKey || DEFAULT_SUBTASK_KEY).trim();
   return {
-    'identify-hard-coded-paths': {
-      key: 'identify-hard-coded-paths',
-      title: 'Identify hard-coded source and destination paths',
-      status: 'done',
-      summary: 'The hard-coded wrapper script paths have been located and isolated from the intended reusable operation model.',
-    },
-    'extract-operation-model': {
-      key: 'extract-operation-model',
-      title: 'Extract reusable wrapper operation model',
-      status: 'in progress',
-      summary: 'The bespoke behavior is being converted into a reusable wrapper operation contract.',
-    },
-    'bind-sql-evidence': {
-      key: 'bind-sql-evidence',
-      title: 'Bind operation records to SQL-backed wrapper evidence',
-      status: 'blocked',
-      summary: 'The subtask is blocked until wrapper execution evidence has a governed SQL-backed surface.',
-    },
-    'replace-script-path': {
-      key: 'replace-script-path',
-      title: 'Replace script path with SDK-visible governed execution',
-      status: 'not started',
-      summary: 'The final script path replacement waits for the wrapper operation and evidence surfaces to be available.',
-    },
-  }[subtaskKey] || {
-    key: subtaskKey || 'subtask',
-    title: subtaskKey || 'Subtask',
+    key,
+    title: key || 'Subtask',
     status: 'unknown',
     summary: 'This subtask is available structurally, but no detailed projection has been published yet.',
   };
 }
 
 function getTask(taskKey) {
+  const key = String(taskKey || DEFAULT_TASK_KEY).trim();
   return {
-    'define-contract-schema': {
-      key: 'define-contract-schema',
-      title: 'Define Wrapper Contract Schema',
-      status: 'done',
-      summary: 'The wrapper contract schema has been defined. It specifies the input, output, and evidence requirements for all governed wrapper executions.',
-      acceptanceCriteria: '',
-      deliverables: '',
-    },
-    'implement-wrapper-operations': {
-      key: 'implement-wrapper-operations',
-      title: 'Implement Reusable Wrapper Operations',
-      status: 'in progress',
-      summary: 'Generic wrapper operations are being built to replace bespoke script behavior with contract-driven, reusable execution primitives.',
-      acceptanceCriteria: '',
-      deliverables: '',
-    },
-    'replace-hard-coded-scripts': {
-      key: 'replace-hard-coded-scripts',
-      title: 'Replace Hard-coded Wrapper Scripts',
-      status: 'blocked',
-      summary: 'The system must replace bespoke source/destination rewrite behavior with generic contract-driven operations. Blocked until the SDK promotes the required execution surfaces.',
-      acceptanceCriteria: '',
-      deliverables: '',
-    },
-    'validate-execution-evidence': {
-      key: 'validate-execution-evidence',
-      title: 'Validate Wrapper Execution Evidence',
-      status: 'not started',
-      summary: 'Wrapper execution evidence must be validated against the contract before the governed refactor path is considered complete.',
-      acceptanceCriteria: '',
-      deliverables: '',
-    },
-  }[taskKey] || {
-    key: taskKey || 'task',
-    title: taskKey || 'Task',
+    key,
+    title: key || 'Task',
     status: 'unknown',
     summary: 'No detailed projection has been published for this task yet.',
     acceptanceCriteria: '',
@@ -1440,20 +1526,15 @@ function parseDescriptionSection(text, sectionName) {
 }
 
 function getTurn(turn) {
-  return {
-    '1': { action: 'startWork', status: 'persisted', evidence: 'claim acquired', summary: 'Work was started. A governed claim was acquired and the session was initialized under the refactor workflow.' },
-    '2': { action: 'analyze candidate', status: 'persisted', evidence: 'responsibility map produced', summary: 'The refactor candidate was analyzed. A responsibility map was produced and persisted as SQL-backed evidence.' },
-    '3': { action: 'propose contract', status: 'pending', evidence: 'awaiting wrapper evidence', summary: 'A wrapper contract proposal is pending. Execution is waiting for the evidence packet to be produced.' },
-  }[String(turn)] || { action: `Turn ${turn}`, status: 'unknown', evidence: 'none', summary: 'No detail has been published for this turn yet.' };
+  const key = String(turn || '').trim();
+  return { action: `Turn ${key || '?'}`, status: 'unknown', evidence: 'none', summary: 'No detail has been published for this turn yet.' };
 }
 
 function getPromotion(promotionKey) {
+  const key = String(promotionKey || '').trim();
   return {
-    'startWork': { status: 'promoted', impact: 'Unified governed entrypoint for all workflow execution.', description: 'startWork is the single governed entrypoint for beginning any workflow run. It acquires a claim, initializes the session, and ensures all execution is traceable from the first turn.' },
-    'completeTurn': { status: 'promoted', impact: 'Governed execution exit and DB turn persistence.', description: 'completeTurn closes each agent turn with explicit evidence capture and DB persistence, ensuring no turn completes without a durable SQL-backed record.' },
-    'runCharter': { status: 'promoted', impact: 'Charter execution through a single workflow primitive.', description: 'runCharter replaces ad hoc charter scripts with a single governed workflow primitive that produces a structured charter artifact and SQL evidence.' },
-    'createRefactorImplementationPlan': { status: 'needed', impact: 'Prevents local plan files and bespoke choreography.', description: 'This promotion is needed to replace hand-authored implementation plan files with a governed SDK method that produces a SQL-backed plan artifact reviewable by the operator.' },
-    'executeGovernedRefactorWrapper': { status: 'needed', impact: 'Makes wrapper execution observable through the SDK.', description: 'This promotion is needed to replace direct script execution with a governed wrapper call that produces observable, evidence-backed execution records accessible from project surfaces.' },
-    'getRefactorWrapperEvidence': { status: 'needed', impact: 'Makes wrapper evidence inspectable from project surfaces.', description: 'This promotion is needed to expose the wrapper execution evidence packet as a first-class SDK surface so operators can verify refactor execution without navigating raw SQL.' },
-  }[promotionKey] || { status: 'unknown', impact: 'No detail available.', description: 'No promotion detail has been published for this key yet.' };
+    status: 'unknown',
+    impact: 'No detail available.',
+    description: `No promotion detail has been published for ${key || 'this key'} yet.`,
+  };
 }
