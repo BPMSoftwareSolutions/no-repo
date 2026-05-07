@@ -1,6 +1,7 @@
 import {
   DEFAULT_ITEM_KEY,
   DEFAULT_PROJECT_ID,
+  normalizeStatus,
 } from '../shared/projection-schema.js';
 
 export function buildLogaTreeRoot() {
@@ -371,14 +372,19 @@ async function buildCurrentFocusChildren(parentId, projectId, { client }) {
     const roadmap = await client.getProjectRoadmap(projectId);
     const items = roadmap.items || [];
     const focus = items.filter((i) => i.is_current_project_stage === true);
-    const display = focus.length > 0 ? focus : items.filter((i) => i.item_status === 'in_progress').slice(0, 3);
+    const display = focus.length > 0 ? focus : items.filter((i) => normalizeStatus(i.item_status) === 'in_progress').slice(0, 3);
+    const enriched = await Promise.all(display.map(async (item) => {
+      const taskSummary = await getRoadmapTaskSummary(client, item);
+      return { item, taskSummary };
+    }));
     return {
       parent_id: parentId,
-      nodes: display.map((item) => treeNode({
+      nodes: enriched.map(({ item, taskSummary }) => treeNode({
         id: `project-${projectId}-roadmap-item-${getRoadmapItemKey(item)}`,
         label: getRoadmapItemLabel(item),
         type: 'roadmap_item',
-        meta: item.item_status,
+        status: taskSummary.status,
+        meta: taskSummary.total > 0 ? `${taskSummary.completed} / ${taskSummary.total} tasks` : item.item_status,
         hasChildren: true,
         contentHref: `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(getRoadmapItemKey(item))}`,
       })),
@@ -392,16 +398,23 @@ async function buildRoadmapItemsChildren(parentId, projectId, { client }) {
   try {
     const roadmap = await client.getProjectRoadmap(projectId);
     const items = roadmap.items || [];
-    const open = items.filter((i) => i.item_status !== 'done' && i.item_status !== 'completed');
-    const display = open.length > 0 ? open : items;
+    const enriched = await Promise.all(items.map(async (item) => ({
+      item,
+      taskSummary: await getRoadmapTaskSummary(client, item),
+    })));
+    const open = enriched.filter(({ taskSummary, item }) => {
+      const status = normalizeStatus(taskSummary.status || item.item_status);
+      return status !== 'done' && status !== 'completed';
+    });
+    const display = open.length > 0 ? open : enriched;
     return {
       parent_id: parentId,
-      nodes: display.map((item) => treeNode({
+      nodes: display.map(({ item, taskSummary }) => treeNode({
         id: `project-${projectId}-roadmap-item-${getRoadmapItemKey(item)}`,
         label: getRoadmapItemLabel(item),
         type: 'roadmap_item',
-        status: item.item_status,
-        meta: item.total_task_count > 0 ? `${item.open_task_count} / ${item.total_task_count} tasks` : undefined,
+        status: taskSummary.status,
+        meta: taskSummary.total > 0 ? `${taskSummary.completed} / ${taskSummary.total} tasks` : undefined,
         hasChildren: true,
         contentHref: `projection-detail.html?type=operator.roadmap_item&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(getRoadmapItemKey(item))}`,
       })),
@@ -551,7 +564,7 @@ async function buildTasksChildren(parentId, projectId, { client }) {
           id: `${parentId}-task-${taskId}`,
           label: getTaskLabel(task),
           type: 'task',
-          status: task.status,
+          status: normalizeStatus(task.status),
           hasChildren: hasSubtasks,
           contentHref: `projection-detail.html?type=operator.task_detail&projectId=${encodeURIComponent(projectId)}&itemKey=${encodeURIComponent(itemKey)}&taskKey=${encodeURIComponent(taskId)}`,
         });
@@ -683,6 +696,52 @@ function getProjectStatus(project) {
 
 function fallbackProject() {
   return { id: DEFAULT_PROJECT_ID, name: 'AI Engine', status: 'active' };
+}
+
+async function getRoadmapTaskSummary(client, item) {
+  const fallbackStatus = normalizeStatus(item?.item_status || 'unknown');
+  const fallbackTotal = Number(item?.total_task_count || 0);
+  const fallbackOpen = Number(item?.open_task_count || 0);
+  const fallbackCompleted = Number.isFinite(fallbackTotal) ? Math.max(0, fallbackTotal - fallbackOpen) : 0;
+
+  try {
+    if (!item?.implementation_item_id) {
+      return {
+        status: fallbackStatus,
+        total: fallbackTotal,
+        completed: fallbackCompleted,
+      };
+    }
+
+    const result = await client.listImplementationTasks(item.implementation_item_id);
+    const tasks = Array.isArray(result) ? result : (result.tasks || []);
+    const total = tasks.length || fallbackTotal;
+    const completed = tasks.filter((task) => {
+      const status = normalizeStatus(task.status);
+      return status === 'done' || status === 'completed';
+    }).length || fallbackCompleted;
+    const inProgress = tasks.some((task) => normalizeStatus(task.status) === 'in_progress');
+    const blocked = tasks.some((task) => normalizeStatus(task.status) === 'blocked');
+    const status = total > 0 && completed >= total
+      ? 'done'
+      : blocked
+        ? 'blocked'
+        : inProgress
+          ? 'in_progress'
+          : fallbackStatus;
+
+    return {
+      status,
+      total,
+      completed,
+    };
+  } catch {
+    return {
+      status: fallbackStatus,
+      total: fallbackTotal,
+      completed: fallbackCompleted,
+    };
+  }
 }
 
 function firstNonEmpty(...values) {
