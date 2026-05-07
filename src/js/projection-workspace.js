@@ -5,13 +5,14 @@ import {
   refreshSelectedBranch,
   renderProjectionTree,
 } from './projection-tree.js';
+import { aiEngineFetch } from './api-client.js';
 
 let projectSearchIndex = null;
 
 async function ensureProjectSearchIndex() {
   if (projectSearchIndex) return;
   try {
-    const res = await fetch('/api/loga/tree/nodes/project-portfolio/children');
+    const res = await aiEngineFetch('/api/loga/tree/nodes/project-portfolio/children');
     if (!res.ok) throw new Error(`${res.status}`);
     const data = await res.json();
     projectSearchIndex = (data.nodes || []).map((node) => ({

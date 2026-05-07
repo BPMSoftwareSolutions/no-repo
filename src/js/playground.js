@@ -1,32 +1,29 @@
-import { renderMarkdownProjection } from './api-client.js';
+import { callAiEngine, renderMarkdownProjection } from './api-client.js';
 
-// Simple AIEngine API wrapper that talks to our node proxy server
-async function callAiEngine(method, ...args) {
+function traceArgs(args) {
+  try {
+    return JSON.stringify(args);
+  } catch {
+    return '[unserializable args]';
+  }
+}
+
+async function callAiEngineWithTrace(method, ...args) {
   const traceLog = document.getElementById('trace-log');
   const traceEntry = document.createElement('div');
   traceEntry.className = 'trace-entry';
   const time = new Date().toISOString().split('T')[1].slice(0, 12);
-  traceEntry.innerHTML = `<span class="trace-time">[${time}]</span> <span class="trace-method">${method}</span>( ${JSON.stringify(args)} ) <span class="trace-status" id="status-${Date.now()}">⏳ Pending...</span>`;
+  traceEntry.innerHTML = `<span class="trace-time">[${time}]</span> <span class="trace-method">${method}</span>( ${traceArgs(args)} ) <span class="trace-status" id="status-${Date.now()}">⏳ Pending...</span>`;
   traceLog.appendChild(traceEntry);
   traceLog.scrollTop = traceLog.scrollHeight;
 
   const statusEl = traceEntry.querySelector('.trace-status');
 
   try {
-    const res = await fetch('/api/ai-engine', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ method, args })
-    });
-    const data = await res.json();
-    
-    if (!res.ok || data.error) {
-      throw new Error(data.error || 'Unknown error');
-    }
-    
+    const result = await callAiEngine(method, ...args);
     statusEl.textContent = `✅ OK`;
     statusEl.className = 'trace-status';
-    return data.result;
+    return result;
   } catch (err) {
     statusEl.textContent = `❌ ${err.message}`;
     statusEl.className = 'trace-status error';
@@ -61,21 +58,21 @@ document.querySelectorAll('.nav-item').forEach(el => {
     const action = e.target.getAttribute('data-action');
     if (action === 'loadHome') {
       try {
-        const proj = await callAiEngine('getLogaOperatorHomeProjection');
+        const proj = await callAiEngineWithTrace('getLogaOperatorHomeProjection');
         renderProjection(proj);
       } catch (e) {
         console.error(e);
       }
     } else if (action === 'loadProjects') {
       try {
-        const proj = await callAiEngine('getLogaProjectCatalogProjection');
+        const proj = await callAiEngineWithTrace('getLogaProjectCatalogProjection');
         renderProjection(proj);
       } catch (e) {
         console.error(e);
       }
     } else if (action === 'loadCodebaseShape') {
       try {
-        const status = await callAiEngine('currentCodebaseShapeStatus');
+        const status = await callAiEngineWithTrace('currentCodebaseShapeStatus');
         renderProjection(status);
       } catch(e) {
         console.error(e);
@@ -89,7 +86,7 @@ document.getElementById('inspect-symbol-btn').addEventListener('click', async ()
   const val = document.getElementById('inspect-symbol-input').value;
   if (!val) return;
   try {
-    const res = await callAiEngine('getSymbolDefinition', { qualifiedName: val, includeCode: true });
+    const res = await callAiEngineWithTrace('getSymbolDefinition', { qualifiedName: val, includeCode: true });
     renderInspection(res);
   } catch(e) {
     renderInspection({ error: e.message });
@@ -101,7 +98,7 @@ document.getElementById('inspect-file-btn').addEventListener('click', async () =
   if (!val) return;
   // Usually this would be getCodeFileContentWindow or similar, using getCodeFile here for testing
   try {
-    const res = await callAiEngine('listCodeFiles', { pathPrefix: val, limit: 5 });
+    const res = await callAiEngineWithTrace('listCodeFiles', { pathPrefix: val, limit: 5 });
     renderInspection(res);
   } catch(e) {
     renderInspection({ error: e.message });

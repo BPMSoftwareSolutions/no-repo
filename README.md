@@ -32,21 +32,21 @@ The package is installed in `package.json` and exposes `AIEngineClient.fromEnv()
 
 ## Environment
 
-Set these variables before running scripts:
+Set the base URL before running the app or scripts:
 
 ```bash
-export AI_ENGINE_API_KEY="your-api-key"
 export AI_ENGINE_BASE_URL="https://your-ai-engine-host"
 ```
 
 PowerShell:
 
 ```powershell
-$env:AI_ENGINE_API_KEY = "your-api-key"
 $env:AI_ENGINE_BASE_URL = "https://your-ai-engine-host"
 ```
 
-See `.env.example` for the required names.
+When you open the browser app, it now prompts for the AI Engine API key on first use, stores it in local storage, and reuses it on later requests.
+
+See `.env.example` for the required names used by the CLI scripts.
 
 ## Smoke Test
 

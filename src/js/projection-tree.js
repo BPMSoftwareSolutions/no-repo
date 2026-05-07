@@ -1,3 +1,5 @@
+import { aiEngineFetch } from './api-client.js';
+
 const childrenCache = new Map();
 let activeContainer = null;
 let activeCurrentNodeId = null;
@@ -64,7 +66,7 @@ export async function expandPathToNode(nodeId, container = activeContainer) {
 }
 
 async function loadTreeRoot() {
-  const response = await fetch('/api/loga/tree');
+  const response = await aiEngineFetch('/api/loga/tree');
   if (!response.ok) throw new Error(`Tree root failed: ${response.status}`);
   return response.json();
 }
@@ -73,7 +75,7 @@ async function loadChildren(node, { refresh = false } = {}) {
   if (!node.lazyLoadUrl) return { parent_id: node.id, nodes: [] };
   if (!refresh && childrenCache.has(node.id)) return childrenCache.get(node.id);
 
-  const response = await fetch(node.lazyLoadUrl);
+  const response = await aiEngineFetch(node.lazyLoadUrl);
   if (!response.ok) throw new Error(`Tree node ${node.id} failed: ${response.status}`);
 
   const payload = await response.json();

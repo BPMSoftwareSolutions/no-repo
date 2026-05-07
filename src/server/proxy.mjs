@@ -1,4 +1,4 @@
-export function createProxyHandler(client) {
+export function createProxyHandler(createClient) {
   return function (req, res) {
     if (req.method !== 'POST') {
       res.writeHead(405, { 'Content-Type': 'application/json' });
@@ -10,6 +10,7 @@ export function createProxyHandler(client) {
     req.on('end', async () => {
       try {
         const { method, args } = JSON.parse(body);
+        const client = createClient(req);
         if (typeof client[method] !== 'function') {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: `Method ${method} not found on client` }));

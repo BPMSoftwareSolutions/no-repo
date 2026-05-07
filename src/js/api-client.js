@@ -1,10 +1,83 @@
 import { parseMarkdown } from '../renderer/parser.js';
 import { renderMarkdown } from '../renderer/renderer.js';
 
+const AI_ENGINE_API_KEY_STORAGE_KEY = 'ai-engine.api-key';
+const AI_ENGINE_API_KEY_HEADER = 'X-AI-Engine-Api-Key';
+
+function getStoredAiEngineApiKey() {
+  try {
+    return globalThis.localStorage?.getItem(AI_ENGINE_API_KEY_STORAGE_KEY)?.trim() || '';
+  } catch {
+    return '';
+  }
+}
+
+function storeAiEngineApiKey(apiKey) {
+  try {
+    globalThis.localStorage?.setItem(AI_ENGINE_API_KEY_STORAGE_KEY, apiKey);
+  } catch {
+    // Ignore localStorage failures and continue with the in-memory prompt result.
+  }
+}
+
+export function clearStoredAiEngineApiKey() {
+  try {
+    globalThis.localStorage?.removeItem(AI_ENGINE_API_KEY_STORAGE_KEY);
+  } catch {
+    // Ignore localStorage failures.
+  }
+}
+
+async function ensureAiEngineApiKey({ forcePrompt = false, reason = '' } = {}) {
+  const storedApiKey = getStoredAiEngineApiKey();
+  if (storedApiKey && !forcePrompt) return storedApiKey;
+
+  if (typeof window?.prompt !== 'function') {
+    throw new Error('AI Engine API key is required, but prompting is unavailable in this environment.');
+  }
+
+  const promptLabel = reason
+    ? `Enter your AI Engine API key. ${reason}`
+    : 'Enter your AI Engine API key.';
+  const promptedValue = window.prompt(promptLabel, storedApiKey);
+
+  if (promptedValue === null) {
+    throw new Error('AI Engine API key entry was cancelled.');
+  }
+
+  const apiKey = promptedValue.trim();
+  if (!apiKey) {
+    throw new Error('AI Engine API key is required.');
+  }
+
+  storeAiEngineApiKey(apiKey);
+  return apiKey;
+}
+
+export async function aiEngineFetch(input, init = {}, { retryOnAuthFailure = true } = {}) {
+  const apiKey = await ensureAiEngineApiKey();
+  const headers = new Headers(init.headers || {});
+  headers.set(AI_ENGINE_API_KEY_HEADER, apiKey);
+
+  let response = await fetch(input, { ...init, headers });
+  if (!retryOnAuthFailure || (response.status !== 401 && response.status !== 403)) {
+    return response;
+  }
+
+  clearStoredAiEngineApiKey();
+  const refreshedApiKey = await ensureAiEngineApiKey({
+    forcePrompt: true,
+    reason: 'The stored key was rejected. Please try again.',
+  });
+  headers.set(AI_ENGINE_API_KEY_HEADER, refreshedApiKey);
+  response = await fetch(input, { ...init, headers });
+  return response;
+}
+
 // Shared AIEngine API wrapper
 export async function callAiEngine(method, ...args) {
   try {
-    const res = await fetch('/api/ai-engine', {
+    const res = await aiEngineFetch('/api/ai-engine', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ method, args })
