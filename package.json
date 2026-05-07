@@ -7,6 +7,7 @@
   "scripts": {
     "check": "node --check ./scripts/ping.mjs",
     "ping": "node ./scripts/ping.mjs",
+    "charter:workflow-discovery": "node ./scripts/create-natural-language-workflow-discovery-loop.mjs",
     "start": "node server.mjs",
     "smoke": "npm run ping",
     "test": "npm run check && node ./scripts/test-markdown-contract-lab.mjs"

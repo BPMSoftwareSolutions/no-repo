@@ -6,24 +6,32 @@ const AI_ENGINE_API_KEY_STORAGE_KEY = 'ai-engine.api-key';
 const AI_ENGINE_API_KEY_HEADER = 'X-AI-Engine-Api-Key';
 const AI_ENGINE_API_KEY_MODAL_ID = 'ai-engine-api-key-modal';
 let apiKeyPromptPromise = null;
+let cachedApiKey = '';
+let lastRejectedApiKey = '';
 
 function getStoredAiEngineApiKey() {
+  if (cachedApiKey) return cachedApiKey;
   try {
-    return globalThis.localStorage?.getItem(AI_ENGINE_API_KEY_STORAGE_KEY)?.trim() || '';
+    const stored = globalThis.localStorage?.getItem(AI_ENGINE_API_KEY_STORAGE_KEY)?.trim() || '';
+    if (stored) cachedApiKey = stored;
+    return stored;
   } catch {
     return '';
   }
 }
 
 function storeAiEngineApiKey(apiKey) {
+  cachedApiKey = String(apiKey || '').trim();
+  lastRejectedApiKey = '';
   try {
-    globalThis.localStorage?.setItem(AI_ENGINE_API_KEY_STORAGE_KEY, apiKey);
+    globalThis.localStorage?.setItem(AI_ENGINE_API_KEY_STORAGE_KEY, cachedApiKey);
   } catch {
-    // Ignore localStorage failures and continue with the in-memory prompt result.
+    // Ignore localStorage failures and continue with the in-memory cache.
   }
 }
 
 export function clearStoredAiEngineApiKey() {
+  cachedApiKey = '';
   try {
     globalThis.localStorage?.removeItem(AI_ENGINE_API_KEY_STORAGE_KEY);
   } catch {
@@ -149,7 +157,12 @@ export async function aiEngineFetch(input, init = {}, { retryOnAuthFailure = tru
 
   let response = await fetch(input, { ...init, headers });
   if (!retryOnAuthFailure || (response.status !== 401 && response.status !== 403)) {
+    if (response.status < 400) lastRejectedApiKey = '';
     return response;
+  }
+
+  if (apiKey && apiKey === lastRejectedApiKey) {
+    throw new Error('AI Engine API key was rejected. Enter a different key and try again.');
   }
 
   clearStoredAiEngineApiKey();
@@ -159,6 +172,11 @@ export async function aiEngineFetch(input, init = {}, { retryOnAuthFailure = tru
   });
   headers.set(AI_ENGINE_API_KEY_HEADER, refreshedApiKey);
   response = await fetch(input, { ...init, headers });
+  if (response.status === 401 || response.status === 403) {
+    lastRejectedApiKey = refreshedApiKey;
+  } else {
+    lastRejectedApiKey = '';
+  }
   return response;
 }
 
