@@ -102,6 +102,12 @@ npm run loga:experiment
 
 By default this inspects the Operator Home Dashboard projection. Use `AI_ENGINE_LOGA_EXPERIMENTS=all` to probe the full set and record which projection surfaces are runnable, blocked by missing identifiers, or unsupported.
 
+## Design Docs
+
+- [Design docs index](docs/design/index.md)
+- [Natural Language Workflow Discovery Loop](docs/design/natural-language-workflow-discovery-loop.md)
+- [Natural Language Workflow Discovery Loop v1 API Spec](docs/design/natural-language-workflow-discovery-loop-v1-api-spec.md)
+
 ## Basic Usage
 
 ```js

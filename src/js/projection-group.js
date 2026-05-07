@@ -1,6 +1,7 @@
 import { callAiEngine } from './api-client.js';
 import { renderProjectionTree } from './projection-tree.js';
 import { mountWorkspaceChrome } from './workspace-chrome.js';
+import { DEFAULT_PROJECT_ID } from '../shared/projection-schema.js';
 
 const SURFACE_CONFIG = {
   'operator.project_detail': {
@@ -62,7 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function renderProjectProjection(project, config, index) {
-  const projectId = project.project_id || project.id || 'ai-engine';
+  const projectId = project.project_id || project.id || DEFAULT_PROJECT_ID;
   const title = project.name || project.project_name || project.slug || projectId;
   const summary = project.objective || project.description || project.summary || config.itemQuestion;
   const status = project.status || project.process_status || project.charter_status || 'Active';
@@ -85,7 +86,7 @@ function renderProjectProjection(project, config, index) {
 
 function fallbackProject() {
   return {
-    id: 'ai-engine',
+    id: DEFAULT_PROJECT_ID,
     name: 'AI Engine',
     summary: 'Governed refactor execution and SDK promotion observability',
     status: 'Active',

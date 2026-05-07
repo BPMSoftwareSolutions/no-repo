@@ -1,6 +1,6 @@
-# Hard-coded Client Values — AI Engine Migration Taxonomy
+# Client Source Taxonomy — Hard-coded Values and Bespoke Duplication
 
-Audit of JavaScript values and logic in the application source that are hard-coded today but should be driven by the AI Engine. Findings are grouped by category and ordered by priority.
+Two-part audit of the JavaScript source. Part 1 covers values and logic that are hard-coded today but should be driven by the AI Engine. Part 2 covers repeating patterns and bespoke implementations that should be centralized as shared functionality. Both parts are ordered by priority.
 
 ---
 
@@ -146,7 +146,7 @@ Gauge color thresholds are coupled to the engine's completion percentage ranges.
 
 ---
 
-## Priority Summary
+## Part 1 — Priority Summary
 
 | Priority | Category | Key file |
 |---|---|---|
@@ -158,3 +158,152 @@ Gauge color thresholds are coupled to the engine's completion percentage ranges.
 | Later | Mode and surface definitions | `src/js/projection-workspace.js:184` |
 | Later | Tree root structure | `src/server/tree.mjs:1` |
 | Config | Attention filter patterns, gauge colors, polling interval | scattered |
+
+---
+
+---
+
+# Part 2 — Repeating Patterns and Missing Modularization
+
+A shared module already exists at `src/shared/projection-schema.js` and exports `normalizeStatus`, `getItemStatus`, `getItemCompletionPct`, `getProjectId`, `WORKSPACE_SCHEMA`, and the default ID constants. The problem is that the module is only partially consumed — several files re-implement what it already provides, and several patterns that belong in it haven't been moved there yet.
+
+---
+
+## 10. `escapeHtml` — 6 Identical Copies
+
+The same five-replacement HTML escaping function is copy-pasted verbatim into every file that renders dynamic content:
+
+| File | Line |
+|---|---|
+| `src/js/projection-detail.js` | 1298 |
+| `src/js/projection-workspace.js` | 271 |
+| `src/js/projection-tree.js` | 408 |
+| `src/js/api-client.js` | 96 |
+| `src/js/projections.js` | 147 |
+| `src/js/projection-group.js` | 96 |
+
+This is the most mechanical duplication in the codebase. It belongs in `src/shared/dom-utils.js` (or `projection-schema.js`) and should be imported everywhere.
+
+---
+
+## 11. `WORKSPACE_SCHEMA` Imported but Bypassed
+
+`src/js/projection-workspace.js:9` imports `WORKSPACE_SCHEMA` from the shared module, then ignores it and re-implements the same data inline in four functions:
+
+| Function | Lines | Duplicates |
+|---|---|---|
+| `formatNodeType()` | 184–195 | `WORKSPACE_SCHEMA.nodeTypeLabels` |
+| `surfacesForType()` | 197–205 | `WORKSPACE_SCHEMA.surfaceByType` |
+| `applyModeHint()` | 243–253 | `WORKSPACE_SCHEMA.modeHints` |
+| `applyModePreset()` | 255–268 | `WORKSPACE_SCHEMA.modePresets` |
+
+Each of these functions maintains an inline object that is already defined in the schema. The functions should read from `WORKSPACE_SCHEMA` instead.
+
+---
+
+## 12. `projection-tree.js` Ignores the Shared Module Entirely
+
+`src/js/projection-tree.js` does not import from `src/shared/projection-schema.js` at all. As a result:
+
+- `expandFocusPath()` at line 36 hardcodes the focus node ID string directly instead of calling `buildFocusNodeId()` from the shared module
+- Field extraction patterns throughout the file (`project?.project_id || project?.id`) duplicate `getProjectId()` and `getItemKey()` from the shared module
+- Status comparisons throughout duplicate `normalizeStatus()` from the shared module
+
+---
+
+## 13. `tasksByStatus` Bucketing — Duplicated Loop
+
+**Files:** `src/js/projection-detail.js:751–756` and `:853–858`
+
+The same four-line pattern for bucketing tasks by status appears identically inside both `buildProjectStatusProjection()` and `buildProjectRoadmapProjection()`:
+
+```js
+const tasksByStatus = {
+  open:       tasks.filter((t) => normalizeStatus(t.status) === 'open').length,
+  in_progress: tasks.filter((t) => normalizeStatus(t.status) === 'in_progress').length,
+  completed:  tasks.filter((t) => normalizeStatus(t.status) === 'completed' || ...).length,
+  blocked:    tasks.filter((t) => normalizeStatus(t.status) === 'blocked').length,
+};
+```
+
+This should be a `bucketTasksByStatus(tasks)` function in the shared module.
+
+---
+
+## 14. `isDone` Predicate — 4 Inline Repetitions
+
+**File:** `src/js/projection-detail.js:753, 770, 777, 855`
+
+The check `normalizeStatus(s) === 'completed' || normalizeStatus(s) === 'done'` is written out in full four times. `projection-schema.js` already has `getStatusCompletionPct` which treats both as 100%, but there is no exported `isDone(status)` predicate. One should be added and used consistently in place of the repeated two-term OR expression.
+
+---
+
+## 15. `buildProjectStatusProjection` and `buildProjectRoadmapProjection` — Near-Identical Structure
+
+**File:** `src/js/projection-detail.js:710–821` and `:823–957`
+
+Both transforms follow the same four-phase structure:
+1. Fetch roadmap via `getProjectRoadmap(projectId)`
+2. For each item, fetch tasks via `listImplementationTasks(item.implementation_item_id)`
+3. Bucket tasks by status and infer item status from the counts
+4. Compute aggregate stats (completedItems, inProgressItems, completionPercent, blockedCount)
+
+Phase 3 and 4 are nearly word-for-word identical across the two functions. The shared logic should be extracted into an `enrichRoadmapItems(items)` helper so each transform only contains the rendering logic that differs.
+
+---
+
+## 16. `normalizeItemProgress()` Not Exported from the Shared Module
+
+**File:** `src/js/projection-detail.js:205–234`
+
+`normalizeItemProgress()` converts a roadmap item into the gauge progress shape `{ pct, completed, total, inProgress, blocked, awaiting }`. It is used in four places within `projection-detail.js` and overlaps with `getItemCompletionPct()` already in `projection-schema.js`. It should be moved to the shared module so the gauge data shape is defined in one place.
+
+---
+
+## 17. Projection Card Markup — 2 Parallel Implementations
+
+The `.projection-card` element is constructed independently in two files with the same structure, same class names, and same "Open" button:
+
+| Function | File | Lines |
+|---|---|---|
+| `renderSurface()` | `src/js/projections.js` | 119–134 |
+| `renderProjectProjection()` | `src/js/projection-group.js` | 65–85 |
+
+The only differences are which data fields are used for the title/summary/status slots. A shared `createProjectionCard({ label, summary, status, href, index, meaning })` factory in `src/shared/dom-utils.js` would serve both callers.
+
+---
+
+## 18. Table Error Rendering — Repeated DOM Pattern
+
+**Files:** `src/js/code-intelligence.js`, `src/js/repositories.js`, `src/js/repository-detail.js`
+
+All three use the same pattern to report an error inside a table body:
+
+```js
+tbody.innerHTML = `<tr><td colspan="X" class="loga-error-row">Error: ${error.message}</td></tr>`;
+```
+
+A `renderTableError(tbody, colSpan, message)` helper in `src/shared/dom-utils.js` would eliminate this pattern.
+
+---
+
+## 19. URL Params Extraction — 4 Separate Reads
+
+`new URLSearchParams(window.location.search)` is called at page load in at least four files (`projection-detail.js:21`, `projection-group.js:22`, `symbol-detail.js:4`, `repository-detail.js:4`), and each file then manually extracts the same set of fields (`type`, `projectId`, `itemKey`, `taskKey`). A shared `parseProjectionParams()` function that returns a typed object would eliminate the repeated extraction and ensure consistent field handling across all pages.
+
+---
+
+## Part 2 — Priority Summary
+
+| Priority | Finding | Where to fix |
+|---|---|---|
+| Now | `escapeHtml` — 6 copies | Extract to `src/shared/dom-utils.js`, import everywhere |
+| Now | `WORKSPACE_SCHEMA` imported but bypassed — 4 functions | Rewrite `formatNodeType`, `surfacesForType`, `applyModeHint`, `applyModePreset` to read from schema |
+| Now | `projection-tree.js` ignores shared module | Import and use `buildFocusNodeId`, `normalizeStatus`, `getProjectId` |
+| Soon | `tasksByStatus` bucketing — 2 identical loops | Extract `bucketTasksByStatus(tasks)` to shared module |
+| Soon | `buildProjectStatusProjection` / `buildProjectRoadmapProjection` — shared structure | Extract `enrichRoadmapItems(items)` shared helper |
+| Soon | `isDone` predicate — 4 inline repetitions | Add `isDone(status)` to `projection-schema.js` |
+| Soon | `normalizeItemProgress()` — not exported | Move to shared module |
+| Later | Projection card markup — 2 parallel implementations | Shared `createProjectionCard()` in `dom-utils.js` |
+| Later | Table error rendering — repeated DOM pattern | Shared `renderTableError()` in `dom-utils.js` |
+| Later | URL params extraction — 4 separate reads | Shared `parseProjectionParams()` |

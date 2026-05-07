@@ -339,15 +339,15 @@ async function injectCompletionGauge({ projType, params, container }) {
         });
 
         const total = statuses.length;
-        const done = statuses.filter((s) => s === 'done' || s === 'completed').length;
-        const inProgress = statuses.filter((s) => s === 'in_progress').length;
-        const blocked = statuses.filter((s) => s === 'blocked').length;
-        const awaiting = statuses.filter((s) => s === 'awaiting_review').length;
+        const done = statuses.filter((s) => normalizeStatus(s) === 'done' || normalizeStatus(s) === 'completed').length;
+        const inProgress = statuses.filter((s) => normalizeStatus(s) === 'in_progress').length;
+        const blocked = statuses.filter((s) => normalizeStatus(s) === 'blocked').length;
+        const awaiting = statuses.filter((s) => normalizeStatus(s) === 'awaiting_review').length;
         const pct = total > 0 ? (done / total) * 100 : 0;
 
-        const activeStatus = statuses.find((s) => s === 'in_progress')
-          || statuses.find((s) => s === 'awaiting_review')
-          || statuses.find((s) => s === 'blocked')
+        const activeStatus = statuses.find((s) => normalizeStatus(s) === 'in_progress')
+          || statuses.find((s) => normalizeStatus(s) === 'awaiting_review')
+          || statuses.find((s) => normalizeStatus(s) === 'blocked')
           || statuses[0]
           || 'not_started';
 
@@ -408,7 +408,7 @@ function aggregateRoadmapPhases(items) {
     }
 
     const phase = phaseMap.get(key);
-    const status = String(item?.item_status || 'not_started').toLowerCase();
+    const status = normalizeStatus(item?.item_status || 'not_started');
     phase.total += 1;
 
     if (status === 'done' || status === 'completed') {
