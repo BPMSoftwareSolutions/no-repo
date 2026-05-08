@@ -12,6 +12,11 @@ let lastRejectedApiKey = '';
 
 function getStoredAiEngineApiKey() {
   if (cachedApiKey) return cachedApiKey;
+  const bootstrapApiKey = readBootstrapAiEngineApiKey();
+  if (bootstrapApiKey) {
+    cachedApiKey = bootstrapApiKey;
+    return bootstrapApiKey;
+  }
   try {
     const stored = globalThis.localStorage?.getItem(AI_ENGINE_API_KEY_STORAGE_KEY)?.trim() || '';
     if (stored) cachedApiKey = stored;
@@ -28,6 +33,22 @@ function storeAiEngineApiKey(apiKey) {
     globalThis.localStorage?.setItem(AI_ENGINE_API_KEY_STORAGE_KEY, cachedApiKey);
   } catch {
     // Ignore localStorage failures and continue with the in-memory cache.
+  }
+}
+
+function readBootstrapAiEngineApiKey() {
+  try {
+    if (typeof window === 'undefined' || !window?.location?.search) return '';
+    const search = new URLSearchParams(window.location.search);
+    const value = String(search.get('ai_engine_api_key') || search.get('apiKey') || '').trim();
+    if (!value) return '';
+    search.delete('ai_engine_api_key');
+    search.delete('apiKey');
+    const nextUrl = `${window.location.pathname}${search.toString() ? `?${search.toString()}` : ''}${window.location.hash || ''}`;
+    window.history.replaceState({}, '', nextUrl);
+    return value;
+  } catch {
+    return '';
   }
 }
 

@@ -8,19 +8,24 @@
 </head>
 <body class="projection-shell-page">
   <header>
-    <p><a href="index.html">Inspection Home</a> / <a href="projections.html">Projection Inspection</a></p>
+    <p><a href="index.html">Inspection Home</a></p>
     <h1>Execution Telemetry</h1>
     <p><strong>Primary question:</strong> What is the execution substrate doing right now?</p>
   </header>
 
   <main class="projection-shell">
     <aside class="projection-shell__tree" aria-labelledby="telemetry-nav-title">
-      <h2 id="telemetry-nav-title" class="projection-shell__title">Navigation</h2>
-      <form class="inspection-form" style="margin-bottom:16px;">
-        <label for="telemetry-project-id">Project UUID</label>
-        <input id="telemetry-project-id" type="text" placeholder="017769d6-3316-4aed-b8a8-a4a28e272c2c" autocomplete="off" spellcheck="false">
-        <button id="telemetry-load-button" type="submit" style="margin-top:10px;">Load Project</button>
+      <h2 id="telemetry-nav-title" class="projection-shell__title">Watch Controls</h2>
+      <form class="inspection-form" id="telemetry-watch-form" style="margin-bottom:16px;">
+        <label for="telemetry-session-id">Session ID</label>
+        <input id="telemetry-session-id" type="text" placeholder="agent_session_id (leave blank for latest)" autocomplete="off" spellcheck="false">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+          <button id="telemetry-refresh-button" type="button">Refresh</button>
+          <button id="telemetry-latest-button" type="button">Use Latest</button>
+        </div>
       </form>
+      <p class="execution-monitor__status" data-state="polling">Polling</p>
+      <p id="telemetry-meta" class="execution-monitor__caption">Connecting to live telemetry...</p>
       <div class="projection-list">
         <a class="projection-card" href="index.html">
           <span class="projection-card__number">01</span>
@@ -29,44 +34,51 @@
             <span>Return to the inspection workspace.</span>
             <em>Back to overview</em>
           </span>
-          <span class="projection-card__meaning">Use this to jump back to the landing screen.</span>
+          <span class="projection-card__meaning">Jump back to the landing screen.</span>
           <span class="projection-card__open">Open</span>
         </a>
-        <a class="projection-card" href="projections.html">
+        <a class="projection-card" href="lab.html">
           <span class="projection-card__number">02</span>
           <span class="projection-card__copy">
-            <strong>Projections</strong>
-            <span>Inspect the operator surface catalog.</span>
-            <em>Surface selection</em>
+            <strong>Editor Cockpit</strong>
+            <span>Watch telemetry beside the markdown editor.</span>
+            <em>Live monitor</em>
           </span>
-          <span class="projection-card__meaning">Use this to jump back to the projection surfaces.</span>
+          <span class="projection-card__meaning">Open the editor with the embedded monitor.</span>
           <span class="projection-card__open">Open</span>
         </a>
       </div>
     </aside>
 
     <section class="projection-shell__surface" aria-labelledby="telemetry-main-title">
-      <h2 id="telemetry-main-title">Execution Substrate Monitor</h2>
-      <p id="execution-monitor-meta" class="execution-monitor__caption">Enter a project UUID to load remote telemetry.</p>
-      <section id="execution-monitor" class="execution-monitor" aria-labelledby="execution-monitor-title">
+      <h2 id="telemetry-main-title">Execution Substrate Cockpit</h2>
+      <p id="telemetry-projection-note" class="execution-monitor__caption">Loading the latest session snapshot...</p>
+
+      <section class="execution-monitor" aria-labelledby="telemetry-summary-title">
         <div class="execution-monitor__header">
           <div>
-            <p class="execution-monitor__eyebrow">Execution substrate</p>
-            <h3 id="execution-monitor-title" class="execution-monitor__title"><span id="execution-project-label">Telemetry monitor</span></h3>
+            <p class="execution-monitor__eyebrow">Live watch surface</p>
+            <h3 id="telemetry-summary-title" class="execution-monitor__title">Session telemetry</h3>
           </div>
-          <span id="execution-monitor-status" class="execution-monitor__status">Connecting</span>
+          <span id="telemetry-connection-status" class="execution-monitor__status" data-state="polling">Polling</span>
         </div>
+
+        <div id="telemetry-summary-strip" class="execution-monitor__metrics" aria-live="polite">
+          <div class="execution-monitor__empty">Loading live telemetry...</div>
+        </div>
+
         <div class="execution-monitor__grid">
           <article class="execution-monitor__card">
-            <h4>Remote summary</h4>
-            <div id="execution-monitor-summary">
-              <p class="execution-monitor__empty">Loading remote telemetry...</p>
+            <h4>Session details</h4>
+            <div id="telemetry-session-details">
+              <p class="execution-monitor__empty">Waiting for session resolution...</p>
             </div>
           </article>
+
           <article class="execution-monitor__card" style="grid-column:1/-1;">
-            <h4>Remote event feed</h4>
-            <div id="execution-monitor-feed">
-              <p class="execution-monitor__empty">Waiting for remote events...</p>
+            <h4>Chronological events</h4>
+            <div id="telemetry-event-feed">
+              <p class="execution-monitor__empty">Waiting for live events...</p>
             </div>
           </article>
         </div>
