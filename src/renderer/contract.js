@@ -24,6 +24,8 @@ export function validateContract(markdown, parsed) {
     });
   }
 
+  applyTelemetryDoctrineValidation(markdown, parsed, fatal);
+
   return { fatal };
 }
 
@@ -75,3 +77,43 @@ const SUPPORTED_EXPERIMENT_BLOCKS = new Set([
   'timeline',
   'tree',
 ]);
+
+function applyTelemetryDoctrineValidation(markdown, parsed, fatal) {
+  const projectionType = String(parsed.frontmatter?.projection_type || '');
+  if (!projectionType.startsWith('operator.execution_')) return;
+
+  if (!String(parsed.frontmatter?.primary_question || '').trim()) {
+    fatal.push({
+      title: 'Telemetry doctrine violation',
+      detail: 'Telemetry projections must declare a primary_question in frontmatter.',
+      repair: 'Add primary_question to frontmatter to anchor summary-first rendering intent.',
+    });
+  }
+
+  const firstDirective = (parsed.body.match(/::([a-zA-Z0-9_]+)/) || [])[1] || '';
+  if (firstDirective.toLowerCase() !== 'focus') {
+    fatal.push({
+      title: 'Telemetry doctrine violation',
+      detail: 'Telemetry projections must start with a ::focus block (summary first).',
+      repair: 'Move or add a ::focus block before diagnostic or payload blocks.',
+    });
+  }
+
+  if (!parsed.blocks.includes('focus')) {
+    fatal.push({
+      title: 'Telemetry doctrine violation',
+      detail: 'Telemetry projections must include a ::focus block.',
+      repair: 'Add a ::focus block that answers the primary operator question.',
+    });
+  }
+
+  const hasRawPayloadBinding = /rawMetadataJson|rawMetadata|output_text|error_text/.test(markdown);
+  const rawPayloadInDetails = /<details>[\s\S]*?(rawMetadataJson|rawMetadata|output_text|error_text)[\s\S]*?<\/details>/i.test(markdown);
+  if (hasRawPayloadBinding && !rawPayloadInDetails) {
+    fatal.push({
+      title: 'Telemetry doctrine violation',
+      detail: 'Raw payload bindings must be behind a <details> disclosure block (payload third).',
+      repair: 'Move raw payload bindings into a collapsed <details> section.',
+    });
+  }
+}

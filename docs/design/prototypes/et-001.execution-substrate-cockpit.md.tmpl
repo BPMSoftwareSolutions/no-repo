@@ -1,0 +1,201 @@
+---
+loga_contract: "ai-engine-ui/v1"
+interaction_contract: "loga-choreography/v1"
+navigation_contract: "loga-navigation/v1"
+projection_type: "operator.execution_substrate_cockpit"
+projection_id: "execution-substrate-cockpit:latest"
+projection_version: "1"
+source_system: "ai-engine"
+source_truth: "sql"
+source_version: "{{ source_version }}"
+generated_at: "{{ generated_at }}"
+correlation_id: "{{ correlation_id }}"
+refresh_policy: "manual"
+primary_question: "What should I care about right now?"
+allowed_actions:
+  - copy_summary
+  - open_evidence_packet
+  - refresh_projection
+  - select_event
+---
+
+::telemetry_app
+surface: "execution-substrate-cockpit"
+layout: "operator_shell"
+theme: "dark_document"
+::
+
+::topbar
+brand_mark: "AI"
+title: "AI Engine / Execution Telemetry"
+subtitle: "Thin operator surface · SQL truth · markdown-native projection"
+actions:
+  - label: "Copy summary"
+    action: "copy_summary"
+    variant: "default"
+  - label: "Open evidence packet"
+    action: "open_evidence_packet"
+    variant: "default"
+  - label: "Refresh projection"
+    action: "refresh_projection"
+    variant: "primary"
+::
+
+::operator_shell
+columns:
+  - rail
+  - main
+  - detail
+::
+
+:::rail
+title: "Operator Scope"
+timezone_label: "EDT"
+
+::nav_list
+items:
+  - label: "Execution cockpit"
+    count: "live"
+    state: "active"
+    target: "#execution-cockpit"
+  - label: "Event stream"
+    count: "{{ event_count }}"
+    target: "#event-stream"
+  - label: "Workflow substrate"
+    count: "{{ workflow_substrate_count }}"
+    target: "#workflow-substrate"
+  - label: "Promotion lane"
+    count: "{{ promotion_candidate_count }}"
+    target: "#promotion-lane"
+  - label: "Schema drift"
+    count: "{{ schema_drift_count }}"
+    target: "#schema-drift"
+::
+
+::mini_section
+title: "Current Run"
+items:
+  - label: "{{ current_run.project_name }}"
+    meta: "workflow_run · {{ current_run.status }}"
+  - label: "Active item: {{ current_run.active_item_title }}"
+    meta: "{{ current_run.active_item_key }}"
+  - label: "Projection source"
+    meta: "{{ source_truth }} · generated {{ generated_at_local }}"
+::
+
+::legend
+title: "Compact Legend"
+items:
+  - label: "Healthy"
+    status: "good"
+  - label: "Attention"
+    status: "warn"
+  - label: "Blocked"
+    status: "bad"
+  - label: "Informational"
+    status: "info"
+::
+:::
+
+:::main
+::focus
+eyebrow: "Primary question"
+question: "What should I care about right now?"
+answer: "{{ focus.answer }}"
+status: "{{ focus.status }}"
+::
+
+::state_grid
+metrics:
+  - label: "Session posture"
+    value: "{{ session.status_label }}"
+    status: "{{ session.status_indicator }}"
+    sub: "{{ session.session_key }}"
+  - label: "Recent processes"
+    value: "{{ telemetry.recent_process_count }}"
+    sub: "last 24h · newest first"
+  - label: "Friction"
+    value: "{{ telemetry.failed_process_count }}"
+    status: "{{ telemetry.friction_indicator }}"
+    sub: "failed/retried events"
+  - label: "Open gaps"
+    value: "{{ telemetry.open_gap_count }}"
+    sub: "no substrate bypasses"
+::
+
+::event_stream
+id: "event-stream"
+title: "Recent events"
+iterator: "events"
+sort:
+  field: "occurred_at"
+  direction: "desc"
+limit: 25
+selected_policy: "first"
+filters:
+  - label: "All"
+    value: "all"
+    active: true
+  - label: "Failed"
+    value: "failed"
+  - label: "Workflow turns"
+    value: "workflow_turn"
+  - label: "Projection generation"
+    value: "projection_generation"
+  - label: "Promotion"
+    value: "promotion"
+search:
+  placeholder: "Filter events…"
+empty_state: "No execution events match the current filter."
+row_template:
+  time: "{{ occurred_at_local }}"
+  status: "{{ status_indicator }}"
+  title: "{{ title }}"
+  summary: "{{ summary }}"
+  tags: "{{ tags }}"
+  duration: "{{ duration_label }}"
+  action: "select_event"
+::
+:::
+
+:::detail
+::selected_event_detail
+source: "selected_event"
+title: "Selected Event"
+eyebrow: "drill-down"
+status: "{{ selected_event.status }}"
+status_indicator: "{{ selected_event.status_indicator }}"
+heading: "{{ selected_event.title }}"
+summary: "{{ selected_event.detail_summary }}"
+metadata:
+  - label: "When"
+    value: "{{ selected_event.occurred_at_local }}"
+  - label: "Kind"
+    value: "{{ selected_event.kind }}"
+  - label: "Stage"
+    value: "{{ selected_event.stage }}"
+  - label: "Actor"
+    value: "{{ selected_event.actor_label }}"
+  - label: "Duration"
+    value: "{{ selected_event.duration_label }}"
+drawers:
+  - title: "Operator summary"
+    open: true
+    kind: "text"
+    copyable: true
+    value: "{{ selected_event.detail_summary }}"
+  - title: "Evidence payload"
+    kind: "json"
+    value: "{{ selected_event.evidence_payload }}"
+  - title: "Identifiers"
+    kind: "json"
+    value: "{{ selected_event.identifiers }}"
+  - title: "Markdown projection excerpt"
+    kind: "markdown"
+    value: "{{ selected_event.markdown_excerpt }}"
+::
+
+::footer_note
+text: "Mock data only. The layout keeps raw identifiers and payloads behind drill-down, while the main surface stays compact and copy-paste friendly."
+::
+:::

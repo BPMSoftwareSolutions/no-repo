@@ -500,8 +500,16 @@ modularTelemetryArtifacts.forEach(({ scenario, markdownPath, contractPath, proje
   assert.ok(fs.existsSync(contractPath), `${scenario} UI contract JSON must exist`);
 
   const parsed = parseMarkdown(fs.readFileSync(markdownPath, 'utf8'));
+  const markdown = fs.readFileSync(markdownPath, 'utf8');
+  const doctrineValidation = validateContract(markdown, parsed);
   assert.equal(parsed.frontmatter.projection_type, projectionType, `${scenario} markdown contract must declare the expected projection type`);
   assert.ok(parsed.blocks.includes('focus'), `${scenario} markdown contract must include the focus block`);
+  assert.equal((parsed.body.match(/::([a-zA-Z0-9_]+)/) || [])[1], 'focus', `${scenario} markdown contract must start with a focus block (summary first)`);
+  assert.equal(doctrineValidation.fatal.length, 0, `${scenario} markdown contract must pass telemetry doctrine validation`);
+
+  if (/rawMetadataJson|rawMetadata|output_text|error_text/.test(markdown)) {
+    assert.match(markdown, /<details>[\s\S]*?(rawMetadataJson|rawMetadata|output_text|error_text)[\s\S]*?<\/details>/i, `${scenario} raw payload bindings must stay inside details disclosure (payload third)`);
+  }
 
   let contract;
   assert.doesNotThrow(() => { contract = JSON.parse(fs.readFileSync(contractPath, 'utf8')); }, `${scenario} UI contract JSON must be valid JSON`);
@@ -512,6 +520,31 @@ modularTelemetryArtifacts.forEach(({ scenario, markdownPath, contractPath, proje
   assert.ok('elements' in contract, `${scenario} UI contract JSON must include an elements object`);
   assert.ok('styles' in contract, `${scenario} UI contract JSON must include a styles object`);
 });
+
+const telemetryDoctrineViolation = `---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.execution_telemetry_event_stream"
+source_truth: "sdk"
+primary_question: "What happened?"
+---
+
+::table
+columns: "time_et,title"
+rows_source: "eventRows"
+::
+
+::focus
+question: "What happened?"
+answer: "summary"
+status: "ok"
+::
+
+::code
+content: "{{rawMetadataJson}}"
+::`;
+const doctrineViolationParsed = parseMarkdown(telemetryDoctrineViolation);
+const doctrineViolationValidation = validateContract(telemetryDoctrineViolation, doctrineViolationParsed);
+assert.ok(doctrineViolationValidation.fatal.some((item) => item.title === 'Telemetry doctrine violation'), 'telemetry contracts that violate summary-first or payload-third must fail fast');
 
 const metricRowWithItemsKey = `::metric_row
 items:
