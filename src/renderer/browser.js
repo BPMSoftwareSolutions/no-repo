@@ -3,68 +3,9 @@
     ? new URL('.', document.currentScript.src).href
     : './';
 
-  const SAMPLE = `---
-loga_contract: "ai-engine-ui/v1"
-ux_contract: "loga-ux/v1"
-surface_type: "operator.projection_graph"
-projection_type: "operator.project_roadmap"
-source_truth: "sql"
-primary_question: "What should I care about right now?"
----
-
-::toolbar id="projection-toolbar" variant="linear"
-
-  ::toolbar_zone name="context" align="left"
-  eyebrow: "Inspection Workspace"
-  status: "Agent active - Turn 3"
-  ::
-
-  ::toolbar_zone name="navigation" align="left"
-  ::nav variant="pills"
-  - Roadmap
-  - Promotions
-  - Workflows
-  - CI/CD
-  - Memory
-  - Evidence
-  ::
-  ::
-
-  ::toolbar_zone name="search" align="center"
-  ::search
-  placeholder: "Search projects, tasks, evidence..."
-  ::
-  ::
-
-  ::toolbar_zone name="filters" align="right"
-  ::filter_group variant="chips"
-  - Needs Attention
-  - Blocked Only
-  - High Priority
-  ::
-  ::
-
-  ::toolbar_zone name="actions" align="right"
-  ::action_group
-  - Expand Focus
-  - Collapse All
-  - Refresh
-  ::
-  ::
-
-::
-
-# Projection Graph
-
-::roadmap
-- key: "generic-wrapper-runtime"
-  title: "Establish Generic Wrapper Runtime"
-  status: "in progress"
-  priority: "high"
-  progress: "2 / 4 tasks complete"
-::`;
-
   let activeElementRegistry = null;
+  let activeTelemetryScenario = null;
+  const telemetryScenarioLoader = window.TelemetryContractLoader || globalThis.TelemetryContractLoader || null;
 
   function createMarkdownContractLab(documentRef = document) {
     const input = documentRef.getElementById('markdown-input');
@@ -74,11 +15,9 @@ primary_question: "What should I care about right now?"
     const inputCount = documentRef.getElementById('input-count');
     const blockCount = documentRef.getElementById('block-count');
     const autoRender = documentRef.getElementById('auto-render');
-
-    documentRef.getElementById('load-sample').addEventListener('click', () => {
-      input.value = SAMPLE;
-      render();
-    });
+    const scenarioSelect = documentRef.getElementById('telemetry-scenario-select');
+    const scenarioLoadButton = documentRef.getElementById('telemetry-scenario-load');
+    const scenarioStatus = documentRef.getElementById('telemetry-scenario-status');
 
     documentRef.getElementById('clear-input').addEventListener('click', () => {
       input.value = '';
@@ -87,6 +26,12 @@ primary_question: "What should I care about right now?"
     });
 
     documentRef.getElementById('render-now').addEventListener('click', render);
+    scenarioLoadButton?.addEventListener('click', () => {
+      void loadSelectedTelemetryScenario();
+    });
+    scenarioSelect?.addEventListener('change', () => {
+      updateScenarioStatus();
+    });
     input.addEventListener('input', () => {
       updateCounts();
       if (autoRender.checked) render();
@@ -99,6 +44,12 @@ primary_question: "What should I care about right now?"
         const parsed = parseMarkdown(markdown);
         const validation = validateContract(markdown, parsed);
         meta.innerHTML = renderMeta(parsed.frontmatter);
+        if (activeTelemetryScenario?.scenarioKey) {
+          meta.innerHTML += `<span>scenario: ${escapeHtml(activeTelemetryScenario.scenarioKey)}</span>`;
+          if (activeTelemetryScenario.uiContract?.schema) {
+            meta.innerHTML += `<span>ui: ${escapeHtml(activeTelemetryScenario.uiContract.schema)}</span>`;
+          }
+        }
         diagnostics.innerHTML = renderDiagnostics(markdown, parsed, validation).join('');
         blockCount.textContent = `${parsed.blocks.length} block${parsed.blocks.length === 1 ? '' : 's'} - rendered ${new Date().toLocaleTimeString()}`;
         output.innerHTML = markdown.trim()
@@ -117,13 +68,64 @@ primary_question: "What should I care about right now?"
     loadExternalElementRegistry().then((registry) => {
       injectRegistryStyles(registry);
       activeElementRegistry = registry.elements;
-      input.value = SAMPLE;
-      render();
+      void initializeTelemetryScenarios();
       mountEditorTelemetry(documentRef);
     }).catch((error) => {
       diagnostics.innerHTML = `<li class="fail">Renderer blocked: markdown-ui-elements.json could not be loaded.</li>`;
       output.innerHTML = `<div class="empty-state"><div><strong>Renderer blocked.</strong><p>${escapeHtml(error.message)}</p></div></div>`;
     });
+
+    async function initializeTelemetryScenarios() {
+      if (!scenarioSelect || !telemetryScenarioLoader?.listTelemetryScenarios) return;
+      try {
+        const scenarios = await telemetryScenarioLoader.listTelemetryScenarios();
+        scenarioSelect.innerHTML = [
+          '<option value="">Choose a modular telemetry scenario…</option>',
+          ...scenarios.map((scenario) => `<option value="${escapeHtml(scenario.scenarioKey)}">${escapeHtml(scenario.scenarioKey)} · ${escapeHtml(scenario.label)}</option>`),
+        ].join('');
+        const preferred = scenarios.find((scenario) => scenario.scenarioKey === 'ET-001') || scenarios[0] || null;
+        if (preferred) {
+          scenarioSelect.value = preferred.scenarioKey;
+          await loadSelectedTelemetryScenario();
+        } else {
+          updateScenarioStatus('No modular scenarios available');
+        }
+      } catch (error) {
+        scenarioSelect.innerHTML = '<option value="">Scenario loader unavailable</option>';
+        updateScenarioStatus(`Scenario loader unavailable: ${error.message}`);
+        diagnostics.innerHTML = `<li class="fail">Scenario loader error: ${escapeHtml(error.message)}</li>`;
+      }
+    }
+
+    async function loadSelectedTelemetryScenario() {
+      if (!telemetryScenarioLoader?.loadTelemetryScenario) {
+        updateScenarioStatus('Modular scenario loader unavailable');
+        return;
+      }
+      const scenarioKey = String(scenarioSelect?.value || '').trim();
+      if (!scenarioKey) {
+        updateScenarioStatus('Choose a scenario to load');
+        return;
+      }
+      try {
+        const scenario = await telemetryScenarioLoader.loadTelemetryScenario(scenarioKey);
+        activeTelemetryScenario = scenario;
+        input.value = scenario.markdown;
+        updateCounts();
+        updateScenarioStatus(`Loaded ${scenarioKey} · UI contract resolved`);
+        render();
+      } catch (error) {
+        updateScenarioStatus(`Scenario load failed: ${error.message}`);
+        diagnostics.innerHTML = `<li class="fail">Scenario load error: ${escapeHtml(error.message)}</li>`;
+        output.innerHTML = `<div class="empty-state"><div><strong>Scenario load failed.</strong><p>${escapeHtml(error.message)}</p></div></div>`;
+      }
+    }
+
+    function updateScenarioStatus(message = '') {
+      if (!scenarioStatus) return;
+      const selected = String(scenarioSelect?.value || '').trim();
+      scenarioStatus.textContent = message || (selected ? `Selected ${selected}` : 'Legacy editor ready');
+    }
 
     return { render, elements: { input, output, diagnostics } };
   }

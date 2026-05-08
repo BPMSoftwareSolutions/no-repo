@@ -12,14 +12,22 @@
       <div>
         <p class="eyebrow">Standalone UX experiment</p>
         <h1>Markdown Contract Lab</h1>
-        <p>Paste AI Engine LOGA markdown, render it locally, and watch live execution telemetry beside the editor.</p>
+        <p>Load a modular telemetry scenario, inspect its markdown contract, and render it against the current UI contract path.</p>
       </div>
       <div class="header-actions">
-        <button id="load-sample" type="button">Load Sample</button>
+        <label class="scenario-picker" for="telemetry-scenario-select">
+          <span>Scenario</span>
+          <select id="telemetry-scenario-select" aria-label="Telemetry scenario">
+            <option value="">Loading modular scenarios...</option>
+          </select>
+        </label>
+        <button id="telemetry-scenario-load" class="primary" type="button">Load Scenario</button>
         <button id="clear-input" type="button">Clear</button>
-        <button id="render-now" class="primary" type="button">Render</button>
+        <button id="render-now" type="button">Render</button>
       </div>
     </header>
+
+    <p id="telemetry-scenario-status" class="grammar-note">Loading modular telemetry scenarios...</p>
 
     <main class="lab-grid">
       <section class="editor-pane" aria-labelledby="editor-title">
@@ -106,6 +114,7 @@
   </div>
 
   <script src="../js/execution-monitor.js" type="module"></script>
+  <script src="../js/telemetry-contract-loader.js"></script>
   <script src="../renderer/browser.js"></script>
 </body>
 </html>

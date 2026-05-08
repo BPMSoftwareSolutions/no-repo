@@ -360,6 +360,9 @@ const labShellCss = fs.readFileSync('./src/renderer/lab-shell.css', 'utf8');
 assert.doesNotMatch(labHtml, /<style>/, 'lab HTML must not own inline CSS');
 assert.match(labHtml, /lab-shell\.css/, 'lab HTML must link host-shell CSS');
 assert.doesNotMatch(labHtml, /markdown-ui-contract\.css/, 'lab HTML must not link rendered LOGA contract CSS');
+assert.doesNotMatch(labHtml, /load-sample/, 'lab HTML must not expose the legacy sample flow');
+assert.match(labHtml, /telemetry-scenario-select/, 'lab HTML must expose the modular telemetry scenario picker');
+assert.match(labHtml, /telemetry-contract-loader\.js/, 'lab HTML must load the modular telemetry scenario loader');
 assert.doesNotMatch(labShellCss, /\.loga-toolbar|\.loga-grid|\.loga-focus-strip/, 'lab-shell CSS must not own rendered LOGA surface styles');
 assert.deepEqual(MARKDOWN_UI_REGISTRY.elements, elementRegistryJson.elements, 'JSON registry must expose element mappings');
 assert.deepEqual(MARKDOWN_UI_REGISTRY.styles, elementRegistryJson.styles, 'JSON registry must expose style mappings');
@@ -421,6 +424,28 @@ const windowStub = {
   location: {
     protocol: 'http:',
   },
+  TelemetryContractLoader: {
+    async listTelemetryScenarios() {
+      return [
+        { scenarioKey: 'ET-001', label: 'Execution Substrate Cockpit' },
+        { scenarioKey: 'ET-002', label: 'Execution Event Stream' },
+      ];
+    },
+    async loadTelemetryScenario(scenarioKey) {
+      if (scenarioKey === 'ET-002') {
+        return {
+          scenarioKey,
+          markdown: fs.readFileSync('./fixtures/templates/telemetry/et-002.execution-event-stream.md.tmpl', 'utf8'),
+          uiContract: JSON.parse(fs.readFileSync('./src/renderer/contracts/telemetry/et-002.execution-event-stream.ui.contract.json', 'utf8')),
+        };
+      }
+      return {
+        scenarioKey: 'ET-001',
+        markdown: fs.readFileSync('./fixtures/templates/telemetry/et-001.execution-substrate-cockpit.md.tmpl', 'utf8'),
+        uiContract: JSON.parse(fs.readFileSync('./src/renderer/contracts/telemetry/et-001.execution-substrate-cockpit.ui.contract.json', 'utf8')),
+      };
+    },
+  },
   fetch: async (url) => {
     fetchCalls.push(url);
     return {
@@ -439,11 +464,16 @@ await new Promise((resolve) => setTimeout(resolve, 0));
 assert.ok(windowStub.MarkdownContractLab, 'browser runtime must expose the lab API for diagnostics');
 assert.deepEqual(fetchCalls, ['./markdown-ui-elements.json'], 'browser runtime must load the JSON contract registry');
 assert.doesNotMatch(browserRuntime, /const ELEMENT_REGISTRY\s*=/, 'browser runtime must not embed a substitute element registry');
+assert.doesNotMatch(browserRuntime, /Load Sample/, 'browser runtime must not retain the legacy sample flow');
 assert.equal(appendedStyles.length, 1, 'browser runtime must inject styles generated from the registry');
 assert.match(appendedStyles[0].textContent, /\.loga-toolbar--linear\{/, 'injected registry CSS must include toolbar styles');
 assert.match(appendedStyles[0].textContent, /flex-wrap:nowrap;/, 'injected registry CSS must convert camelCase to CSS declarations');
-assert.match(elements['rendered-output'].innerHTML, /loga-toolbar--linear/, 'browser runtime must render the initial sample');
-assert.match(elements['markdown-input'].value, /variant="linear"/, 'browser runtime must load the sample into the editor');
+assert.match(elements['telemetry-scenario-select'].innerHTML, /ET-001/, 'browser runtime must populate modular scenarios');
+assert.match(elements['markdown-input'].value, /Execution Substrate Cockpit/, 'browser runtime must load the modular telemetry scenario into the editor');
+assert.match(elements['rendered-output'].innerHTML, /Execution Substrate Cockpit/, 'browser runtime must render the loaded telemetry scenario');
+assert.match(elements['projection-meta'].innerHTML, /scenario: ET-001/, 'browser runtime must display the active modular scenario key');
+assert.match(elements['projection-meta'].innerHTML, /ui: ai-engine-ui\/v1/, 'browser runtime must display the active UI contract schema');
+assert.match(elements['telemetry-scenario-status'].textContent, /Loaded ET-001/, 'browser runtime must expose modular scenario load status');
 
 const modularTelemetryArtifacts = [
   {
@@ -460,6 +490,11 @@ const modularTelemetryArtifacts = [
   },
 ];
 
+const scenarioManifest = JSON.parse(fs.readFileSync('./src/renderer/contracts/telemetry/scenario-manifest.json', 'utf8'));
+assert.equal(scenarioManifest.version, 1, 'scenario manifest must declare a version');
+assert.ok(scenarioManifest.scenarios['ET-001'], 'scenario manifest must include ET-001');
+assert.ok(scenarioManifest.scenarios['ET-002'], 'scenario manifest must include ET-002');
+
 modularTelemetryArtifacts.forEach(({ scenario, markdownPath, contractPath, projectionType }) => {
   assert.ok(fs.existsSync(markdownPath), `${scenario} markdown contract must exist`);
   assert.ok(fs.existsSync(contractPath), `${scenario} UI contract JSON must exist`);
@@ -473,6 +508,7 @@ modularTelemetryArtifacts.forEach(({ scenario, markdownPath, contractPath, proje
   assert.equal(contract.schema, 'ai-engine-ui/v1', `${scenario} UI contract JSON must declare schema "ai-engine-ui/v1"`);
   assert.equal(contract.scenario_key, scenario, `${scenario} UI contract JSON must declare scenario_key matching the scenario identifier`);
   assert.equal(contract.projection_type, projectionType, `${scenario} UI contract JSON must declare projection_type matching the markdown template`);
+  assert.equal(contract.version, 1, `${scenario} UI contract JSON must declare a version`);
   assert.ok('elements' in contract, `${scenario} UI contract JSON must include an elements object`);
   assert.ok('styles' in contract, `${scenario} UI contract JSON must include a styles object`);
 });
@@ -481,9 +517,11 @@ elements['markdown-input'].value = '';
 elements['clear-input'].handlers.click();
 assert.equal(elements['markdown-input'].value, '', 'clear button must empty the editor');
 
-elements['load-sample'].handlers.click();
-assert.match(elements['markdown-input'].value, /Projection Graph/, 'load sample button must restore sample markdown');
-assert.match(elements['rendered-output'].innerHTML, /Projection Graph/, 'load sample button must render sample output');
+elements['telemetry-scenario-select'].value = 'ET-002';
+elements['telemetry-scenario-load'].handlers.click();
+await new Promise((resolve) => setTimeout(resolve, 0));
+assert.match(elements['markdown-input'].value, /Execution Event Stream/, 'scenario load button must load the selected modular scenario');
+assert.match(elements['rendered-output'].innerHTML, /Execution Event Stream/, 'scenario load button must render the selected modular scenario');
 
 const fileProtocolElements = {};
 const fileProtocolDocumentStub = {

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "scenarios": {
+    "ET-001": {
+      "label": "Execution Substrate Cockpit",
+      "projection_type": "operator.execution_substrate_cockpit",
+      "markdown_path": "../../../../fixtures/templates/telemetry/et-001.execution-substrate-cockpit.md.tmpl",
+      "ui_contract_path": "./et-001.execution-substrate-cockpit.ui.contract.json"
+    },
+    "ET-002": {
+      "label": "Execution Event Stream",
+      "projection_type": "operator.execution_telemetry_event_stream",
+      "markdown_path": "../../../../fixtures/templates/telemetry/et-002.execution-event-stream.md.tmpl",
+      "ui_contract_path": "./et-002.execution-event-stream.ui.contract.json"
+    }
+  }
+}

@@ -14,6 +14,8 @@ This document describes the target architecture. The current runtime still loads
 `src/renderer/markdown-ui-elements.json` for the existing markdown contract system
 and must be migrated incrementally. The first modular scenario scaffolds now exist
 for ET-001 and ET-002, but they are not yet wired into the live runtime.
+The Lab now also has a manifest-backed modular scenario picker so the new files
+are operationally testable without the legacy sample flow.
 
 ## Design goals
 
@@ -74,7 +76,7 @@ Lab URL: http://localhost:5000/lab.html
 
 For each scenario:
 
-1. load markdown scenario content in lab
+1. load markdown scenario content in lab from the modular scenario manifest
 2. select/load matching scenario UI contract JSON
 3. verify declarative blocks, bindings, iterators, actions, and navigation
 4. record Pass/Fail in scenario audit
