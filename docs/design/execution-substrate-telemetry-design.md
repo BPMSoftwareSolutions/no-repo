@@ -42,6 +42,67 @@ This document specifies:
 6. **Owned contracts.** All markdown templates and field bindings live in this repo.
    Upstream projection shape changes do not break our display layer.
 
+7. **Strict separation of responsibilities.** Markdown defines structure and
+  semantic rendering intent, JSON contracts define style/behavior policy, and
+  JavaScript executes a generic declarative runtime with no domain-specific
+  telemetry logic.
+
+---
+
+## Responsibility boundaries (non-negotiable)
+
+This architecture is contract-first and fail-fast. Responsibilities are strictly
+separated to prevent context bleed and bespoke UI logic.
+
+### Markdown responsibilities (view semantics only)
+
+Markdown templates define:
+- page structure, sections, and semantic component blocks
+- declarative iterators, data bindings, and action declarations
+- navigation declarations and operator-facing copy
+
+Markdown does not define:
+- imperative fetch logic
+- bespoke conditional domain logic
+- style token values or animation engine implementation details
+
+### JSON contract responsibilities (rendering policy)
+
+JSON UI contracts define:
+- component style tokens and visual variants
+- animation profiles and transition policy
+- action wiring schema and navigation policy
+- declarative capability schema and validation rules
+
+JSON contracts do not define:
+- domain data retrieval logic
+- telemetry-specific business decisions
+- bespoke one-off renderer behavior
+
+### JavaScript responsibilities (generic runtime only)
+
+JavaScript runtime defines:
+- generic markdown block interpreter
+- generic iterator execution, binding resolution, action dispatch, and navigation
+- contract validation, error surfacing, and lifecycle orchestration
+
+JavaScript runtime must not define:
+- telemetry-specific display logic
+- hardcoded event-type business mappings tied to one domain page
+- bespoke rendering branches that bypass markdown + contract declarations
+
+### Loud-failure policy for boundary violations
+
+Boundary violations are blocking errors, not warnings:
+- markdown requiring undeclared contract capabilities
+- contract schema mismatch against runtime capabilities
+- runtime detecting domain-specific branch logic in declarative execution path
+
+Raise explicit errors and stop rendering for affected surface:
+- `telemetry_markdown_contract_violation`
+- `telemetry_ui_contract_schema_error`
+- `telemetry_runtime_domain_logic_detected`
+
 ---
 
 ## What the SDK can truly provide
@@ -1237,6 +1298,49 @@ The following specific gaps exist between the current cockpit and this design.
 
 ## Phased implementation plan
 
+## Projection scenario testing and promotion workflow
+
+All projection scenarios must move through a markdown-first test gate before
+they become official UX surfaces.
+
+### Scenario lifecycle
+
+1. Create one markdown file per projection scenario.
+2. Register the scenario in the audit file:
+  - `docs/design/execution-telemetry-projection-scenario-audit.md`
+3. Load and test the markdown in Contract Lab:
+  - `http://localhost:5000/lab.html`
+4. Verify rendering behavior against contract expectations (layout, bindings,
+  iterators, actions, navigation, animations).
+5. Mark scenario as approved only after lab verification passes.
+6. Promote approved markdown to official UX for that scenario.
+
+### Promotion gate policy
+
+- No scenario is promotable without an audit entry.
+- No scenario is promotable without explicit `Approved` status in the audit.
+- Promotion is blocked if Contract Lab verification fails or is incomplete.
+- Promotion is blocked if markdown/runtime/contract separation boundaries are violated.
+
+### Required audit fields per scenario
+
+- scenario_key
+- markdown_path
+- contract_key
+- lab_url (default: `http://localhost:5000/lab.html`)
+- verification_result (Pass/Fail)
+- approved_by
+- approved_at_et
+- promotion_status (Draft/Approved/Promoted/Blocked)
+- notes
+
+### Fail-fast testing policy
+
+Testing does not permit silent fallback behavior:
+- If a markdown scenario fails to render in Contract Lab, record `Fail` and stop promotion.
+- If runtime reports schema or boundary errors, record `Blocked` and stop promotion.
+- If domain-specific JS logic is required to make a scenario render, treat as design defect.
+
 ### Phase 1 — Normalization layer
 
 - Implement `normalizeContextFragment(fragment) → ActivityEvent`
@@ -1322,3 +1426,13 @@ The following specific gaps exist between the current cockpit and this design.
 **Contracts**
 - [ ] Normalization functions are pure and independently testable
 - [ ] Templates bind to normalized fields only, not raw API shapes
+- [ ] Markdown defines structure, iterators, bindings, actions, and navigation only (no imperative fetch or bespoke domain code)
+- [ ] JSON contracts define style/animation/action policy only (no domain retrieval logic)
+- [ ] JavaScript runtime remains declarative and generic (no telemetry-specific rendering branches)
+- [ ] Any markdown/contract/runtime boundary breach raises a blocking error, not a fallback path
+
+**Scenario testing and promotion**
+- [ ] Every projection scenario has a markdown file and a corresponding audit entry
+- [ ] Every scenario is verified in Contract Lab (`http://localhost:5000/lab.html`) before approval
+- [ ] Only audit-approved scenarios are promoted to official UX
+- [ ] Failed or blocked scenarios are explicitly recorded and never promoted silently
