@@ -1,4 +1,7 @@
 {
+  "schema": "ai-engine-ui/v1",
+  "scenario_key": "ET-002",
+  "projection_type": "operator.execution_telemetry_event_stream",
   "elements": {},
   "styles": {},
   "media": {}

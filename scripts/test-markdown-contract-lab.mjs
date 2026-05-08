@@ -463,10 +463,18 @@ const modularTelemetryArtifacts = [
 modularTelemetryArtifacts.forEach(({ scenario, markdownPath, contractPath, projectionType }) => {
   assert.ok(fs.existsSync(markdownPath), `${scenario} markdown contract must exist`);
   assert.ok(fs.existsSync(contractPath), `${scenario} UI contract JSON must exist`);
+
   const parsed = parseMarkdown(fs.readFileSync(markdownPath, 'utf8'));
   assert.equal(parsed.frontmatter.projection_type, projectionType, `${scenario} markdown contract must declare the expected projection type`);
   assert.ok(parsed.blocks.includes('focus'), `${scenario} markdown contract must include the focus block`);
-  assert.doesNotThrow(() => JSON.parse(fs.readFileSync(contractPath, 'utf8')), `${scenario} UI contract JSON must be valid JSON`);
+
+  let contract;
+  assert.doesNotThrow(() => { contract = JSON.parse(fs.readFileSync(contractPath, 'utf8')); }, `${scenario} UI contract JSON must be valid JSON`);
+  assert.equal(contract.schema, 'ai-engine-ui/v1', `${scenario} UI contract JSON must declare schema "ai-engine-ui/v1"`);
+  assert.equal(contract.scenario_key, scenario, `${scenario} UI contract JSON must declare scenario_key matching the scenario identifier`);
+  assert.equal(contract.projection_type, projectionType, `${scenario} UI contract JSON must declare projection_type matching the markdown template`);
+  assert.ok('elements' in contract, `${scenario} UI contract JSON must include an elements object`);
+  assert.ok('styles' in contract, `${scenario} UI contract JSON must include a styles object`);
 });
 
 elements['markdown-input'].value = '';

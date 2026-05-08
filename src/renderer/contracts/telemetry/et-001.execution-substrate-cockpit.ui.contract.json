@@ -1,4 +1,7 @@
 {
+  "schema": "ai-engine-ui/v1",
+  "scenario_key": "ET-001",
+  "projection_type": "operator.execution_substrate_cockpit",
   "elements": {},
   "styles": {},
   "media": {}

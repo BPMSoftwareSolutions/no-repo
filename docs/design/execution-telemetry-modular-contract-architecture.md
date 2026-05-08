@@ -95,8 +95,35 @@ Migration approach:
 6. block promotion for any scenario still requiring monolith-only entries
 
 Current audit implication:
-- ET-001 and ET-002 remain legacy-implemented scenarios, but they are not modular-ready
-  until their per-scenario JSON contracts exist.
+- ET-001 and ET-002 have scaffold artifacts checked in but are not modular-ready.
+  Their promotion_status is Blocked until runtime wiring is complete and Contract
+  Lab verification passes with non-empty scenario-level UI contract elements.
+
+**Projection type transition.**
+- `operator.execution_substrate_cockpit` (ET-001) replaces `operator.execution_telemetry_dashboard`.
+- The legacy type `operator.execution_telemetry_dashboard` is deprecated. Do not use it for new scenarios.
+- `operator.execution_telemetry_event_stream` (ET-002) retains its type; no change.
+- Any routing or projection registry that still references `operator.execution_telemetry_dashboard`
+  must be migrated to `operator.execution_substrate_cockpit` as part of the modular rollout.
+
+**Minimum required UI contract schema.**
+A scenario UI contract JSON is not promotion-eligible if it contains only empty objects.
+The minimum required content for a promotable contract is:
+
+```json
+{
+  "schema": "ai-engine-ui/v1",
+  "scenario_key": "ET-XXX",
+  "projection_type": "operator.<scenario_type>",
+  "elements": { /* at least one block type declaration for elements used in the markdown */ },
+  "styles": { /* at least scenario-scoped CSS tokens */ },
+  "media": {}
+}
+```
+
+Scaffold files with empty `elements` and `styles` pass existence checks but fail promotion.
+The distinction is intentional: existence checks validate that files are registered;
+promotion checks validate that they carry meaningful rendering policy.
 
 ## Validation checklist
 
