@@ -428,7 +428,10 @@ For any unrecognized type, derive label as: capitalize first word, replace under
 
 **Default sort:** descending by occurredAtUtc.
 
-**Default page size:** 30 rows. "Load more" appends next 30.
+**Default page size:** 30 rows. "Load more" fetches the next window using
+time-window pagination: the oldest visible event's `occurredAtUtc` becomes the
+`before` cursor for the next call. This avoids offset drift when new events
+arrive between pages.
 
 **Columns:**
 
@@ -483,30 +486,52 @@ For any unrecognized type, derive label as: capitalize first word, replace under
 
 ### Server-side filters (pass to SDK methods)
 
-These filters are sent to the server. Use them before normalizing.
+These filters are sent to the server before any normalization. Omit a parameter
+entirely if the user has not selected a value for it — do not send empty strings
+or null.
 
-| Filter key       | SDK parameter          | Method                     | Values                                      |
-|------------------|------------------------|----------------------------|---------------------------------------------|
-| artifactKind     | artifactKind           | listExecutionProcessRuns   | shell_command, git_operation, test_run,     |
-|                  |                        |                            | projection_generation, verification_retry,  |
-|                  |                        |                            | remote_publish, context_fragment,           |
-|                  |                        |                            | workflow_turn                               |
-| status           | status                 | listExecutionProcessRuns   | running, completed, failed, skipped, retried|
-| since            | since (ISO8601)        | listExecutionProcessRuns   | derived from timeRange preset               |
-| learningCategory | learningCategory       | listPromotionCandidates    | capability, pattern, constraint, heuristic  |
-| promotionReady   | promotionReadiness     | listPromotionCandidates    | draft, ready, validated, promoted           |
+| Filter key       | SDK parameter          | Method                     | Cardinality  |
+|------------------|------------------------|----------------------------|--------------|
+| artifactKind     | artifactKind           | listExecutionProcessRuns   | single value |
+| status (single)  | status                 | listExecutionProcessRuns   | single value |
+| since            | since (ISO8601)        | listExecutionProcessRuns   | single value |
+| before           | before (ISO8601)       | listExecutionProcessRuns   | single value (pagination cursor) |
+| learningCategory | learningCategory       | listPromotionCandidates    | single value |
+| promotionReady   | promotionReadiness     | listPromotionCandidates    | single value |
+
+**Status filter cardinality rule.** The server `status` param accepts a single
+value. Multi-select behavior is handled as follows:
+
+- 0 statuses selected → omit `status` from server call; no status filter applied
+- 1 status selected → pass directly as the server `status` param
+- 2+ statuses selected → omit `status` from server call; apply multi-select filter
+  client-side after normalization
+
+This avoids sending unsupported multi-value syntax to the server.
+
+**Known enum values are not exhaustive.** The listed values are observed at
+design time. The server may add new values at any time. See the unknown-value
+fallback rules in the Query Mechanics section.
 
 ### Client-side filters (applied after normalization)
 
-| Filter key       | Normalized field       | Type              |
-|------------------|------------------------|-------------------|
-| executionType    | eventType              | multi-select      |
-| domainObjectType | domainObjectType       | multi-select      |
-| status           | status                 | multi-select      |
-| actorLabel       | actorLabel             | multi-select      |
-| workflowRunId    | workflowRunId          | single-select     |
-| sessionId        | sessionId              | single-select     |
-| timeRange        | occurredAtUtc          | preset select     |
+These filters are applied to the merged, normalized record set.
+
+| Filter key       | Normalized field       | Type              | Notes                          |
+|------------------|------------------------|-------------------|--------------------------------|
+| executionType    | eventType              | multi-select      | Populated dynamically from data|
+| domainObjectType | domainObjectType       | multi-select      | Populated dynamically from data|
+| status           | status                 | multi-select      | Active when 2+ statuses chosen |
+| actorLabel       | actorLabel             | multi-select      | Populated dynamically from data|
+| workflowRunId    | workflowRunId          | single-select     |                                |
+| sessionId        | sessionId              | single-select     |                                |
+| timeRange        | occurredAtUtc          | preset select     | Gates ALL sources (see below)  |
+
+**Time range gates all sources.** After merging primary and supplement results,
+apply a client-side `occurredAtUtc >= since` filter to every normalized event.
+This prevents supplement source events (substrate fragments, recent activity)
+from leaking records outside the selected time window, since those calls do not
+accept a `since` parameter.
 
 ### Time range presets
 
@@ -528,6 +553,109 @@ These filters are sent to the server. Use them before normalizing.
 
 ---
 
+## Query mechanics
+
+This section defines the exact runtime behavior for the stream contract: how
+pagination works, how multi-select filters map to server params, how sources
+are merged and deduplicated, and how unknown enum values are handled.
+
+### Pagination: time-window, not offset
+
+"Load more" uses a `before` cursor, not a numeric offset.
+
+```
+First load:
+  listExecutionProcessRuns({ limit: 30, since, ...otherFilters })
+  → returns events [E1 ... E30] sorted desc by started_at
+  → record oldestSeenTimestamp = E30.occurredAtUtc
+
+"Load more" click:
+  listExecutionProcessRuns({ limit: 30, since, before: oldestSeenTimestamp, ...otherFilters })
+  → returns events [E31 ... E60]
+  → append to list, update oldestSeenTimestamp = E60.occurredAtUtc
+```
+
+Why: offset pagination returns duplicates or skips records when new events
+arrive between pages. Time-window pagination is deterministic — "everything
+before timestamp X" does not shift.
+
+Supplement sources (substrate fragments and recent activity) are fetched once
+on the first page load only. They are not re-fetched on "Load more" because
+they represent a fixed historical set for the current workflow run.
+
+### Multi-select status filter
+
+The server `status` param accepts a single string. To support multi-select in
+the UI without multiple parallel requests:
+
+```
+filters.status_server = (filters.status.length === 1) ? filters.status[0] : undefined
+filters.status_client = (filters.status.length >= 2) ? filters.status : []
+```
+
+When 2+ statuses are selected, the server call is made without a status param
+(returns all statuses for the window), and the client-side filter narrows the
+result. This trades one extra network response for simplicity of a single call.
+
+### Time gate applied to all sources
+
+After normalization and before the dedupe step:
+
+```
+if (filters.since) {
+  allEvents = allEvents.filter(e => e.occurredAtUtc >= filters.since);
+}
+```
+
+This ensures supplement events (substrate context_fragments, recent_activity)
+are trimmed to the selected time window, even though those calls do not accept
+a `since` parameter.
+
+### Merge and deduplicate
+
+Merge order: primary source events first, supplement events appended.
+
+Dedupe key resolution for each event:
+
+```javascript
+function dedupeKey(event) {
+  if (event.eventId) return event.eventId;
+  return `${event.occurredAtUtc}:${event.executionType}:${event.actorLabel}`;
+}
+```
+
+Build a `Map<string, ActivityEvent>`. Iterate primary source first — keys are
+set. Iterate supplement — skip any key that already exists. Primary wins on
+collision.
+
+### Unknown enum values
+
+The listed `artifactKind`, `status`, `learningCategory`, and `promotionReadiness`
+values are observed at design time and are not exhaustive. Runtime behavior:
+
+**Server params:** If the user selects a value not in the known list, still pass
+it to the server. The server may accept newer values we don't know about yet.
+Only omit a param if the value is empty.
+
+**Filter chip options:** Populate dynamically from the unique values observed in
+the current result set, not from a hardcoded list. This means new enum values
+the server returns automatically appear as filter options.
+
+**Display chips (eventType, domainObjectType):** If a value has no entry in the
+event type map, apply the fallback transform:
+
+```javascript
+function eventTypeLabel(rawType) {
+  return EVENT_TYPE_MAP[rawType]
+    ?? rawType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+```
+
+This renders `new_unknown_type` as `New Unknown Type` — readable without
+crashing or showing a blank chip.
+
+---
+
 ## Declarative iterator contracts
 
 The stream view consumes a declarative query contract before rendering any list.
@@ -544,9 +672,10 @@ source:
     method: listExecutionProcessRuns
     args:
       limit: 30
-      artifactKind: ${filters.artifactKind}   # optional, omit if unset
-      status: ${filters.status}               # optional, omit if unset
-      since: ${filters.since}                 # derived from timeRange preset
+      artifactKind: ${filters.artifactKind}         # omit if unset
+      status: ${filters.status_server}              # single value only; omit if 0 or 2+ selected
+      since: ${filters.since}                       # ISO8601 from timeRange preset; omit for "All"
+      before: ${pagination.oldestSeenTimestamp}     # ISO8601 cursor; omit on first load
   supplement:
     - method: getWorkflowRunSubstrate
       args:
@@ -558,16 +687,33 @@ source:
         - path: recent_activity
           normalize: ActivityEvent
           domainObjectType: workflow_turn
+      # Supplement is fetched only on the first page load. "Load more" extends
+      # only the primary source using the before cursor.
+      page: first_only
 
 normalize: ActivityEvent
 
+dedupe:
+  # Apply after merge, before client filters.
+  # Primary source records take precedence over supplement records.
+  key:
+    primary: eventId                               # use if non-empty
+    fallback: "${occurredAtUtc}:${executionType}:${actorLabel}"
+  precedence: primary_over_supplement
+
 client_filters:
+  - field: occurredAtUtc
+    operator: gte
+    value: ${filters.since}                        # gates ALL sources by time window
   - field: executionType
     operator: in
-    value: ${filters.executionType}   # empty array = no filter
+    value: ${filters.executionType}                # empty array = no filter
   - field: domainObjectType
     operator: in
     value: ${filters.domainObjectType}
+  - field: status
+    operator: in
+    value: ${filters.status_client}                # active when 2+ statuses chosen
   - field: actorLabel
     operator: in
     value: ${filters.actorLabel}
@@ -578,7 +724,9 @@ sort:
 
 paginate:
   size: 30
-  strategy: append   # Load more appends, does not replace
+  strategy: time_window       # "Load more" uses before cursor, not offset
+  cursor_field: occurredAtUtc # oldest visible event timestamp becomes next before value
+  append: true                # new page appends below existing rows
 
 render:
   emptyMessage: "No execution telemetry events were found for this scope."
@@ -1067,14 +1215,39 @@ The following specific gaps exist between the current cockpit and this design.
 
 ## Acceptance criteria
 
+**Ordering**
 - [ ] Stream shows newest event first by default with no user interaction
+- [ ] "Load more" appends older events, never duplicates or re-orders existing rows
+
+**Timestamps**
 - [ ] All displayed timestamps are in America/New_York with EDT/EST abbreviation
+- [ ] Relative age (e.g. "14m ago") is always accompanied by an absolute ET timestamp
+
+**GUID suppression**
 - [ ] No UUID or raw GUID appears in any list row, metric, or summary label
 - [ ] Session is identified by human session_key, not agent_session_id
-- [ ] Execution type filter narrows the event stream without page reload
-- [ ] Domain object type filter narrows the event stream without page reload
-- [ ] Time range preset (15m, 1h, 6h, 24h) passes `since` to listExecutionProcessRuns
+- [ ] Raw IDs are available only in the detail panel's collapsed "Raw metadata" section
+
+**Filters**
+- [ ] Time range preset passes `since` to listExecutionProcessRuns as a server-side param
+- [ ] Time range preset also gates supplement source events client-side by occurredAtUtc
+- [ ] Selecting 1 status sends it as the server `status` param
+- [ ] Selecting 2+ statuses omits server `status` param and applies filter client-side
+- [ ] Selecting 0 statuses omits server `status` param (all statuses returned)
+- [ ] Execution type filter options are populated dynamically from observed data
+- [ ] Domain object type filter options are populated dynamically from observed data
+- [ ] An unknown event type renders as a capitalized, space-separated label (not blank, not crash)
+
+**Pagination**
+- [ ] "Load more" uses the `before` cursor (oldest visible timestamp), not a numeric offset
+- [ ] Supplement sources are fetched only on first page load, not on "Load more"
+- [ ] Re-fetching (auto-refresh) resets to the first page; it does not accumulate
+
+**Data integrity**
+- [ ] Merge deduplicate step eliminates events that appear in both primary and supplement
+- [ ] Primary source event wins when primary and supplement share a dedupe key
 - [ ] listExecutionProcessRuns is called in every refresh cycle
-- [ ] Raw IDs are available in the detail panel's "Raw metadata" section
+
+**Contracts**
 - [ ] Normalization functions are pure and independently testable
 - [ ] Templates bind to normalized fields only, not raw API shapes
