@@ -21,16 +21,15 @@
             <option value="">Loading modular scenarios...</option>
           </select>
         </label>
-        <button id="telemetry-scenario-load" class="primary" type="button">Load Scenario</button>
-        <button id="clear-input" type="button">Clear</button>
+        <button id="telemetry-scenario-load" class="primary" type="button">Load Scenario</button>        <button id=\"toggle-editor\" type=\"button\" title=\"Show/hide markdown editor\">Editor</button>        <button id="clear-input" type="button">Clear</button>
         <button id="render-now" type="button">Render</button>
       </div>
     </header>
 
     <p id="telemetry-scenario-status" class="grammar-note">Loading modular telemetry scenarios...</p>
 
-    <main class="lab-grid">
-      <section class="editor-pane" aria-labelledby="editor-title">
+    <main class="lab-grid" data-editor-visible="false">
+      <section class="editor-pane hidden" aria-labelledby="editor-title">
         <div class="pane-title">
           <h2 id="editor-title">Paste Markdown</h2>
           <span id="input-count">0 chars</span>

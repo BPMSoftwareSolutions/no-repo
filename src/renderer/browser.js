@@ -26,6 +26,21 @@
     });
 
     documentRef.getElementById('render-now').addEventListener('click', render);
+    
+    const toggleEditorBtn = documentRef.getElementById('toggle-editor');
+    if (toggleEditorBtn && documentRef.querySelector) {
+      const labGrid = documentRef.querySelector('.lab-grid');
+      toggleEditorBtn.addEventListener('click', () => {
+        const editorPane = documentRef.querySelector('.editor-pane');
+        const currentlyVisible = labGrid?.getAttribute('data-editor-visible') === 'true';
+        labGrid?.setAttribute('data-editor-visible', String(!currentlyVisible));
+        editorPane?.classList.toggle('hidden');
+        if (!currentlyVisible) {
+          input.focus();
+        }
+      });
+    }
+
     scenarioLoadButton?.addEventListener('click', () => {
       void loadSelectedTelemetryScenario();
     });

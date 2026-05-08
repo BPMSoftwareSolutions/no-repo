@@ -1,9 +1,454 @@
 {
   "schema": "ai-engine-ui/v1",
   "scenario_key": "ET-001",
-  "projection_type": "operator.execution_substrate_cockpit",
   "version": 1,
-  "elements": {},
   "styles": {},
-  "media": {}
+  "media": {},
+  "contract_key": "et-001.execution-substrate-cockpit",
+  "contract_version": "1.0.0",
+  "projection_type": "operator.execution_substrate_cockpit",
+  "runtime": {
+    "renderer": "loga-markdown-runtime",
+    "mode": "generic",
+    "fail_fast": true,
+    "no_domain_specific_branches": true
+  },
+  "capabilities": {
+    "required": [
+      "layout.operator_shell",
+      "iterator.event_stream",
+      "selection.selected_event",
+      "drawer.progressive_disclosure",
+      "action.copy_to_clipboard",
+      "action.refresh_projection",
+      "action.open_evidence_packet"
+    ],
+    "on_missing": "block_surface"
+  },
+  "data_contract": {
+    "source_truth": "sql",
+    "timezone": "America/New_York",
+    "timestamp_display": "yyyy-MM-dd HH:mm:ss z",
+    "collections": {
+      "events": {
+        "identity": "event_id",
+        "sort_default": {
+          "field": "occurred_at",
+          "direction": "desc"
+        },
+        "required_fields": [
+          "event_id",
+          "occurred_at",
+          "occurred_at_local",
+          "status",
+          "status_indicator",
+          "kind",
+          "title",
+          "summary",
+          "detail_summary",
+          "tags",
+          "duration_label",
+          "stage",
+          "actor_label",
+          "evidence_payload",
+          "identifiers",
+          "markdown_excerpt"
+        ]
+      }
+    }
+  },
+  "layout": {
+    "root": "app",
+    "regions": {
+      "topbar": {
+        "element": "header",
+        "className": "topbar"
+      },
+      "shell": {
+        "element": "div",
+        "className": "shell",
+        "columns": [
+          "rail",
+          "main",
+          "detail"
+        ]
+      },
+      "rail": {
+        "element": "aside",
+        "className": "rail card flush"
+      },
+      "main": {
+        "element": "main",
+        "className": "main card"
+      },
+      "detail": {
+        "element": "aside",
+        "className": "detail"
+      }
+    }
+  },
+  "elements": {
+    "telemetry_app": {
+      "category": "root",
+      "element": "div",
+      "className": "app"
+    },
+    "topbar": {
+      "category": "component",
+      "element": "header",
+      "className": "topbar",
+      "parts": {
+        "brand": {
+          "element": "div",
+          "className": "brand"
+        },
+        "brand_mark": {
+          "element": "div",
+          "className": "mark"
+        },
+        "title": {
+          "element": "h1"
+        },
+        "subtitle": {
+          "element": "p"
+        },
+        "actions": {
+          "element": "div",
+          "className": "actions"
+        }
+      },
+      "action_item": {
+        "element": "button",
+        "className": "btn",
+        "variants": {
+          "default": "btn",
+          "primary": "btn primary"
+        }
+      }
+    },
+    "operator_shell": {
+      "category": "layout",
+      "element": "div",
+      "className": "shell",
+      "regions": [
+        "rail",
+        "main",
+        "detail"
+      ]
+    },
+    "rail": {
+      "category": "region",
+      "element": "aside",
+      "className": "rail card flush"
+    },
+    "main": {
+      "category": "region",
+      "element": "main",
+      "className": "main card"
+    },
+    "detail": {
+      "category": "region",
+      "element": "aside",
+      "className": "detail"
+    },
+    "nav_list": {
+      "category": "component",
+      "element": "section",
+      "className": "rail-block",
+      "item": {
+        "element": "button",
+        "className": "nav-item",
+        "activeClassName": "active",
+        "fields": {
+          "label": {
+            "element": "span"
+          },
+          "count": {
+            "element": "span",
+            "className": "nav-count"
+          }
+        }
+      }
+    },
+    "mini_section": {
+      "category": "component",
+      "element": "section",
+      "className": "rail-block",
+      "title": {
+        "element": "h3"
+      },
+      "item": {
+        "element": "div",
+        "className": "mini-item",
+        "fields": {
+          "label": {
+            "element": "strong"
+          },
+          "meta": {
+            "element": "span"
+          }
+        }
+      }
+    },
+    "legend": {
+      "category": "component",
+      "element": "section",
+      "className": "rail-block",
+      "item": {
+        "element": "div",
+        "className": "pill",
+        "indicator": {
+          "element": "span",
+          "className": "dot",
+          "status_field": "status",
+          "status_classes": {
+            "good": "dot good",
+            "warn": "dot warn",
+            "bad": "dot bad",
+            "info": "dot info"
+          }
+        }
+      }
+    },
+    "focus": {
+      "category": "component",
+      "element": "section",
+      "className": "focus",
+      "fields": {
+        "eyebrow": {
+          "element": "p",
+          "className": "eyebrow"
+        },
+        "question": {
+          "element": "h2"
+        },
+        "answer": {
+          "element": "p",
+          "className": "answer"
+        }
+      }
+    },
+    "state_grid": {
+      "category": "component",
+      "element": "section",
+      "className": "state-grid",
+      "collection_field": "metrics",
+      "item": {
+        "element": "article",
+        "className": "metric",
+        "fields": {
+          "label": {
+            "element": "div",
+            "className": "label"
+          },
+          "value": {
+            "element": "p",
+            "className": "value"
+          },
+          "sub": {
+            "element": "div",
+            "className": "sub"
+          }
+        }
+      }
+    },
+    "event_stream": {
+      "category": "iterator",
+      "element": "section",
+      "className": "event-stream",
+      "toolbar": {
+        "className": "toolbar",
+        "filtersClassName": "filters",
+        "filterClassName": "chip",
+        "activeFilterClassName": "chip active",
+        "searchClassName": "search"
+      },
+      "collection_field": "iterator",
+      "sort": {
+        "field": "occurred_at",
+        "direction": "desc"
+      },
+      "item": {
+        "element": "article",
+        "className": "event",
+        "selectedClassName": "selected",
+        "action": "select_event",
+        "fields": {
+          "occurred_at_local": {
+            "element": "div",
+            "className": "event-time"
+          },
+          "title": {
+            "element": "h3",
+            "className": "event-title"
+          },
+          "summary": {
+            "element": "p",
+            "className": "event-summary"
+          },
+          "tags": {
+            "element": "span",
+            "className": "tag"
+          },
+          "duration_label": {
+            "element": "div",
+            "className": "duration"
+          }
+        }
+      }
+    },
+    "selected_event_detail": {
+      "category": "selection_detail",
+      "element": "section",
+      "className": "detail-card card",
+      "source": "selected_event",
+      "body": {
+        "className": "detail-body"
+      },
+      "fields": {
+        "heading": {
+          "element": "h2",
+          "className": "detail-title"
+        },
+        "summary": {
+          "element": "p",
+          "className": "detail-summary"
+        },
+        "status": {
+          "element": "div",
+          "className": "pill"
+        },
+        "metadata": {
+          "element": "dl",
+          "className": "kv"
+        },
+        "drawers": {
+          "element": "details",
+          "bodyElement": "pre"
+        }
+      }
+    },
+    "footer_note": {
+      "category": "component",
+      "element": "p",
+      "className": "footer-note",
+      "fields": {
+        "text": {
+          "element": "text"
+        }
+      }
+    }
+  },
+  "actions": {
+    "copy_summary": {
+      "type": "clipboard",
+      "source": "focus.answer",
+      "success_message": "Summary copied."
+    },
+    "open_evidence_packet": {
+      "type": "navigation",
+      "target_binding": "selected_event.evidence_packet_url",
+      "fallback": "open_selected_event_drawer:evidence_payload"
+    },
+    "refresh_projection": {
+      "type": "api",
+      "method": "GET",
+      "surface": "current_projection",
+      "refresh": "replace_document"
+    },
+    "select_event": {
+      "type": "selection",
+      "collection": "events",
+      "identity_field": "event_id",
+      "target": "selected_event"
+    }
+  },
+  "style_tokens": {
+    "color": {
+      "bg": "#0f1115",
+      "panel": "#151821",
+      "text": "#e7eaf0",
+      "muted": "#9aa3b2",
+      "faint": "#6f7787",
+      "line": "#282d3a",
+      "good": "#61d394",
+      "warn": "#ffd166",
+      "bad": "#ff6b6b",
+      "info": "#7aa7ff"
+    },
+    "layout": {
+      "app_width": "min(1480px, calc(100vw - 40px))",
+      "shell_columns": "270px minmax(0, 1fr) 390px",
+      "gap": "16px",
+      "radius": "18px"
+    },
+    "type": {
+      "sans": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+      "mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace"
+    }
+  },
+  "style_classes": {
+    "app": "centers the page and sets max width",
+    "topbar": "brand and actions row",
+    "shell": "three-column operator shell",
+    "rail card flush": "left navigation column",
+    "main card": "center command deck and event stream",
+    "detail-card card": "sticky selected-event drill-down",
+    "focus": "primary question header",
+    "state-grid": "four compact metric cards",
+    "event": "newest-first event row",
+    "selected": "selected row state",
+    "pill": "status/legend capsule",
+    "dot good|warn|bad|info": "semantic status indicator"
+  },
+  "responsive": [
+    {
+      "media": "(max-width: 1180px)",
+      "rules": {
+        ".shell": {
+          "gridTemplateColumns": "230px minmax(0, 1fr)"
+        },
+        ".detail": {
+          "gridColumn": "1 / -1"
+        },
+        ".detail-card": {
+          "position": "static"
+        }
+      }
+    },
+    {
+      "media": "(max-width: 860px)",
+      "rules": {
+        ".shell": {
+          "gridTemplateColumns": "1fr"
+        },
+        ".state-grid": {
+          "gridTemplateColumns": "repeat(2, minmax(0, 1fr))"
+        },
+        ".event": {
+          "gridTemplateColumns": "1fr"
+        }
+      }
+    },
+    {
+      "media": "(max-width: 520px)",
+      "rules": {
+        ".state-grid": {
+          "gridTemplateColumns": "1fr"
+        }
+      }
+    }
+  ],
+  "quality_gates": {
+    "must_validate": [
+      "frontmatter.source_truth == sql",
+      "primary_question exists",
+      "event_stream.sort.direction == desc",
+      "identifiers are not visible in event rows",
+      "drawers contain raw payload and identifiers",
+      "runtime has no telemetry-specific branches",
+      "unknown block raises visible warning",
+      "missing contract raises blocking error"
+    ]
+  }
 }

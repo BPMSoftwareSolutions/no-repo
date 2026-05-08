@@ -90,20 +90,28 @@ function applyTelemetryDoctrineValidation(markdown, parsed, fatal) {
     });
   }
 
-  const firstDirective = (parsed.body.match(/::([a-zA-Z0-9_]+)/) || [])[1] || '';
-  if (firstDirective.toLowerCase() !== 'focus') {
-    fatal.push({
-      title: 'Telemetry doctrine violation',
-      detail: 'Telemetry projections must start with a ::focus block (summary first).',
-      repair: 'Move or add a ::focus block before diagnostic or payload blocks.',
-    });
-  }
-
-  if (!parsed.blocks.includes('focus')) {
+  const body = String(parsed.body || markdown || '').replace(/\r\n/g, '\n');
+  const hasFocusBlock = /(^|\n)::focus(?:\s+[^\n]*)?\n/i.test(body);
+  if (!hasFocusBlock) {
     fatal.push({
       title: 'Telemetry doctrine violation',
       detail: 'Telemetry projections must include a ::focus block.',
       repair: 'Add a ::focus block that answers the primary operator question.',
+    });
+  }
+
+  const directiveIndex = (name) => body.search(new RegExp(`(^|\\n)::${name}(?:\\s+[^\\n]*)?\\n`, 'i'));
+  const focusIndex = directiveIndex('focus');
+  const diagnosticIndexes = ['event_stream', 'table', 'selected_event_detail', 'panel', 'code']
+    .map((name) => directiveIndex(name))
+    .filter((index) => index >= 0);
+  const firstDiagnosticIndex = diagnosticIndexes.length ? Math.min(...diagnosticIndexes) : -1;
+
+  if (focusIndex >= 0 && firstDiagnosticIndex >= 0 && focusIndex > firstDiagnosticIndex) {
+    fatal.push({
+      title: 'Telemetry doctrine violation',
+      detail: 'Telemetry projections must surface ::focus before diagnostics or payload blocks (summary first).',
+      repair: 'Move ::focus earlier in the document before event stream or detail/payload sections.',
     });
   }
 

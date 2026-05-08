@@ -101,6 +101,29 @@
       grid-template-columns: minmax(360px, 0.38fr) minmax(0, 0.42fr) minmax(320px, 0.2fr);
     }
 
+    .lab-grid[data-editor-visible="false"] {
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.2fr);
+    }
+
+    .editor-pane.hidden {
+      display: none;
+    }
+
+    #toggle-editor {
+      opacity: 0.8;
+      transition: all 140ms ease;
+    }
+
+    #toggle-editor:hover {
+      opacity: 1;
+    }
+
+    .lab-grid[data-editor-visible="true"] #toggle-editor {
+      border-color: rgba(124, 156, 255, 0.6);
+      background: var(--accent-soft);
+      color: var(--strong);
+    }
+
     .editor-pane,
     .preview-pane {
       min-width: 0;

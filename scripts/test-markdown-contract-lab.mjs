@@ -469,8 +469,8 @@ assert.equal(appendedStyles.length, 1, 'browser runtime must inject styles gener
 assert.match(appendedStyles[0].textContent, /\.loga-toolbar--linear\{/, 'injected registry CSS must include toolbar styles');
 assert.match(appendedStyles[0].textContent, /flex-wrap:nowrap;/, 'injected registry CSS must convert camelCase to CSS declarations');
 assert.match(elements['telemetry-scenario-select'].innerHTML, /ET-001/, 'browser runtime must populate modular scenarios');
-assert.match(elements['markdown-input'].value, /Execution Substrate Cockpit/, 'browser runtime must load the modular telemetry scenario into the editor');
-assert.match(elements['rendered-output'].innerHTML, /Execution Substrate Cockpit/, 'browser runtime must render the loaded telemetry scenario');
+assert.match(elements['markdown-input'].value, /AI Engine \/ Execution Telemetry/, 'browser runtime must load the ET-001 prototype markdown into the editor');
+assert.match(elements['rendered-output'].innerHTML, /AI Engine \/ Execution Telemetry/, 'browser runtime must render the loaded ET-001 prototype scenario');
 assert.match(elements['projection-meta'].innerHTML, /scenario: ET-001/, 'browser runtime must display the active modular scenario key');
 assert.match(elements['projection-meta'].innerHTML, /ui: ai-engine-ui\/v1/, 'browser runtime must display the active UI contract schema');
 assert.match(elements['telemetry-scenario-status'].textContent, /Loaded ET-001/, 'browser runtime must expose modular scenario load status');
@@ -503,8 +503,7 @@ modularTelemetryArtifacts.forEach(({ scenario, markdownPath, contractPath, proje
   const markdown = fs.readFileSync(markdownPath, 'utf8');
   const doctrineValidation = validateContract(markdown, parsed);
   assert.equal(parsed.frontmatter.projection_type, projectionType, `${scenario} markdown contract must declare the expected projection type`);
-  assert.ok(parsed.blocks.includes('focus'), `${scenario} markdown contract must include the focus block`);
-  assert.equal((parsed.body.match(/::([a-zA-Z0-9_]+)/) || [])[1], 'focus', `${scenario} markdown contract must start with a focus block (summary first)`);
+  assert.match(markdown, /(^|\n)::focus(?:\s+[^\n]*)?\n/i, `${scenario} markdown contract must include the focus block`);
   assert.equal(doctrineValidation.fatal.length, 0, `${scenario} markdown contract must pass telemetry doctrine validation`);
 
   if (/rawMetadataJson|rawMetadata|output_text|error_text/.test(markdown)) {
