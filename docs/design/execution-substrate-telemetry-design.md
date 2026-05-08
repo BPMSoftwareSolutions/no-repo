@@ -1298,7 +1298,7 @@ The following specific gaps exist between the current cockpit and this design.
 
 ## Phased implementation plan
 
-## Projection scenario testing and promotion workflow
+### Projection scenario testing and promotion workflow
 
 All projection scenarios must move through a markdown-first test gate before
 they become official UX surfaces.
@@ -1364,8 +1364,9 @@ Testing does not permit silent fallback behavior:
 
 - Add time range button group (15m · 1h · 6h · 24h · All)
 - Wire `since` parameter to `listExecutionProcessRuns` based on selected range
-- Add execution type multi-select (populated from known event type labels)
-- Add domain object type multi-select
+- Add execution type multi-select (options driven by contract allowlist, not observed data)
+- Add domain object type multi-select (same: contract allowlist)
+- Reject unknown values before dispatch; surface `telemetry_filter_unknown_value` on violation
 - Show active filters as dismissible chips
 - Persist filter state to localStorage
 
