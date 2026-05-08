@@ -29,15 +29,26 @@ Excluded:
 
 ## New-design scenario inventory
 
-| scenario_key | status | primary_operator_question | primary_sdk_methods | markdown_contract | operator_value | lab_verification | promotion_status |
-|---|---|---|---|---|---|---|---|
-| ET-001 execution_substrate_cockpit | Implemented | What is the execution substrate doing right now? | getLatestMemoryProjection, getExecutionTelemetryCurrent, getSessionPerformanceMetrics, listPromotionCandidates, getWorkflowRunSubstrate | fixtures/templates/operator.execution_telemetry_dashboard.md.tmpl | Immediate operational posture, friction visibility, next-action clarity | Pending | Draft |
-| ET-002 execution_event_stream | Implemented | What happened most recently, in what order, and why? | listExecutionProcessRuns, getWorkflowRunSubstrate | fixtures/templates/operator.execution_telemetry_event_stream.md.tmpl | Fast incident triage and chronological inspection with newest-first stream | Pending | Draft |
-| ET-003 execution_process_run_detail | Planned | What exactly happened in this specific process run? | getExecutionProcessRun | TBD (new template required) | Root-cause depth for command/output/error and retry behavior | Not Started | Draft |
-| ET-004 session_metrics_inspection | Planned | Is this session healthy, stale, or degraded over time? | getSessionPerformanceMetrics, getExecutionTelemetryCurrent | TBD (new template required) | Session reliability and heartbeat governance | Not Started | Draft |
-| ET-005 workflow_substrate_inspection | Planned | What context fragments and activity signals shaped this workflow run? | getWorkflowRunSubstrate | TBD (new template required) | Explainability of run evolution and context quality | Not Started | Draft |
-| ET-006 promotion_effectiveness_lane | Planned | Which promotion candidates are actionable now? | listPromotionCandidates | TBD (new template required) | Promote high-value learning signals into governed improvements | Not Started | Draft |
-| ET-007 execution_schema_drift_surface | Planned | Did runtime detect schema drift or contract violations that block trust? | listExecutionProcessRuns, getWorkflowRunSubstrate (validated through strict contracts) | TBD (new template required) | Loud-failure visibility for architecture defects and contract drift | Not Started | Draft |
+| scenario_key | status | primary_operator_question | primary_sdk_methods | markdown_contract | ui_contract_json | operator_value | lab_verification | promotion_status |
+|---|---|---|---|---|---|---|---|---|
+| ET-001 execution_substrate_cockpit | Implemented | What is the execution substrate doing right now? | getLatestMemoryProjection, getExecutionTelemetryCurrent, getSessionPerformanceMetrics, listPromotionCandidates, getWorkflowRunSubstrate | fixtures/templates/operator.execution_telemetry_dashboard.md.tmpl | src/renderer/contracts/telemetry/et-001.execution-substrate-cockpit.ui.contract.json (planned path) | Immediate operational posture, friction visibility, next-action clarity | Pending | Draft |
+| ET-002 execution_event_stream | Implemented | What happened most recently, in what order, and why? | listExecutionProcessRuns, getWorkflowRunSubstrate | fixtures/templates/operator.execution_telemetry_event_stream.md.tmpl | src/renderer/contracts/telemetry/et-002.execution-event-stream.ui.contract.json (planned path) | Fast incident triage and chronological inspection with newest-first stream | Pending | Draft |
+| ET-003 execution_process_run_detail | Planned | What exactly happened in this specific process run? | getExecutionProcessRun | fixtures/templates/telemetry/et-003.execution-process-run-detail.md.tmpl (planned path) | src/renderer/contracts/telemetry/et-003.execution-process-run-detail.ui.contract.json (planned path) | Root-cause depth for command/output/error and retry behavior | Not Started | Draft |
+| ET-004 session_metrics_inspection | Planned | Is this session healthy, stale, or degraded over time? | getSessionPerformanceMetrics, getExecutionTelemetryCurrent | fixtures/templates/telemetry/et-004.session-metrics-inspection.md.tmpl (planned path) | src/renderer/contracts/telemetry/et-004.session-metrics-inspection.ui.contract.json (planned path) | Session reliability and heartbeat governance | Not Started | Draft |
+| ET-005 workflow_substrate_inspection | Planned | What context fragments and activity signals shaped this workflow run? | getWorkflowRunSubstrate | fixtures/templates/telemetry/et-005.workflow-substrate-inspection.md.tmpl (planned path) | src/renderer/contracts/telemetry/et-005.workflow-substrate-inspection.ui.contract.json (planned path) | Explainability of run evolution and context quality | Not Started | Draft |
+| ET-006 promotion_effectiveness_lane | Planned | Which promotion candidates are actionable now? | listPromotionCandidates | fixtures/templates/telemetry/et-006.promotion-effectiveness-lane.md.tmpl (planned path) | src/renderer/contracts/telemetry/et-006.promotion-effectiveness-lane.ui.contract.json (planned path) | Promote high-value learning signals into governed improvements | Not Started | Draft |
+| ET-007 execution_schema_drift_surface | Planned | Did runtime detect schema drift or contract violations that block trust? | listExecutionProcessRuns, getWorkflowRunSubstrate (validated through strict contracts) | fixtures/templates/telemetry/et-007.execution-schema-drift-surface.md.tmpl (planned path) | src/renderer/contracts/telemetry/et-007.execution-schema-drift-surface.ui.contract.json (planned path) | Loud-failure visibility for architecture defects and contract drift | Not Started | Draft |
+
+## Modular packaging rule
+
+Each scenario row must declare both:
+
+- `markdown_contract`
+- `ui_contract_json`
+
+Scenarios missing either file are not eligible for promotion.
+
+Reference architecture: [Execution Telemetry Modular Contract Architecture](./execution-telemetry-modular-contract-architecture.md)
 
 ## SDK exposure coverage (new design)
 
@@ -66,10 +77,11 @@ Excluded:
 A scenario can move to Promoted only when all are true:
 
 1. markdown contract exists and is versioned
-2. Contract Lab verification passes at http://localhost:5000/lab.html
-3. separation boundaries hold (markdown vs JSON contract vs generic JS runtime)
-4. fail-fast checks pass (no fallback-only behavior, no silent schema coercion)
-5. audit row is updated with verifier and timestamp
+2. scenario UI contract JSON exists and is versioned
+3. Contract Lab verification passes at http://localhost:5000/lab.html
+4. separation boundaries hold (markdown vs JSON contract vs generic JS runtime)
+5. fail-fast checks pass (no fallback-only behavior, no silent schema coercion)
+6. audit row is updated with verifier and timestamp
 
 ## Next implementation targets (ordered)
 

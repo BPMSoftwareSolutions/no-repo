@@ -14,6 +14,7 @@
 - [Execution Substrate Telemetry Design](./execution-substrate-telemetry-design.md)
 - [Execution Telemetry Projection Scenario Audit](./execution-telemetry-projection-scenario-audit.md)
 - [Execution Telemetry New-Design Scenario Audit](./execution-telemetry-new-design-scenario-audit.md)
+- [Execution Telemetry Modular Contract Architecture](./execution-telemetry-modular-contract-architecture.md)
 
 ## Operator UX
 

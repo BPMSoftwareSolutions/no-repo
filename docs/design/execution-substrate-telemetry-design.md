@@ -47,6 +47,10 @@ This document specifies:
   JavaScript executes a generic declarative runtime with no domain-specific
   telemetry logic.
 
+8. **Modular scenario packaging.** Each scenario/page must have its own markdown
+  contract file and its own UI contract JSON file. Monolithic all-scenario
+  contract packaging is prohibited for the new telemetry design.
+
 ---
 
 ## Responsibility boundaries (non-negotiable)
@@ -102,6 +106,19 @@ Raise explicit errors and stop rendering for affected surface:
 - `telemetry_markdown_contract_violation`
 - `telemetry_ui_contract_schema_error`
 - `telemetry_runtime_domain_logic_detected`
+
+### Modular packaging policy
+
+For the new telemetry design, scenario assets are one-to-one:
+
+- one markdown contract file per scenario
+- one UI contract JSON file per scenario
+
+A scenario is blocked if either artifact is missing, and runtime must raise
+explicit blocking errors instead of falling back to monolithic contract files.
+
+Reference architecture and migration plan:
+- [Execution Telemetry Modular Contract Architecture](./execution-telemetry-modular-contract-architecture.md)
 
 ---
 
