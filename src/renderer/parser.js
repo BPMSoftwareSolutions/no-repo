@@ -112,7 +112,7 @@ export function parseRecords(lines) {
     }
     const pair = line.match(/^([a-zA-Z0-9_]+):\s*"?([^"]*)"?$/);
     if (pair) {
-      if (!current) current = {};
+      if (!current) return;
       current[pair[1]] = pair[2];
     }
   });

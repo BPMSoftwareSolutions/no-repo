@@ -513,6 +513,19 @@ modularTelemetryArtifacts.forEach(({ scenario, markdownPath, contractPath, proje
   assert.ok('styles' in contract, `${scenario} UI contract JSON must include a styles object`);
 });
 
+const metricRowWithItemsKey = `::metric_row
+items:
+- label: "Status"
+  value: "running"
+- label: "Friction"
+  value: "0"
+::`;
+const metricRowResult = renderContract(metricRowWithItemsKey);
+assert.doesNotMatch(metricRowResult.html, /contract-warning|Missing required field|loga-field-warning/, 'metric_row with items: container key must not produce required-field warnings');
+assert.match(metricRowResult.html, /Status/, 'metric_row with items: container key must render the first label');
+assert.match(metricRowResult.html, /Friction/, 'metric_row with items: container key must render the second label');
+assert.equal((metricRowResult.html.match(/<article class="loga-metric">/g) || []).length, 2, 'metric_row with items: container key must render exactly two metric articles, not a third spurious one from the container key');
+
 elements['markdown-input'].value = '';
 elements['clear-input'].handlers.click();
 assert.equal(elements['markdown-input'].value, '', 'clear button must empty the editor');
