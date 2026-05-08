@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Execution Telemetry</title>
+  <script src="../js/registry-styles.js" type="module"></script>
+</head>
+<body class="projection-shell-page">
+  <header>
+    <p><a href="index.html">Inspection Home</a> / <a href="projections.html">Projection Inspection</a></p>
+    <h1>Execution Telemetry</h1>
+    <p><strong>Primary question:</strong> What is the execution substrate doing right now?</p>
+  </header>
+
+  <main class="projection-shell">
+    <aside class="projection-shell__tree" aria-labelledby="telemetry-nav-title">
+      <h2 id="telemetry-nav-title" class="projection-shell__title">Navigation</h2>
+      <form class="inspection-form" style="margin-bottom:16px;">
+        <label for="telemetry-project-id">Project UUID</label>
+        <input id="telemetry-project-id" type="text" placeholder="017769d6-3316-4aed-b8a8-a4a28e272c2c" autocomplete="off" spellcheck="false">
+        <button id="telemetry-load-button" type="submit" style="margin-top:10px;">Load Project</button>
+      </form>
+      <div class="projection-list">
+        <a class="projection-card" href="index.html">
+          <span class="projection-card__number">01</span>
+          <span class="projection-card__copy">
+            <strong>Home</strong>
+            <span>Return to the inspection workspace.</span>
+            <em>Back to overview</em>
+          </span>
+          <span class="projection-card__meaning">Use this to jump back to the landing screen.</span>
+          <span class="projection-card__open">Open</span>
+        </a>
+        <a class="projection-card" href="projections.html">
+          <span class="projection-card__number">02</span>
+          <span class="projection-card__copy">
+            <strong>Projections</strong>
+            <span>Inspect the operator surface catalog.</span>
+            <em>Surface selection</em>
+          </span>
+          <span class="projection-card__meaning">Use this to jump back to the projection surfaces.</span>
+          <span class="projection-card__open">Open</span>
+        </a>
+      </div>
+    </aside>
+
+    <section class="projection-shell__surface" aria-labelledby="telemetry-main-title">
+      <h2 id="telemetry-main-title">Execution Substrate Monitor</h2>
+      <p id="execution-monitor-meta" class="execution-monitor__caption">Enter a project UUID to load remote telemetry.</p>
+      <section id="execution-monitor" class="execution-monitor" aria-labelledby="execution-monitor-title">
+        <div class="execution-monitor__header">
+          <div>
+            <p class="execution-monitor__eyebrow">Execution substrate</p>
+            <h3 id="execution-monitor-title" class="execution-monitor__title"><span id="execution-project-label">Telemetry monitor</span></h3>
+          </div>
+          <span id="execution-monitor-status" class="execution-monitor__status">Connecting</span>
+        </div>
+        <div class="execution-monitor__grid">
+          <article class="execution-monitor__card">
+            <h4>Remote summary</h4>
+            <div id="execution-monitor-summary">
+              <p class="execution-monitor__empty">Loading remote telemetry...</p>
+            </div>
+          </article>
+          <article class="execution-monitor__card" style="grid-column:1/-1;">
+            <h4>Remote event feed</h4>
+            <div id="execution-monitor-feed">
+              <p class="execution-monitor__empty">Waiting for remote events...</p>
+            </div>
+          </article>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="../js/execution-telemetry.js" type="module"></script>
+</body>
+</html>

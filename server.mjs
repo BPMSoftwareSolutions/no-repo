@@ -74,7 +74,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  let filePath = path.join(SRC_DIR, pathname === '/' ? 'html/projection-detail.html' : pathname);
+  let filePath = path.join(SRC_DIR, pathname === '/' ? 'html/execution-telemetry.html' : pathname);
+
+  if (pathname === '/lab' || pathname === '/lab.html') {
+    filePath = path.join(SRC_DIR, 'html/lab.html');
+  }
 
   if (pathname.startsWith('/docs/')) {
     filePath = path.join(DOCS_DIR, pathname.slice('/docs/'.length));
@@ -113,10 +117,11 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 5000);
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);
-  console.log(`Open http://localhost:${PORT}/playground.html to see the UI`);
+  console.log(`Open http://localhost:${PORT}/ for execution telemetry`);
+  console.log(`Open http://localhost:${PORT}/lab.html to monitor execution next to the editor`);
 });
 
 function sendJson(res, payload) {

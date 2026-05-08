@@ -1,16 +1,27 @@
 import { callAiEngine } from './api-client.js';
 import { renderProjectionTree } from './projection-tree.js';
 import { mountWorkspaceChrome } from './workspace-chrome.js';
+import { mountExecutionTelemetryMonitor } from './execution-monitor.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const surfaceList = document.getElementById('surface-list');
   const attentionList = document.getElementById('recent-attention');
   const tree = document.getElementById('projection-tree');
+  const telemetryCompact = document.getElementById('execution-telemetry-compact');
+  const telemetryStatus = document.getElementById('execution-telemetry-status');
 
   mountWorkspaceChrome({
     workspace_mode: 'focus',
     active_surfaces: 'roadmap,promotions,workflows,memory',
   });
+
+  const stopTelemetryMonitor = mountExecutionTelemetryMonitor({
+    compactEl: telemetryCompact,
+    statusEl: telemetryStatus,
+    refreshMs: 15000,
+  });
+
+  window.addEventListener('beforeunload', () => stopTelemetryMonitor?.());
 
   try {
     const [homeResult, catalogResult, projectsResult] = await Promise.allSettled([
@@ -42,6 +53,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (error) {
     surfaceList.innerHTML = `<p class="loga-error">Error loading operator surfaces: ${error.message}</p>`;
     tree.innerHTML = `<p class="loga-error">Error loading projection tree: ${error.message}</p>`;
+    if (telemetryCompact) {
+      telemetryCompact.innerHTML = `<p class="loga-error">Telemetry panel could not load: ${error.message}</p>`;
+    }
   }
 });
 

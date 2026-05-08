@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Governed Interaction Playground</title>
+  <script src="../js/registry-styles.js" type="module"></script>
   
   <style>
     body {
@@ -130,6 +131,35 @@
   <!-- SDK Call Trace Panel -->
   <footer id="trace-panel" class="panel">
     <div class="panel-header" style="color: var(--muted-2);">SDK Call Trace Panel (System Boundary)</div>
+    <section id="execution-monitor" class="execution-monitor" aria-labelledby="execution-monitor-title">
+      <div class="execution-monitor__header">
+        <div>
+          <p class="execution-monitor__eyebrow">Execution substrate</p>
+          <h3 id="execution-monitor-title" class="execution-monitor__title">Telemetry monitor</h3>
+        </div>
+        <span id="execution-monitor-status" class="execution-monitor__status">Connecting</span>
+      </div>
+      <div class="execution-monitor__grid">
+        <article class="execution-monitor__card">
+          <h4>Remote telemetry</h4>
+          <div id="execution-monitor-current">
+            <p class="execution-monitor__empty">Loading current telemetry...</p>
+          </div>
+        </article>
+        <article class="execution-monitor__card">
+          <h4>Recent process runs</h4>
+          <div id="execution-monitor-runs">
+            <p class="execution-monitor__empty">Loading process runs...</p>
+          </div>
+        </article>
+        <article class="execution-monitor__card">
+          <h4>Local trace summary</h4>
+          <div id="execution-monitor-local">
+            <p class="execution-monitor__empty">Waiting for SDK calls...</p>
+          </div>
+        </article>
+      </div>
+    </section>
     <div class="trace-log" id="trace-log">
       <!-- Traces go here -->
     </div>

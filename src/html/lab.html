@@ -12,7 +12,7 @@
       <div>
         <p class="eyebrow">Standalone UX experiment</p>
         <h1>Markdown Contract Lab</h1>
-        <p>Paste AI Engine LOGA markdown and render it locally. No backend. No app integration. No route assumptions.</p>
+        <p>Paste AI Engine LOGA markdown, render it locally, and watch live execution telemetry beside the editor.</p>
       </div>
       <div class="header-actions">
         <button id="load-sample" type="button">Load Sample</button>
@@ -57,9 +57,55 @@
           </article>
         </div>
       </section>
+
+      <aside class="monitor-pane" aria-labelledby="monitor-title">
+        <div class="pane-title monitor-pane__titlebar">
+          <div>
+            <h2 id="monitor-title">Execution Monitor</h2>
+            <p class="monitor-pane__subtitle">Live remote heartbeat and execution telemetry.</p>
+          </div>
+          <span id="execution-monitor-status" class="execution-monitor__status">Connecting</span>
+        </div>
+
+        <section id="execution-monitor" class="execution-monitor" aria-labelledby="execution-monitor-title">
+          <div class="execution-monitor__header">
+            <div>
+              <p class="execution-monitor__eyebrow">Remote substrate</p>
+              <h3 id="execution-monitor-title" class="execution-monitor__title">Execution stream</h3>
+            </div>
+          </div>
+          <div class="execution-monitor__grid">
+            <article class="execution-monitor__card" style="grid-column:1/-1;">
+              <h4>Remote summary</h4>
+              <div id="execution-monitor-compact">
+                <p class="execution-monitor__empty">Loading remote telemetry...</p>
+              </div>
+            </article>
+            <article class="execution-monitor__card">
+              <h4>Current substrate</h4>
+              <div id="execution-monitor-current">
+                <p class="execution-monitor__empty">Loading current telemetry...</p>
+              </div>
+            </article>
+            <article class="execution-monitor__card">
+              <h4>Recent runs</h4>
+              <div id="execution-monitor-runs">
+                <p class="execution-monitor__empty">Loading process runs...</p>
+              </div>
+            </article>
+            <article class="execution-monitor__card" style="grid-column:1/-1;">
+              <h4>Local trace</h4>
+              <div id="execution-monitor-local">
+                <p class="execution-monitor__empty">Waiting for SDK calls...</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </aside>
     </main>
   </div>
 
+  <script src="../js/execution-monitor.js" type="module"></script>
   <script src="../renderer/browser.js"></script>
 </body>
 </html>

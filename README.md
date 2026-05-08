@@ -28,7 +28,7 @@ This workspace uses:
 npm install @bpmsoftwaresolutions/ai-engine-client
 ```
 
-The package is installed in `package.json` and exposes `AIEngineClient.fromEnv()`.
+The package is installed in `package.json` at the latest published version and exposes `AIEngineClient.fromEnv()`.
 
 ## Environment
 
@@ -45,6 +45,12 @@ $env:AI_ENGINE_BASE_URL = "https://your-ai-engine-host"
 ```
 
 When you open the browser app, it now prompts for the AI Engine API key on first use, stores it in local storage, and reuses it on later requests.
+
+The browser surfaces also show execution telemetry:
+
+- the projection browser includes a compact substrate monitor
+- the execution telemetry page includes a live substrate dashboard and SDK call trace
+- each AI Engine request is recorded locally with timing and status so you can inspect the execution trail
 
 See `.env.example` for the required names used by the CLI scripts.
 

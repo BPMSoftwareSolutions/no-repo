@@ -1,6 +1,7 @@
 import { parseMarkdown } from '../renderer/parser.js';
 import { renderMarkdown } from '../renderer/renderer.js';
 import { DEFAULT_ITEM_KEY, DEFAULT_PROJECT_ID } from '../shared/projection-schema.js';
+import { recordExecutionTelemetryEvent } from './execution-telemetry-store.js';
 
 const AI_ENGINE_API_KEY_STORAGE_KEY = 'ai-engine.api-key';
 const AI_ENGINE_API_KEY_HEADER = 'X-AI-Engine-Api-Key';
@@ -150,43 +151,76 @@ function openApiKeyModal({ initialValue = '', reason = '' } = {}) {
   });
 }
 
-export async function aiEngineFetch(input, init = {}, { retryOnAuthFailure = true } = {}) {
+export async function aiEngineFetch(input, init = {}, { retryOnAuthFailure = true, telemetryLabel = String(input), recordTelemetry = true } = {}) {
+  const startedAt = typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now();
+  let attempts = 0;
   const apiKey = await ensureAiEngineApiKey();
   const headers = new Headers(init.headers || {});
   headers.set(AI_ENGINE_API_KEY_HEADER, apiKey);
 
-  let response = await fetch(input, { ...init, headers });
-  if (!retryOnAuthFailure || (response.status !== 401 && response.status !== 403)) {
-    if (response.status < 400) lastRejectedApiKey = '';
+  try {
+    attempts += 1;
+    let response = await fetch(input, { ...init, headers });
+    if (retryOnAuthFailure && (response.status === 401 || response.status === 403)) {
+      if (apiKey && apiKey === lastRejectedApiKey) {
+        throw new Error('AI Engine API key was rejected. Enter a different key and try again.');
+      }
+
+      clearStoredAiEngineApiKey();
+      const refreshedApiKey = await ensureAiEngineApiKey({
+        forcePrompt: true,
+        reason: 'The stored key was rejected. Please try again.',
+      });
+      headers.set(AI_ENGINE_API_KEY_HEADER, refreshedApiKey);
+      attempts += 1;
+      response = await fetch(input, { ...init, headers });
+      if (response.status === 401 || response.status === 403) {
+        lastRejectedApiKey = refreshedApiKey;
+      } else {
+        lastRejectedApiKey = '';
+      }
+    } else if (response.status < 400) {
+      lastRejectedApiKey = '';
+    }
+
+    if (recordTelemetry) {
+      recordExecutionTelemetryEvent({
+        kind: 'transport',
+        label: telemetryLabel,
+        status: response.status < 400 ? 'ok' : 'error',
+        statusCode: response.status,
+        durationMs: (typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : Date.now()) - startedAt,
+        attempts,
+      });
+    }
     return response;
+  } catch (error) {
+    if (recordTelemetry) {
+      recordExecutionTelemetryEvent({
+        kind: 'transport',
+        label: telemetryLabel,
+        status: 'error',
+        error: error?.message || 'Unknown error',
+        durationMs: (typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : Date.now()) - startedAt,
+        attempts: Math.max(1, attempts),
+      });
+    }
+    throw error;
   }
-
-  if (apiKey && apiKey === lastRejectedApiKey) {
-    throw new Error('AI Engine API key was rejected. Enter a different key and try again.');
-  }
-
-  clearStoredAiEngineApiKey();
-  const refreshedApiKey = await ensureAiEngineApiKey({
-    forcePrompt: true,
-    reason: 'The stored key was rejected. Please try again.',
-  });
-  headers.set(AI_ENGINE_API_KEY_HEADER, refreshedApiKey);
-  response = await fetch(input, { ...init, headers });
-  if (response.status === 401 || response.status === 403) {
-    lastRejectedApiKey = refreshedApiKey;
-  } else {
-    lastRejectedApiKey = '';
-  }
-  return response;
 }
 
 // Shared AIEngine API wrapper
-export async function callAiEngine(method, ...args) {
+export async function postAiEngine(method, args = [], options = {}) {
   try {
     const res = await aiEngineFetch('/api/ai-engine', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ method, args })
+    }, {
+      telemetryLabel: `callAiEngine:${method}`,
+      recordTelemetry: options.recordTelemetry !== false,
     });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || 'Unknown error');
@@ -195,6 +229,10 @@ export async function callAiEngine(method, ...args) {
     console.error(`Error calling ${method}:`, err);
     throw err;
   }
+}
+
+export async function callAiEngine(method, ...args) {
+  return postAiEngine(method, args);
 }
 
 // --- SPA link resolution ---

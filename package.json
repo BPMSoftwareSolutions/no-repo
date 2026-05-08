@@ -8,7 +8,9 @@
     "check": "node --check ./scripts/ping.mjs",
     "ping": "node ./scripts/ping.mjs",
     "charter:workflow-discovery": "node ./scripts/create-natural-language-workflow-discovery-loop.mjs",
-    "start": "node server.mjs",
+    "monitor:publish": "node ./scripts/remote-execution-monitor.mjs",
+    "monitor:watch": "node ./scripts/remote-execution-watch.mjs",
+    "start": "node --env-file-if-exists=.env server.mjs",
     "smoke": "npm run ping",
     "test": "npm run check && node ./scripts/test-markdown-contract-lab.mjs"
   },
@@ -16,6 +18,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@bpmsoftwaresolutions/ai-engine-client": "^1.1.36"
-  }
+    "@bpmsoftwaresolutions/ai-engine-client": "^1.1.42"
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BPMSoftwareSolutions/no-repo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BPMSoftwareSolutions/no-repo/issues"
+  },
+  "homepage": "https://github.com/BPMSoftwareSolutions/no-repo#readme"
 }

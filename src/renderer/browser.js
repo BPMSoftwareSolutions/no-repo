@@ -119,12 +119,35 @@ primary_question: "What should I care about right now?"
       activeElementRegistry = registry.elements;
       input.value = SAMPLE;
       render();
+      mountEditorTelemetry(documentRef);
     }).catch((error) => {
       diagnostics.innerHTML = `<li class="fail">Renderer blocked: markdown-ui-elements.json could not be loaded.</li>`;
       output.innerHTML = `<div class="empty-state"><div><strong>Renderer blocked.</strong><p>${escapeHtml(error.message)}</p></div></div>`;
     });
 
     return { render, elements: { input, output, diagnostics } };
+  }
+
+  function mountEditorTelemetry(documentRef = document) {
+    const mountExecutionTelemetryMonitor = globalThis.mountExecutionTelemetryMonitor;
+    if (typeof mountExecutionTelemetryMonitor !== 'function') return;
+    const statusEl = documentRef.getElementById('execution-monitor-status');
+    const currentEl = documentRef.getElementById('execution-monitor-current');
+    const runsEl = documentRef.getElementById('execution-monitor-runs');
+    const localEl = documentRef.getElementById('execution-monitor-local');
+    const compactEl = documentRef.getElementById('execution-monitor-compact');
+    if (!statusEl && !currentEl && !runsEl && !localEl && !compactEl) return;
+
+    const stopTelemetryMonitor = mountExecutionTelemetryMonitor({
+      statusEl,
+      currentEl,
+      runsEl,
+      localEl,
+      compactEl,
+      refreshMs: 5000,
+    });
+
+    window.addEventListener('beforeunload', () => stopTelemetryMonitor?.());
   }
 
   async function loadExternalElementRegistry() {

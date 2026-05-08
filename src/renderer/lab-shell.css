@@ -98,7 +98,7 @@
     .lab-grid {
       min-height: 0;
       display: grid;
-      grid-template-columns: minmax(360px, 0.42fr) minmax(0, 1fr);
+      grid-template-columns: minmax(360px, 0.38fr) minmax(0, 0.42fr) minmax(320px, 0.2fr);
     }
 
     .editor-pane,
@@ -114,6 +114,42 @@
       gap: 14px;
       border-right: 1px solid var(--line);
       background: rgba(9, 13, 20, 0.52);
+    }
+
+    .preview-pane {
+      border-right: 1px solid var(--line);
+      background: rgba(8, 12, 18, 0.42);
+    }
+
+    .monitor-pane {
+      min-width: 0;
+      min-height: 0;
+      padding: clamp(16px, 2.2vw, 28px);
+      display: grid;
+      gap: 14px;
+      background: rgba(9, 13, 20, 0.42);
+    }
+
+    .monitor-pane__titlebar {
+      align-items: start;
+    }
+
+    .monitor-pane__subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font: 12px/1.45 var(--mono);
+    }
+
+    .monitor-pane .execution-monitor {
+      min-height: 0;
+    }
+
+    .monitor-pane .execution-monitor__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .monitor-pane .execution-monitor__card {
+      min-height: 0;
     }
 
     .pane-title {
@@ -218,9 +254,13 @@
         justify-content: flex-start;
       }
 
-      .editor-pane {
+      .editor-pane,
+      .preview-pane {
         border-right: 0;
         border-bottom: 1px solid var(--line);
       }
-    }
 
+      .monitor-pane {
+        border-top: 1px solid var(--line);
+      }
+    }

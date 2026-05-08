@@ -1,4 +1,5 @@
 import { callAiEngine, renderMarkdownProjection } from './api-client.js';
+import { mountExecutionTelemetryMonitor } from './execution-monitor.js';
 
 function traceArgs(args) {
   try {
@@ -80,6 +81,16 @@ document.querySelectorAll('.nav-item').forEach(el => {
     }
   });
 });
+
+const stopTelemetryMonitor = mountExecutionTelemetryMonitor({
+  statusEl: document.getElementById('execution-monitor-status'),
+  currentEl: document.getElementById('execution-monitor-current'),
+  runsEl: document.getElementById('execution-monitor-runs'),
+  localEl: document.getElementById('execution-monitor-local'),
+  refreshMs: 15000,
+});
+
+window.addEventListener('beforeunload', () => stopTelemetryMonitor?.());
 
 // Inspection Actions
 document.getElementById('inspect-symbol-btn').addEventListener('click', async () => {

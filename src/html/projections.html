@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Projection Inspection</title>
+  <script src="../js/registry-styles.js" type="module"></script>
   
 </head>
 <body class="projection-shell-page">
@@ -25,6 +26,19 @@
 
     <section aria-labelledby="surfaces-title" class="projection-shell__surface">
       <h2 id="surfaces-title">Current Operator Surfaces</h2>
+      <div class="projection-list" aria-labelledby="execution-telemetry-surface-title">
+        <a class="projection-card" href="execution-telemetry.html">
+          <span class="projection-card__number">00</span>
+          <span class="projection-card__copy">
+            <strong id="execution-telemetry-surface-title">Execution Telemetry</strong>
+            <span>Open the live substrate monitor and execution trace panel.</span>
+            <em>Live monitoring surface &middot; Open</em>
+          </span>
+          <span class="projection-card__meaning">Use this when you want the remote telemetry snapshot plus local call trace in one view.</span>
+          <span class="projection-card__open">Open</span>
+        </a>
+      </div>
+
       <div id="surface-list" class="projection-list" aria-live="polite">
         <p>Loading operator surfaces...</p>
       </div>
@@ -34,6 +48,16 @@
         <ul id="recent-attention">
           <li>Checking projection availability.</li>
         </ul>
+      </aside>
+
+      <aside class="projection-aside" aria-labelledby="execution-telemetry-title">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <h2 id="execution-telemetry-title" class="projection-aside__title">Execution Telemetry</h2>
+          <span id="execution-telemetry-status" class="execution-monitor__status">Connecting</span>
+        </div>
+        <div id="execution-telemetry-compact" class="execution-monitor" aria-live="polite">
+          <p class="execution-monitor__empty">Loading execution telemetry...</p>
+        </div>
       </aside>
     </section>
   </main>
