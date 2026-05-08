@@ -114,7 +114,7 @@ in the command deck. Map `failed_process_count` to "Friction" with a severity co
 
 ---
 
-### listExecutionProcessRuns({ limit, artifactKind, status, since, before? })
+### listExecutionProcessRuns({ limit, artifactKind, status, since, before })
 
 **Purpose.** The primary server-side–filtered list of execution runs. This is the
 most powerful filter surface in the SDK and is currently underutilized.
@@ -131,29 +131,16 @@ status         — filter by run outcome
                  known values: running, completed, failed, skipped, retried
 since          — ISO8601 lower bound on start time (server-side time filter)
 before         — ISO8601 upper bound on start time (pagination cursor)
-                 COMPATIBILITY NOTE: presence of this parameter in the SDK is
-                 unconfirmed at design time. Verify against the live SDK before
-                 implementing pagination. See fallback strategy below.
+                 REQUIRED: this parameter must be supported for telemetry paging.
+                 If unsupported, fail fast and raise an architecture defect.
 ```
 
 **Pagination compatibility note.**
 
-The `before` cursor is the preferred pagination approach because it is stable
-under concurrent inserts. However, it must be verified that the SDK accepts this
-parameter before it is used in production code.
-
-If `before` is **not supported** by the SDK, use this confirmed fallback:
-
-```
-Fallback strategy: fetch a larger limit (e.g., 200) on the first load.
-Client-side slice the result into pages of 30 for display.
-"Load more" advances the client-side slice pointer — no additional server call.
-This trades request size for confirmed compatibility and avoids the cursor
-dependency entirely. Reassess when the SDK surface is fully documented.
-```
-
-Whichever strategy is used, the design does not change: events are sorted
-descending by `started_at`, and appended pages show older events.
+The `before` cursor is mandatory because it guarantees deterministic pagination
+under concurrent inserts. This telemetry surface is intentionally fail-fast:
+if the SDK rejects `before`, the UI must block pagination, emit a loud
+`telemetry_pagination_cursor_unsupported` error, and open a design defect.
 
 **Returns per run (meaningful fields):**
 
@@ -299,8 +286,11 @@ created_at                     — ISO8601
 
 ### listWorkflowCandidates({ limit })
 
-**Purpose.** Fallback when listPromotionCandidates scoped to a run returns nothing.
-Returns workflow-level candidates without run scoping.
+**Purpose.** Workflow-level candidate inventory endpoint.
+
+**Design policy.** This telemetry cockpit does not use this method as a runtime
+fallback. If scoped promotion candidate retrieval is empty or invalid, surface
+that outcome directly and record a design/coverage defect.
 
 **Returns:** Same shape as listPromotionCandidates items.
 
@@ -532,9 +522,10 @@ value. Multi-select behavior is handled as follows:
 
 This avoids sending unsupported multi-value syntax to the server.
 
-**Known enum values are not exhaustive.** The listed values are observed at
-design time. The server may add new values at any time. See the unknown-value
-fallback rules in the Query Mechanics section.
+**Known enum values are contract-bound.** The listed values are the current
+contract for this surface. Unknown values are treated as schema drift and must
+raise explicit errors. See the unknown-value failure rules in the Query Mechanics
+section.
 
 ### Client-side filters (applied after normalization)
 
@@ -542,10 +533,10 @@ These filters are applied to the merged, normalized record set.
 
 | Filter key       | Normalized field       | Type              | Notes                          |
 |------------------|------------------------|-------------------|--------------------------------|
-| executionType    | eventType              | multi-select      | Populated dynamically from data|
-| domainObjectType | domainObjectType       | multi-select      | Populated dynamically from data|
+| executionType    | eventType              | multi-select      | Populated from contract allowlist |
+| domainObjectType | domainObjectType       | multi-select      | Populated from contract allowlist |
 | status           | status                 | multi-select      | Active when 2+ statuses chosen |
-| actorLabel       | actorLabel             | multi-select      | Populated dynamically from data|
+| actorLabel       | actorLabel             | multi-select      | Derived from observed data |
 | workflowRunId    | workflowRunId          | single-select     |                                |
 | sessionId        | sessionId              | single-select     |                                |
 | timeRange        | occurredAtUtc          | preset select     | Gates ALL sources (see below)  |
@@ -580,15 +571,14 @@ accept a `since` parameter.
 
 This section defines the exact runtime behavior for the stream contract: how
 pagination works, how multi-select filters map to server params, how sources
-are merged and deduplicated, and how unknown enum values are handled.
+are merged and deduplicated, and how schema mismatches fail loudly.
 
-### Pagination: dual-mode (cursor preferred, client-slice fallback)
+### Pagination: strict cursor mode
 
-"Load more" extends the visible window backward in time. Two strategies are
-supported; the runtime selects based on whether the server accepts the `before`
-parameter.
+"Load more" extends the visible window backward in time using the `before`
+cursor. No client-slice fallback is permitted in this design.
 
-**Preferred — time-window cursor (if `before` is supported):**
+**Required — time-window cursor:**
 
 ```
 First load:
@@ -606,18 +596,8 @@ Why preferred: offset pagination returns duplicates or skips records when new
 events arrive between pages. Time-window pagination is deterministic —
 "everything before timestamp X" does not shift.
 
-**Fallback — client-slice (if `before` is not supported):**
-
-```
-First load:
-  listExecutionProcessRuns({ limit: 200, since, ...otherFilters })
-  → fetch full window into memory; display slice [0..29]
-  → record sliceOffset = 30
-
-"Load more" click:
-  advance sliceOffset by 30; display slice [sliceOffset..sliceOffset+29]
-  → no additional server call
-```
+If the server or SDK does not accept `before`, this is a blocking architecture
+failure. The UI must surface an explicit error state and stop pagination.
 
 **Supplement sources are not re-fetched during Load more under either strategy.**
 On a "Load more" click, only the primary source is extended. Supplement sources
@@ -637,8 +617,7 @@ These are separate behaviors and must not be conflated.
   long-running session are visible without reloading the page
 
 **Pagination ("Load more" click):**
-- Extends only the primary source using the `before` cursor (or client-side slice
-  if cursor is unsupported)
+- Extends only the primary source using the `before` cursor
 - Does NOT re-fetch supplement sources — they represent the fixed historical
   substrate of the current workflow run up to the current poll cycle
 - Appends older records below the existing visible list
@@ -654,6 +633,7 @@ onTimerFire() or onManualRefresh():
 
 onLoadMoreClick():
   fetchPrimaryWithCursor()     // before = oldestSeenTimestamp
+  assertCursorSupported()      // throw telemetry_pagination_cursor_unsupported if false
   appendToCurrentView()        // appended below existing rows
   // supplement NOT fetched
 ```
@@ -706,41 +686,35 @@ Dedupe key resolution for each event:
 
 ```javascript
 function dedupeKey(event) {
-  if (event.eventId) return event.eventId;
-  return `${event.occurredAtUtc}:${event.executionType}:${event.actorLabel}`;
+  if (!event.eventId) {
+    throw new Error('telemetry_event_missing_id');
+  }
+  return event.eventId;
 }
 ```
 
 Build a `Map<string, ActivityEvent>`. Iterate primary source first — keys are
 set. Iterate supplement — skip any key that already exists. Primary wins on
-collision. Because the time gate already ran, both primary and supplement events
-in this step are guaranteed to be within the selected window.
+collision. Missing event IDs are treated as a schema contract violation and must
+surface an explicit blocking error, not a synthesized key. Because the time gate
+already ran, both primary and supplement events in this step are guaranteed to be
+within the selected window.
 
 ### Unknown enum values
 
 The listed `artifactKind`, `status`, `learningCategory`, and `promotionReadiness`
-values are observed at design time and are not exhaustive. Runtime behavior:
+values are the contract for this surface. Runtime behavior is fail-fast:
 
-**Server params:** If the user selects a value not in the known list, still pass
-it to the server. The server may accept newer values we don't know about yet.
-Only omit a param if the value is empty.
+**Server params:** Reject unknown values before request dispatch and surface
+`telemetry_filter_unknown_value` with the offending field and value.
 
-**Filter chip options:** Populate dynamically from the unique values observed in
-the current result set, not from a hardcoded list. This means new enum values
-the server returns automatically appear as filter options.
+**Filter chip options:** Populate from the contract allowlist. If the backend
+returns a value outside the allowlist, surface `telemetry_schema_drift_detected`
+and block rendering of affected rows until the contract is updated.
 
-**Display chips (eventType, domainObjectType):** If a value has no entry in the
-event type map, apply the fallback transform:
-
-```javascript
-function eventTypeLabel(rawType) {
-  return EVENT_TYPE_MAP[rawType]
-    ?? rawType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-}
-```
-
-This renders `new_unknown_type` as `New Unknown Type` — readable without
-crashing or showing a blank chip.
+**Display chips (eventType, domainObjectType):** Unknown values are errors,
+not fallback labels. Emit `telemetry_unknown_event_type` and route to a visible
+error state with raw payload attached for diagnosis.
 
 ---
 
@@ -800,7 +774,8 @@ dedupe:
   # Primary source records take precedence over supplement records.
   key:
     primary: eventId                               # use if non-empty
-    fallback: "${occurredAtUtc}:${executionType}:${actorLabel}"
+  require_primary_key: true
+  on_missing_primary_key: telemetry_event_missing_id
   precedence: primary_over_supplement
 
 client_filters:
@@ -822,17 +797,11 @@ sort:
     direction: desc
 
 paginate:
-  preferred:
-    strategy: time_window     # "Load more" passes before=oldestSeenTimestamp to server
-    size: 30
-    cursor_field: occurredAtUtc
-    append: true
-  fallback:
-    strategy: client_slice    # used if server does not accept the before param
-    fetch_limit: 200          # fetch 200 on first load; no further server calls for Load more
-    slice_size: 30            # client advances a slice pointer per Load more click
-    append: true
-  selection: cursor_detected  # runtime: choose preferred if before param is supported
+  strategy: time_window       # "Load more" passes before=oldestSeenTimestamp to server
+  size: 30
+  cursor_field: occurredAtUtc
+  append: true
+  require_cursor_support: true
 
 render:
   emptyMessage: "No execution telemetry events were found for this scope."
@@ -865,11 +834,6 @@ source:
       learningCategory: ${filters.learningCategory}
       promotionReadiness: ${filters.promotionReadiness}
       limit: 25
-  fallback:
-    method: listWorkflowCandidates
-    args:
-      limit: 25
-    condition: primary_empty
 
 normalize: PromotionInsight
 
@@ -1340,12 +1304,13 @@ The following specific gaps exist between the current cockpit and this design.
 - [ ] Selecting 1 status sends it as the server `status` param
 - [ ] Selecting 2+ statuses omits server `status` param and applies filter client-side
 - [ ] Selecting 0 statuses omits server `status` param (all statuses returned)
-- [ ] Execution type filter options are populated dynamically from observed data
-- [ ] Domain object type filter options are populated dynamically from observed data
-- [ ] An unknown event type renders as a capitalized, space-separated label (not blank, not crash)
+- [ ] Execution type filter options are populated from a contract allowlist
+- [ ] Domain object type filter options are populated from a contract allowlist
+- [ ] Unknown filter values are rejected before request dispatch with explicit errors
+- [ ] Unknown event type or domain value raises a visible schema-drift error
 
 **Pagination**
-- [ ] "Load more" uses the `before` cursor strategy when the server supports it, or the client-slice fallback otherwise
+- [ ] "Load more" requires `before` cursor support; unsupported cursor is a blocking error
 - [ ] Supplement sources are re-fetched on every poll cycle and manual refresh; they are NOT re-fetched on "Load more"
 - [ ] Re-fetching (auto-refresh) resets to the first page; accumulated Load more pages are cleared
 
