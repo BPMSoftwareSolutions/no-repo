@@ -114,7 +114,7 @@ in the command deck. Map `failed_process_count` to "Friction" with a severity co
 
 ---
 
-### listExecutionProcessRuns({ limit, artifactKind, status, since })
+### listExecutionProcessRuns({ limit, artifactKind, status, since, before? })
 
 **Purpose.** The primary server-side–filtered list of execution runs. This is the
 most powerful filter surface in the SDK and is currently underutilized.
@@ -130,7 +130,30 @@ artifactKind   — filter to a specific artifact domain
 status         — filter by run outcome
                  known values: running, completed, failed, skipped, retried
 since          — ISO8601 lower bound on start time (server-side time filter)
+before         — ISO8601 upper bound on start time (pagination cursor)
+                 COMPATIBILITY NOTE: presence of this parameter in the SDK is
+                 unconfirmed at design time. Verify against the live SDK before
+                 implementing pagination. See fallback strategy below.
 ```
+
+**Pagination compatibility note.**
+
+The `before` cursor is the preferred pagination approach because it is stable
+under concurrent inserts. However, it must be verified that the SDK accepts this
+parameter before it is used in production code.
+
+If `before` is **not supported** by the SDK, use this confirmed fallback:
+
+```
+Fallback strategy: fetch a larger limit (e.g., 200) on the first load.
+Client-side slice the result into pages of 30 for display.
+"Load more" advances the client-side slice pointer — no additional server call.
+This trades request size for confirmed compatibility and avoids the cursor
+dependency entirely. Reassess when the SDK surface is fully documented.
+```
+
+Whichever strategy is used, the design does not change: events are sorted
+descending by `started_at`, and appended pages show older events.
 
 **Returns per run (meaningful fields):**
 
@@ -583,6 +606,40 @@ Supplement sources (substrate fragments and recent activity) are fetched once
 on the first page load only. They are not re-fetched on "Load more" because
 they represent a fixed historical set for the current workflow run.
 
+### Polling vs pagination: two distinct operations
+
+These are separate behaviors and must not be conflated.
+
+**Polling (timer refresh, manual refresh):**
+- Re-fetches all sources: primary (`listExecutionProcessRuns`) and all supplements
+  (`getWorkflowRunSubstrate` context_fragments + recent_activity)
+- Resets the view to the current top-30 window (does not accumulate previous pages)
+- Updates the command deck, session signal, and promotion count
+- Supplement re-fetch is required so new context fragments and activity during a
+  long-running session are visible without reloading the page
+
+**Pagination ("Load more" click):**
+- Extends only the primary source using the `before` cursor (or client-side slice
+  if cursor is unsupported)
+- Does NOT re-fetch supplement sources — they represent the fixed historical
+  substrate of the current workflow run up to the current poll cycle
+- Appends older records below the existing visible list
+- Does NOT reset the command deck or session signal
+
+**Implementation boundary:**
+
+```
+onTimerFire() or onManualRefresh():
+  resetPaginationState()       // clear before cursor, reset to page 1
+  fetchAllSources()            // primary + supplement
+  replaceCurrentView()         // new top-30 replaces old
+
+onLoadMoreClick():
+  fetchPrimaryWithCursor()     // before = oldestSeenTimestamp
+  appendToCurrentView()        // appended below existing rows
+  // supplement NOT fetched
+```
+
 ### Multi-select status filter
 
 The server `status` param accepts a single string. To support multi-select in
@@ -687,9 +744,12 @@ source:
         - path: recent_activity
           normalize: ActivityEvent
           domainObjectType: workflow_turn
-      # Supplement is fetched only on the first page load. "Load more" extends
-      # only the primary source using the before cursor.
-      page: first_only
+      # refresh: every_cycle — supplement is re-fetched on every timer-triggered
+      # or manual refresh so new context fragments and activity are picked up.
+      # paginate: first_only — "Load more" clicks do NOT re-fetch the supplement.
+      # Load more only extends the primary source window backward in time.
+      refresh: every_cycle
+      paginate: first_only
 
 normalize: ActivityEvent
 
