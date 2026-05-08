@@ -55,6 +55,57 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock, d
     return `<aside class="loga-rail loga-rail--${escapeHtml(side)}" data-side="${escapeHtml(side)}">${children.map((child) => renderBlock(child.name, child.lines, child.attrs)).join('')}</aside>`;
   }
 
+  if (block === 'main') {
+    return `<main class="loga-main">${collectChildBlocks(lines).map((c) => renderBlock(c.name, c.lines, c.attrs)).join('')}</main>`;
+  }
+
+  if (block === 'detail') {
+    return `<aside class="loga-detail">${collectChildBlocks(lines).map((c) => renderBlock(c.name, c.lines, c.attrs)).join('')}</aside>`;
+  }
+
+  if (block === 'telemetry_app') {
+    return `<div class="loga-telemetry-app" data-surface="${escapeHtml(value('surface'))}" data-theme="${escapeHtml(value('theme'))}"></div>`;
+  }
+
+  if (block === 'topbar') {
+    const brandMark = value('brand_mark'); const title = value('title'); const subtitle = value('subtitle'); const actions = records.filter((r) => r.label);
+    return `<header class="loga-topbar"><div class="loga-topbar__brand">${brandMark ? `<span class="loga-topbar__mark">${escapeHtml(brandMark)}</span>` : ''}<div>${title ? `<strong class="loga-topbar__title">${escapeHtml(title)}</strong>` : ''}${subtitle ? `<span class="loga-topbar__subtitle">${escapeHtml(subtitle)}</span>` : ''}</div></div><div class="loga-topbar__actions">${actions.map((r) => `<button class="loga-action${r.variant === 'primary' ? ' loga-action--primary' : ''}" type="button" data-action="${escapeHtml(r.action || '')}">${escapeHtml(r.label)}</button>`).join('')}</div></header>`;
+  }
+
+  if (block === 'operator_shell') {
+    return `<div class="loga-operator-shell" data-columns="${escapeHtml(records.map((r) => r.label || '').join(','))}"></div>`;
+  }
+
+  if (block === 'nav_list') {
+    return `<nav class="loga-nav-list">${records.map((r) => `<a class="loga-nav-item${r.state === 'active' ? ' loga-nav-item--active' : ''}" href="${escapeHtml(r.target || '#')}">${escapeHtml(r.label || '')}${r.count ? `<span class="loga-nav-count">${escapeHtml(r.count)}</span>` : ''}</a>`).join('')}</nav>`;
+  }
+
+  if (block === 'mini_section') {
+    return `<section class="loga-mini-section">${value('title') ? `<h3 class="loga-mini-section__title">${escapeHtml(value('title'))}</h3>` : ''}<div class="loga-mini-list">${records.filter((r) => r.label).map((r) => `<div class="loga-mini-item"><strong>${escapeHtml(r.label)}</strong>${r.meta ? `<span>${escapeHtml(r.meta)}</span>` : ''}</div>`).join('')}</div></section>`;
+  }
+
+  if (block === 'legend') {
+    return `<section class="loga-legend">${value('title') ? `<h3 class="loga-legend__title">${escapeHtml(value('title'))}</h3>` : ''}<div class="loga-legend__items">${records.filter((r) => r.label).map((r) => `<span class="loga-pill"><span class="loga-dot loga-dot--${escapeHtml(r.status || 'default')}"></span>${escapeHtml(r.label)}</span>`).join('')}</div></section>`;
+  }
+
+  if (block === 'state_grid') {
+    return `<section class="loga-state-grid">${records.filter((r) => r.label).map((r) => `<article class="loga-metric"><div class="loga-metric__label">${escapeHtml(r.label)}</div><p class="loga-metric__value">${r.status ? `<span class="loga-dot loga-dot--${escapeHtml(r.status)}"></span>` : ''}${escapeHtml(r.value || '')}</p>${r.sub ? `<div class="loga-metric__sub">${escapeHtml(r.sub)}</div>` : ''}</article>`).join('')}</section>`;
+  }
+
+  if (block === 'event_stream') {
+    const filters = records.filter((r) => r.label && !r.time);
+    return `<section class="loga-event-stream" aria-label="${escapeHtml(value('title') || 'Events')}"><div class="loga-event-stream__toolbar"><div class="loga-chip-group">${filters.map((r) => `<span class="loga-chip${r.active === 'true' ? ' loga-chip--active' : ''}">${escapeHtml(r.label)}</span>`).join('')}</div><input class="loga-search" type="search" placeholder="${escapeHtml(value('placeholder') || 'Filter events…')}" aria-label="Filter events" /></div><div class="loga-stream"><p class="loga-empty-state">${escapeHtml(value('empty_state') || 'No events.')}</p></div></section>`;
+  }
+
+  if (block === 'selected_event_detail') {
+    const metadata = records.filter((r) => r.label && !r.kind); const drawers = records.filter((r) => r.title && r.kind);
+    return `<section class="loga-selected-event-detail"><div class="loga-selected-event-detail__head"><strong>${escapeHtml(value('title') || 'Selected Event')}</strong>${value('eyebrow') ? `<span>${escapeHtml(value('eyebrow'))}</span>` : ''}</div><div class="loga-selected-event-detail__body">${metadata.length ? `<dl class="loga-kv">${metadata.map((r) => `<dt>${escapeHtml(r.label)}</dt><dd>${escapeHtml(r.value || '')}</dd>`).join('')}</dl>` : ''}${drawers.map((r) => `<details${r.open === 'true' ? ' open' : ''}><summary>${escapeHtml(r.title)}</summary><div class="loga-drawer-body">${escapeHtml(r.value || '')}</div></details>`).join('')}</div></section>`;
+  }
+
+  if (block === 'footer_note') {
+    return `<p class="loga-footer-note">${escapeHtml(value('text') || lines.filter((l) => l.trim()).join(' '))}</p>`;
+  }
+
   if (ELEMENT_REGISTRY[block]) {
     return renderRegisteredElement(
       ELEMENT_REGISTRY[block],
@@ -147,7 +198,7 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock, d
   }
 
   if (block === 'focus') {
-    return `<section class="loga-focus"><p class="eyebrow">${escapeHtml(value('status') || 'focus')}</p><p class="question">${inline(value('question') || 'What matters?')}</p><p class="answer">${inline(value('answer'))}</p></section>`;
+    return `<section class="loga-focus"><p class="eyebrow">${escapeHtml(value('eyebrow') || value('status') || 'focus')}</p><p class="question">${inline(value('question') || 'What matters?')}</p><p class="answer">${inline(value('answer'))}</p></section>`;
   }
 
   if (block === 'task_list') {

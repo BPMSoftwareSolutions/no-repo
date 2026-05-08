@@ -144,11 +144,7 @@
       "category": "component",
       "element": "header",
       "className": "topbar",
-      "parts": {
-        "brand": {
-          "element": "div",
-          "className": "brand"
-        },
+      "fields": {
         "brand_mark": {
           "element": "div",
           "className": "mark"
@@ -158,18 +154,6 @@
         },
         "subtitle": {
           "element": "p"
-        },
-        "actions": {
-          "element": "div",
-          "className": "actions"
-        }
-      },
-      "action_item": {
-        "element": "button",
-        "className": "btn",
-        "variants": {
-          "default": "btn",
-          "primary": "btn primary"
         }
       }
     },
