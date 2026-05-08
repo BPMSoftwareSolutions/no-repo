@@ -654,21 +654,33 @@ When 2+ statuses are selected, the server call is made without a status param
 (returns all statuses for the window), and the client-side filter narrows the
 result. This trades one extra network response for simplicity of a single call.
 
-### Time gate applied to all sources
+### Step order: normalize → merge → time gate → dedupe → client filters → sort
 
-After normalization and before the dedupe step:
+This ordering is not arbitrary. The time gate must run before dedupe, not after.
 
-```
-if (filters.since) {
-  allEvents = allEvents.filter(e => e.occurredAtUtc >= filters.since);
+**Why order matters:** If a primary source event falls outside the selected time
+window and a supplement event with the same dedupe key falls inside it, running
+dedupe first causes the primary to win the key. The time gate then removes the
+primary (out of window) — but the supplement was already evicted by the dedupe
+step. The result is no event in the output, even though a valid in-window event
+existed. Gating first removes the out-of-window primary before dedupe runs, so
+the supplement survives.
+
+### Time gate (step 3, after merge, before dedupe)
+
+```javascript
+function applyTimeGate(events, since) {
+  if (!since) return events;  // no gate if timeRange = "All"
+  return events.filter(e => e.occurredAtUtc >= since);
 }
 ```
 
-This ensures supplement events (substrate context_fragments, recent_activity)
-are trimmed to the selected time window, even though those calls do not accept
-a `since` parameter.
+Applied to the merged array (primary + supplement) before any dedupe or client
+filter. Supplement source events (context_fragments, recent_activity) do not
+accept a `since` server parameter, so this client-side gate is their only time
+constraint.
 
-### Merge and deduplicate
+### Merge and deduplicate (step 4, after time gate)
 
 Merge order: primary source events first, supplement events appended.
 
@@ -683,7 +695,8 @@ function dedupeKey(event) {
 
 Build a `Map<string, ActivityEvent>`. Iterate primary source first — keys are
 set. Iterate supplement — skip any key that already exists. Primary wins on
-collision.
+collision. Because the time gate already ran, both primary and supplement events
+in this step are guaranteed to be within the selected window.
 
 ### Unknown enum values
 
@@ -753,8 +766,19 @@ source:
 
 normalize: ActivityEvent
 
+# Step order: normalize → merge → time_gate → dedupe → client_filters → sort
+# Time gate must precede dedupe. If a primary event falls outside the window but
+# a supplement event with the same dedupe key falls inside, deduping first (primary
+# wins) then time-gating removes the primary — leaving nothing. Gating first
+# removes the out-of-window primary, so the supplement event survives dedupe.
+
+time_gate:
+  field: occurredAtUtc
+  operator: gte
+  value: ${filters.since}     # applied to ALL sources; omit entire step if filters.since is unset
+
 dedupe:
-  # Apply after merge, before client filters.
+  # Apply after time gate, before client filters.
   # Primary source records take precedence over supplement records.
   key:
     primary: eventId                               # use if non-empty
@@ -762,9 +786,6 @@ dedupe:
   precedence: primary_over_supplement
 
 client_filters:
-  - field: occurredAtUtc
-    operator: gte
-    value: ${filters.since}                        # gates ALL sources by time window
   - field: executionType
     operator: in
     value: ${filters.executionType}                # empty array = no filter
@@ -783,10 +804,17 @@ sort:
     direction: desc
 
 paginate:
-  size: 30
-  strategy: time_window       # "Load more" uses before cursor, not offset
-  cursor_field: occurredAtUtc # oldest visible event timestamp becomes next before value
-  append: true                # new page appends below existing rows
+  preferred:
+    strategy: time_window     # "Load more" passes before=oldestSeenTimestamp to server
+    size: 30
+    cursor_field: occurredAtUtc
+    append: true
+  fallback:
+    strategy: client_slice    # used if server does not accept the before param
+    fetch_limit: 200          # fetch 200 on first load; no further server calls for Load more
+    slice_size: 30            # client advances a slice pointer per Load more click
+    append: true
+  selection: cursor_detected  # runtime: choose preferred if before param is supported
 
 render:
   emptyMessage: "No execution telemetry events were found for this scope."
