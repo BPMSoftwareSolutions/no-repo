@@ -1,0 +1,91 @@
+{
+  "code_symbol_inventory_fetch_repositories": {
+    "contractKey": "code_symbol_inventory_fetch_repositories",
+    "contractVersion": "1.0.0",
+    "description": "Fetch repositories that should be scanned for symbol inventory.",
+    "entity": "inventory.code_repositories",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "code_symbol_inventory_fetch_files_for_repository": {
+    "contractKey": "code_symbol_inventory_fetch_files_for_repository",
+    "contractVersion": "1.0.0",
+    "description": "Fetch code files for a repository that need symbol synchronization.",
+    "entity": "inventory.code_files",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["code_repository_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "code_symbol_inventory_fetch_symbol_ids_for_file": {
+    "contractKey": "code_symbol_inventory_fetch_symbol_ids_for_file",
+    "contractVersion": "1.0.0",
+    "description": "Fetch the symbol ids associated with a file before symbol reindexing.",
+    "entity": "inventory.code_symbols",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["code_file_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "code_symbol_inventory_delete_file_symbols": {
+    "contractKey": "code_symbol_inventory_delete_file_symbols",
+    "contractVersion": "1.0.0",
+    "description": "Delete the symbol rows for a file before rebuilding the symbol graph.",
+    "entity": "inventory.code_symbols",
+    "operation": "delete",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["symbol_ids"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "code_symbol_inventory_insert_symbols_batch": {
+    "contractKey": "code_symbol_inventory_insert_symbols_batch",
+    "contractVersion": "1.0.0",
+    "description": "Insert the symbol rows for a file as a batch mutation.",
+    "entity": "inventory.code_symbols",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["rows"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "code_symbol_inventory_update_file_metadata": {
+    "contractKey": "code_symbol_inventory_update_file_metadata",
+    "contractVersion": "1.0.0",
+    "description": "Update file metadata after symbol synchronization.",
+    "entity": "inventory.code_files",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["file_id", "sha256", "line_count", "symbol_count", "content_text"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+}

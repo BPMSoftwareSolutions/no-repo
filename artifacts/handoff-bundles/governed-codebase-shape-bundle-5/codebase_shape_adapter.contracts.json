@@ -1,0 +1,32 @@
+{
+  "codebase_shape_load_repository_sync_policy": {
+    "contractKey": "codebase_shape_load_repository_sync_policy",
+    "contractVersion": "1.0.0",
+    "description": "Load repository sync policy for codebase shape persistence.",
+    "entity": "inventory.code_repositories",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["root_path"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "codebase_shape_save_report": {
+    "contractKey": "codebase_shape_save_report",
+    "contractVersion": "1.0.0",
+    "description": "Persist the staged codebase shape report through the runtime execution path.",
+    "entity": "decisioning.codebase_shape_runs",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["repositories", "projects", "files", "symbols", "relationships"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+}

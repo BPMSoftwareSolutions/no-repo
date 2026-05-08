@@ -1,0 +1,92 @@
+{
+  "implementation_packet_lookup_by_packet_id": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_packets WHERE packet_id = %s::text LIMIT 1",
+    "sqlServerSql": "SELECT TOP (1) * FROM decisioning.implementation_packets WHERE packet_id = ?",
+    "parameterOrder": ["packet_id"]
+  },
+  "implementation_packets_list": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_packets WHERE (%s::integer = 0 OR status = %s::text) AND (%s::integer = 0 OR packet_type = %s::text) ORDER BY created_at DESC",
+    "sqlServerSql": "SELECT * FROM decisioning.implementation_packets WHERE (? = 0 OR status = ?) AND (? = 0 OR packet_type = ?) ORDER BY created_at DESC",
+    "parameterOrder": ["has_status", "status", "has_packet_type", "packet_type"]
+  },
+  "implementation_packet_items_list_by_packet_id": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_packet_items WHERE implementation_packet_id = %s::uuid ORDER BY created_at ASC",
+    "sqlServerSql": "SELECT * FROM decisioning.implementation_packet_items WHERE implementation_packet_id = ? ORDER BY created_at ASC",
+    "parameterOrder": ["implementation_packet_id"]
+  },
+  "implementation_item_dependencies_list_by_packet_id": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_item_dependencies WHERE implementation_packet_id = %s::uuid ORDER BY created_at ASC",
+    "sqlServerSql": "SELECT * FROM decisioning.implementation_item_dependencies WHERE implementation_packet_id = ? ORDER BY created_at ASC",
+    "parameterOrder": ["implementation_packet_id"]
+  },
+  "implementation_acceptance_checks_list_by_packet_id": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_acceptance_checks WHERE implementation_packet_id = %s::uuid ORDER BY created_at ASC",
+    "sqlServerSql": "SELECT * FROM decisioning.implementation_acceptance_checks WHERE implementation_packet_id = ? ORDER BY created_at ASC",
+    "parameterOrder": ["implementation_packet_id"]
+  },
+  "implementation_evidence_links_list_by_packet_id": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_evidence_links WHERE implementation_packet_id = %s::uuid ORDER BY created_at ASC",
+    "sqlServerSql": "SELECT * FROM decisioning.implementation_evidence_links WHERE implementation_packet_id = ? ORDER BY created_at ASC",
+    "parameterOrder": ["implementation_packet_id"]
+  },
+  "implementation_gate_bundles_list_by_packet_id": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_gate_bundles WHERE implementation_packet_id = %s::uuid ORDER BY created_at ASC",
+    "sqlServerSql": "SELECT * FROM decisioning.implementation_gate_bundles WHERE implementation_packet_id = ? ORDER BY created_at ASC",
+    "parameterOrder": ["implementation_packet_id"]
+  },
+  "implementation_gate_decisions_list_by_packet_id": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_gate_decisions WHERE implementation_packet_id = %s::uuid ORDER BY created_at ASC",
+    "sqlServerSql": "SELECT * FROM decisioning.implementation_gate_decisions WHERE implementation_packet_id = ? ORDER BY created_at ASC",
+    "parameterOrder": ["implementation_packet_id"]
+  },
+  "implementation_item_packet_lookup_detail": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_packet_items WHERE implementation_item_id = %s::uuid LIMIT 1",
+    "sqlServerSql": "SELECT TOP (1) * FROM decisioning.implementation_packet_items WHERE implementation_item_id = ?",
+    "parameterOrder": ["implementation_item_id"]
+  },
+  "implementation_item_acceptance_checks_list": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_acceptance_checks WHERE implementation_item_id = %s::uuid ORDER BY sort_order ASC",
+    "sqlServerSql": "SELECT * FROM decisioning.implementation_acceptance_checks WHERE implementation_item_id = ? ORDER BY sort_order ASC",
+    "parameterOrder": ["implementation_item_id"]
+  },
+  "implementation_evidence_links_for_item": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_evidence_links WHERE implementation_item_id = %s::uuid ORDER BY created_at ASC",
+    "sqlServerSql": "SELECT * FROM decisioning.implementation_evidence_links WHERE implementation_item_id = ? ORDER BY created_at ASC",
+    "parameterOrder": ["implementation_item_id"]
+  },
+  "workflow_run_latest_verification_result": {
+    "postgresqlSql": "SELECT * FROM decisioning.workflow_run_verification_results WHERE workflow_run_id = %s::uuid ORDER BY created_at DESC LIMIT 1",
+    "sqlServerSql": "SELECT TOP (1) * FROM decisioning.workflow_run_verification_results WHERE workflow_run_id = ? ORDER BY created_at DESC",
+    "parameterOrder": ["workflow_run_id"]
+  },
+  "create_implementation_packet": {
+    "postgresqlSql": "INSERT INTO decisioning.implementation_packets (implementation_packet_id, packet_id, packet_type, packet_version, title, status, system_slug, system_domain, parent_packet_id, root_packet_id, created_by_kind, created_by_name, imported_by, north_star_summary, scope_json, governance_json, lineage_json, completion_policy_json, source_payload_json) VALUES (%s::uuid, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::uuid, %s::uuid, %s::text, %s::text, %s::text, %s::text, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb) RETURNING *",
+    "sqlServerSql": "INSERT INTO decisioning.implementation_packets (implementation_packet_id, packet_id, packet_type, packet_version, title, status, system_slug, system_domain, parent_packet_id, root_packet_id, created_by_kind, created_by_name, imported_by, north_star_summary, scope_json, governance_json, lineage_json, completion_policy_json, source_payload_json) OUTPUT INSERTED.* VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "parameterOrder": ["implementation_packet_id", "packet_id", "packet_type", "packet_version", "title", "status", "system_slug", "system_domain", "parent_packet_id", "root_packet_id", "created_by_kind", "created_by_name", "imported_by", "north_star_summary", "scope_json", "governance_json", "lineage_json", "completion_policy_json", "source_payload_json"]
+  },
+  "create_implementation_packet_item": {
+    "postgresqlSql": "INSERT INTO decisioning.implementation_packet_items (implementation_item_id, implementation_packet_id, phase_key, phase_title, item_key, stable_item_key, item_type, priority, title, description, status, artifacts_expected_json, origin_domain, current_domain, target_domain, domain_status, routing_strategy, current_owner_type, current_owner_id, status_reason, updated_by) VALUES (%s::uuid, %s::uuid, %s::text, %s::text, %s::text, %s::text, %s::text, %s::integer, %s::text, %s::text, %s::text, %s::jsonb, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text) RETURNING *",
+    "sqlServerSql": "INSERT INTO decisioning.implementation_packet_items (implementation_item_id, implementation_packet_id, phase_key, phase_title, item_key, stable_item_key, item_type, priority, title, description, status, artifacts_expected_json, origin_domain, current_domain, target_domain, domain_status, routing_strategy, current_owner_type, current_owner_id, status_reason, updated_by) OUTPUT INSERTED.* VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "parameterOrder": ["implementation_item_id", "implementation_packet_id", "phase_key", "phase_title", "item_key", "stable_item_key", "item_type", "priority", "title", "description", "status", "artifacts_expected_json", "origin_domain", "current_domain", "target_domain", "domain_status", "routing_strategy", "current_owner_type", "current_owner_id", "status_reason", "updated_by"]
+  },
+  "create_implementation_acceptance_check": {
+    "postgresqlSql": "INSERT INTO decisioning.implementation_acceptance_checks (acceptance_check_id, implementation_item_id, sort_order, check_text, status) VALUES (%s::uuid, %s::uuid, %s::integer, %s::text, %s::text) RETURNING *",
+    "sqlServerSql": "INSERT INTO decisioning.implementation_acceptance_checks (acceptance_check_id, implementation_item_id, sort_order, check_text, status) OUTPUT INSERTED.* VALUES (?, ?, ?, ?, ?)",
+    "parameterOrder": ["acceptance_check_id", "implementation_item_id", "sort_order", "check_text", "status"]
+  },
+  "create_implementation_item_dependency": {
+    "postgresqlSql": "INSERT INTO decisioning.implementation_item_dependencies (implementation_item_dependency_id, implementation_item_id, depends_on_item_key, depends_on_implementation_item_id) VALUES (%s::uuid, %s::uuid, %s::text, %s::uuid) RETURNING *",
+    "sqlServerSql": "INSERT INTO decisioning.implementation_item_dependencies (implementation_item_dependency_id, implementation_item_id, depends_on_item_key, depends_on_implementation_item_id) OUTPUT INSERTED.* VALUES (?, ?, ?, ?)",
+    "parameterOrder": ["implementation_item_dependency_id", "implementation_item_id", "depends_on_item_key", "depends_on_implementation_item_id"]
+  },
+  "create_implementation_gate_bundle": {
+    "postgresqlSql": "INSERT INTO decisioning.implementation_gate_bundles (implementation_gate_bundle_id, implementation_packet_id, gate_type, status, summary_json, evidence_manifest_json) VALUES (%s::uuid, %s::uuid, %s::text, %s::text, %s::jsonb, %s::jsonb) RETURNING *",
+    "sqlServerSql": "INSERT INTO decisioning.implementation_gate_bundles (implementation_gate_bundle_id, implementation_packet_id, gate_type, status, summary_json, evidence_manifest_json) OUTPUT INSERTED.* VALUES (?, ?, ?, ?, ?, ?)",
+    "parameterOrder": ["implementation_gate_bundle_id", "implementation_packet_id", "gate_type", "status", "summary_json", "evidence_manifest_json"]
+  },
+  "create_implementation_item_domain_transition": {
+    "postgresqlSql": "INSERT INTO decisioning.implementation_item_domain_transitions (implementation_item_domain_transition_id, implementation_item_id, implementation_packet_id, workflow_run_id, from_domain, to_domain, from_domain_status, to_domain_status, transition_reason, triggered_by, routing_strategy, current_owner_type, current_owner_id) VALUES (%s::uuid, %s::uuid, %s::uuid, %s::uuid, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text) RETURNING *",
+    "sqlServerSql": "INSERT INTO decisioning.implementation_item_domain_transitions (implementation_item_domain_transition_id, implementation_item_id, implementation_packet_id, workflow_run_id, from_domain, to_domain, from_domain_status, to_domain_status, transition_reason, triggered_by, routing_strategy, current_owner_type, current_owner_id) OUTPUT INSERTED.* VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "parameterOrder": ["implementation_item_domain_transition_id", "implementation_item_id", "implementation_packet_id", "workflow_run_id", "from_domain", "to_domain", "from_domain_status", "to_domain_status", "transition_reason", "triggered_by", "routing_strategy", "current_owner_type", "current_owner_id"]
+  }
+}

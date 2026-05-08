@@ -1,0 +1,32 @@
+{
+  "workflow_store_implementation_item_status_update": {
+    "postgresqlSql": "UPDATE decisioning.implementation_packet_items SET status = %s::text, status_reason = %s::text, updated_by = %s::text, updated_at = NOW() WHERE implementation_item_id = %s::uuid RETURNING *",
+    "sqlServerSql": "UPDATE decisioning.implementation_packet_items SET status = ?, status_reason = ?, updated_by = ?, updated_at = SYSUTCDATETIME() OUTPUT INSERTED.* WHERE implementation_item_id = ?",
+    "parameterOrder": ["status", "status_reason", "updated_by", "implementation_item_id"]
+  },
+  "workflow_store_implementation_item_routing_update": {
+    "postgresqlSql": "WITH transition AS (INSERT INTO decisioning.implementation_item_domain_transitions (implementation_item_domain_transition_id, implementation_item_id, target_domain, from_domain, to_domain, from_domain_status, to_domain_status, transition_reason, routing_strategy, current_owner_type, current_owner_id, triggered_by, workflow_run_id) VALUES (%s::uuid, %s::uuid, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::text, %s::uuid) RETURNING *), item AS (UPDATE decisioning.implementation_packet_items SET current_domain = %s::text, target_domain = %s::text, domain_status = %s::text, routing_strategy = %s::text, current_owner_type = %s::text, current_owner_id = %s::text, updated_by = %s::text, updated_at = NOW() WHERE implementation_item_id = %s::uuid RETURNING *) SELECT * FROM item",
+    "sqlServerSql": "DECLARE @transition_id uniqueidentifier = ?; UPDATE decisioning.implementation_packet_items SET current_domain = ?, target_domain = ?, domain_status = ?, routing_strategy = ?, current_owner_type = ?, current_owner_id = ?, updated_by = ?, updated_at = SYSUTCDATETIME() OUTPUT INSERTED.* WHERE implementation_item_id = ?",
+    "parameterOrder": ["implementation_item_id", "transition_id", "target_domain", "current_domain", "domain_status", "transition_reason", "routing_strategy", "current_owner_type", "current_owner_id", "triggered_by", "workflow_run_id"]
+  },
+  "workflow_store_implementation_acceptance_check_status_update": {
+    "postgresqlSql": "UPDATE decisioning.implementation_acceptance_checks SET status = %s::text, updated_by = %s::text, updated_at = NOW() WHERE implementation_item_id = %s::uuid AND acceptance_check_id = %s::uuid RETURNING *",
+    "sqlServerSql": "UPDATE decisioning.implementation_acceptance_checks SET status = ?, updated_by = ?, updated_at = SYSUTCDATETIME() OUTPUT INSERTED.* WHERE implementation_item_id = ? AND acceptance_check_id = ?",
+    "parameterOrder": ["status", "updated_by", "implementation_item_id", "acceptance_check_id"]
+  },
+  "workflow_store_implementation_evidence_link_create": {
+    "postgresqlSql": "INSERT INTO decisioning.implementation_evidence_links (implementation_evidence_link_id, implementation_item_id, acceptance_check_id, evidence_type, evidence_ref, title, metadata_json, recorded_by) VALUES (COALESCE(NULLIF(%s::text, '')::uuid, gen_random_uuid()), %s::uuid, %s::uuid, %s::text, %s::text, %s::text, COALESCE(%s::jsonb, '{}'::jsonb), %s::text) RETURNING *",
+    "sqlServerSql": "INSERT INTO decisioning.implementation_evidence_links (implementation_evidence_link_id, implementation_item_id, acceptance_check_id, evidence_type, evidence_ref, title, metadata_json, recorded_by) OUTPUT INSERTED.* VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "parameterOrder": ["implementation_evidence_link_id", "implementation_item_id", "acceptance_check_id", "evidence_type", "evidence_ref", "title", "metadata", "recorded_by"]
+  },
+  "workflow_store_implementation_gate_decision_record": {
+    "postgresqlSql": "INSERT INTO decisioning.implementation_gate_decisions (implementation_gate_decision_id, implementation_gate_bundle_id, packet_id, gate_type, decision, rationale, evidence_refs_json, remediation_actions_json, decided_by) VALUES (gen_random_uuid(), (SELECT implementation_gate_bundle_id FROM decisioning.implementation_gate_bundles WHERE packet_id = %s::uuid AND gate_type = %s::text LIMIT 1), %s::uuid, %s::text, %s::text, %s::text, %s::jsonb, %s::jsonb, %s::text) RETURNING *",
+    "sqlServerSql": "INSERT INTO decisioning.implementation_gate_decisions (implementation_gate_decision_id, implementation_gate_bundle_id, packet_id, gate_type, decision, rationale, evidence_refs_json, remediation_actions_json, decided_by) OUTPUT INSERTED.* VALUES (NEWID(), (SELECT TOP (1) implementation_gate_bundle_id FROM decisioning.implementation_gate_bundles WHERE packet_id = ? AND gate_type = ?), ?, ?, ?, ?, ?, ?, ?)",
+    "parameterOrder": ["packet_id", "gate_type", "decision", "rationale", "evidence_refs", "remediation_actions", "decided_by"]
+  },
+  "workflow_store_implementation_item_domain_transitions_list": {
+    "postgresqlSql": "SELECT * FROM decisioning.implementation_item_domain_transitions WHERE implementation_item_id = %s::uuid ORDER BY created_at ASC",
+    "sqlServerSql": "SELECT * FROM decisioning.implementation_item_domain_transitions WHERE implementation_item_id = ? ORDER BY created_at ASC",
+    "parameterOrder": ["implementation_item_id"]
+  }
+}

@@ -74,7 +74,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  let filePath = path.join(SRC_DIR, pathname === '/' ? 'html/execution-telemetry.html' : pathname);
+  let filePath = path.join(SRC_DIR, pathname === '/' ? 'html/index.html' : pathname);
 
   if (pathname === '/lab' || pathname === '/lab.html') {
     filePath = path.join(SRC_DIR, 'html/lab.html');
@@ -120,7 +120,8 @@ const server = http.createServer(async (req, res) => {
 const PORT = Number(process.env.PORT || 5000);
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);
-  console.log(`Open http://localhost:${PORT}/ for execution telemetry`);
+  console.log(`Open http://localhost:${PORT}/ for the inspection landing page`);
+  console.log(`Open http://localhost:${PORT}/execution-telemetry.html for execution telemetry`);
   console.log(`Open http://localhost:${PORT}/lab.html to monitor execution next to the editor`);
 });
 

@@ -1,0 +1,32 @@
+{
+  "code_symbol_inventory_fetch_repositories": {
+    "postgresqlSql": "SELECT code_repository_id, root_path FROM inventory.code_repositories WHERE root_path IS NOT NULL ORDER BY root_path",
+    "sqlServerSql": "SELECT code_repository_id, root_path FROM inventory.code_repositories WHERE root_path IS NOT NULL ORDER BY root_path",
+    "parameterOrder": []
+  },
+  "code_symbol_inventory_fetch_files_for_repository": {
+    "postgresqlSql": "SELECT code_file_id, code_repository_id, relative_path, file_path, sha256, symbol_count, needs_semantic_backfill FROM inventory.code_files WHERE code_repository_id = %s ORDER BY relative_path",
+    "sqlServerSql": "SELECT code_file_id, code_repository_id, relative_path, file_path, sha256, symbol_count, needs_semantic_backfill FROM inventory.code_files WHERE code_repository_id = ? ORDER BY relative_path",
+    "parameterOrder": ["code_repository_id"]
+  },
+  "code_symbol_inventory_fetch_symbol_ids_for_file": {
+    "postgresqlSql": "SELECT code_symbol_id FROM inventory.code_symbols WHERE code_file_id = %s ORDER BY line_number, code_symbol_id",
+    "sqlServerSql": "SELECT code_symbol_id FROM inventory.code_symbols WHERE code_file_id = ? ORDER BY line_number, code_symbol_id",
+    "parameterOrder": ["code_file_id"]
+  },
+  "code_symbol_inventory_delete_file_symbols": {
+    "postgresqlSql": "DELETE FROM inventory.code_symbols WHERE code_symbol_id = ANY(%s::uuid[]) RETURNING code_symbol_id",
+    "sqlServerSql": "DELETE FROM inventory.code_symbols WHERE code_symbol_id IN (SELECT value FROM OPENJSON(?))",
+    "parameterOrder": ["symbol_ids"]
+  },
+  "code_symbol_inventory_insert_symbols_batch": {
+    "postgresqlSql": "WITH input AS (SELECT %s::jsonb AS rows_json), rows AS (SELECT * FROM jsonb_to_recordset((SELECT rows_json FROM input)) AS x(code_symbol_id uuid, code_file_id uuid, symbol_name text, qualified_name text, symbol_kind text, line_number integer, end_line_number integer, container_name text, metadata_json jsonb, symbol_hash text, signature text, visibility text, layer_code text, domain_code text, parent_symbol_id uuid, is_entry_point boolean, is_exported boolean, is_abstract boolean, enrichment_status text)) INSERT INTO inventory.code_symbols (code_symbol_id, code_file_id, symbol_name, qualified_name, symbol_kind, line_number, end_line_number, container_name, metadata_json, symbol_hash, signature, visibility, layer_code, domain_code, parent_symbol_id, is_entry_point, is_exported, is_abstract, enrichment_status) SELECT code_symbol_id, code_file_id, symbol_name, qualified_name, symbol_kind, line_number, end_line_number, container_name, metadata_json, symbol_hash, signature, visibility, layer_code, domain_code, parent_symbol_id, is_entry_point, is_exported, is_abstract, enrichment_status FROM rows RETURNING code_symbol_id",
+    "sqlServerSql": "DECLARE @rows nvarchar(max) = ?; /* PostgreSQL source of truth; SQL Server parity can be materialized with OPENJSON when enabled. */",
+    "parameterOrder": ["rows"]
+  },
+  "code_symbol_inventory_update_file_metadata": {
+    "postgresqlSql": "UPDATE inventory.code_files SET sha256 = %s, line_count = %s, symbol_count = %s, content_text = %s, updated_at = CURRENT_TIMESTAMP WHERE code_file_id = %s RETURNING code_file_id",
+    "sqlServerSql": "UPDATE inventory.code_files SET sha256 = ?, line_count = ?, symbol_count = ?, content_text = ?, updated_at = SYSUTCDATETIME() WHERE code_file_id = ?",
+    "parameterOrder": ["sha256", "line_count", "symbol_count", "content_text", "file_id"]
+  }
+}

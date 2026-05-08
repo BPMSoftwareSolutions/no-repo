@@ -1,0 +1,27 @@
+{
+  "codebase_shape_run_record": {
+    "postgresqlSql": "INSERT INTO decisioning.codebase_shape_runs (codebase_shape_run_id, code_repository_id, run_key, workflow_run_id, trigger_source, requested_by, status, summary_json, started_at, completed_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING codebase_shape_run_id",
+    "sqlServerSql": "INSERT INTO decisioning.codebase_shape_runs (codebase_shape_run_id, code_repository_id, run_key, workflow_run_id, trigger_source, requested_by, status, summary_json, started_at, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+    "parameterOrder": ["codebase_shape_run_id", "code_repository_id", "run_key", "workflow_run_id", "trigger_source", "requested_by", "status", "summary_json", "started_at", "completed_at"]
+  },
+  "codebase_shape_workflow_run_file_link_record": {
+    "postgresqlSql": "INSERT INTO decisioning.workflow_run_code_files (workflow_run_code_file_id, workflow_run_id, code_repository_id, code_file_id, relation_source, metadata_json) VALUES (%s, %s, %s, %s, %s, %s)",
+    "sqlServerSql": "INSERT INTO decisioning.workflow_run_code_files (workflow_run_code_file_id, workflow_run_id, code_repository_id, code_file_id, relation_source, metadata_json) VALUES (?, ?, ?, ?, ?, ?);",
+    "parameterOrder": ["workflow_run_code_file_id", "workflow_run_id", "code_repository_id", "code_file_id", "relation_source", "metadata_json"]
+  },
+  "codebase_shape_action_observation_record": {
+    "postgresqlSql": "INSERT INTO decisioning.codebase_shape_action_observations (codebase_shape_action_observation_id, codebase_shape_run_id, code_repository_id, code_file_id, code_symbol_id, project_path, file_path, symbol_qualified_name, symbol_kind, language, action_kind, action_subject, object_kind, source_kind, representation_in, representation_out, boundary_kind, sink_kind, action_scope, composition_role, side_effect_profile, confidence, evidence_json) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+    "sqlServerSql": "INSERT INTO decisioning.codebase_shape_action_observations (codebase_shape_action_observation_id, codebase_shape_run_id, code_repository_id, code_file_id, code_symbol_id, project_path, file_path, symbol_qualified_name, symbol_kind, language, action_kind, action_subject, object_kind, source_kind, representation_in, representation_out, boundary_kind, sink_kind, action_scope, composition_role, side_effect_profile, confidence, evidence_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+    "parameterOrder": ["codebase_shape_action_observation_id", "codebase_shape_run_id", "code_repository_id", "code_file_id", "code_symbol_id", "project_path", "file_path", "symbol_qualified_name", "symbol_kind", "language", "action_kind", "action_subject", "object_kind", "source_kind", "representation_in", "representation_out", "boundary_kind", "sink_kind", "action_scope", "composition_role", "side_effect_profile", "confidence", "evidence_json"]
+  },
+  "codebase_shape_object_flow_observation_record": {
+    "postgresqlSql": "INSERT INTO decisioning.codebase_object_flow_observations (codebase_object_flow_observation_id, codebase_shape_run_id, code_repository_id, code_file_id, code_symbol_id, project_path, file_path, symbol_qualified_name, symbol_kind, language, action_profile_json, object_kind, source_kind, representation_in, representation_out, boundary_kind, sink_kind, confidence, evidence_json) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+    "sqlServerSql": "INSERT INTO decisioning.codebase_object_flow_observations (codebase_object_flow_observation_id, codebase_shape_run_id, code_repository_id, code_file_id, code_symbol_id, project_path, file_path, symbol_qualified_name, symbol_kind, language, action_profile_json, object_kind, source_kind, representation_in, representation_out, boundary_kind, sink_kind, confidence, evidence_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+    "parameterOrder": ["codebase_object_flow_observation_id", "codebase_shape_run_id", "code_repository_id", "code_file_id", "code_symbol_id", "project_path", "file_path", "symbol_qualified_name", "symbol_kind", "language", "action_profile_json", "object_kind", "source_kind", "representation_in", "representation_out", "boundary_kind", "sink_kind", "confidence", "evidence_json"]
+  },
+  "codebase_shape_finding_record": {
+    "postgresqlSql": "INSERT INTO decisioning.codebase_shape_findings (codebase_shape_finding_id, codebase_shape_run_id, code_repository_id, finding_type, severity, title, summary, project_path, file_path, symbol_qualified_name, evidence_json, status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+    "sqlServerSql": "INSERT INTO decisioning.codebase_shape_findings (codebase_shape_finding_id, codebase_shape_run_id, code_repository_id, finding_type, severity, title, summary, project_path, file_path, symbol_qualified_name, evidence_json, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+    "parameterOrder": ["codebase_shape_finding_id", "codebase_shape_run_id", "code_repository_id", "finding_type", "severity", "title", "summary", "project_path", "file_path", "symbol_qualified_name", "evidence_json", "status"]
+  }
+}

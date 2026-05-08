@@ -3,6 +3,7 @@ import { postAiEngine } from './api-client.js';
 const STORAGE_KEY = 'ai-engine.telemetry.watch-session-id';
 const REFRESH_MS = 5000;
 const STALE_AFTER_MS = 30000;
+const NEW_YORK_TIME_ZONE = 'America/New_York';
 
 const elements = {
   status: document.getElementById('telemetry-connection-status'),
@@ -251,12 +252,15 @@ function renderSummaryStrip(summary, telemetryError, substrateError, candidatesE
   const ageMs = summary.heartbeatTimestamp ? Date.now() - Date.parse(summary.heartbeatTimestamp) : null;
   const connectionState = determineConnectionState(ageMs, telemetryError || substrateError || candidatesError);
   renderStatus(connectionState, buildStatusMessage(connectionState, summary, ageMs));
+  const heartbeatLabel = summary.heartbeatTimestamp
+    ? `${formatTimestampEt(summary.heartbeatTimestamp)}${Number.isFinite(ageMs) ? ` · ${formatAge(ageMs)}` : ''}`
+    : '—';
 
   return `
     <div class="execution-monitor__metrics">
       ${metric('session id', summary.sessionId || '—')}
       ${metric('telemetry status', summary.telemetryStatus || '—')}
-      ${metric('heartbeat / update', summary.heartbeatTimestamp ? `${summary.heartbeatTimestamp}${Number.isFinite(ageMs) ? ` · ${formatAge(ageMs)}` : ''}` : '—')}
+      ${metric('heartbeat / update (new york)', heartbeatLabel)}
       ${metric('friction count', String(summary.frictionCount))}
       ${metric('surface gaps', String(summary.surfaceGapCount))}
       ${metric('promotion candidates', String(summary.promotionCandidateCount))}
@@ -276,7 +280,7 @@ function renderSessionDetails(summary) {
         ${definition('session key', summary.sessionKey)}
         ${definition('workflow run id', summary.workflowRunId)}
         ${definition('latest event id', summary.latestEventId)}
-        ${definition('observed at', summary.heartbeatTimestamp)}
+        ${definition('observed at (new york)', formatTimestampEt(summary.heartbeatTimestamp))}
       </dl>
     </div>
   `;
@@ -293,8 +297,9 @@ function renderProjectionNote(projection, session) {
 
 function renderEventFeed(substrate, telemetry, session) {
   const events = collectEvents({ ...substrate, telemetry });
-  events.sort((left, right) => timestampValue(left.timestamp) - timestampValue(right.timestamp));
-  const rows = events.slice(-20);
+  const rows = [...events]
+    .sort((left, right) => timestampValue(right.timestamp) - timestampValue(left.timestamp))
+    .slice(0, 30);
 
   if (!rows.length) {
     return '<p class="execution-monitor__empty">No live events were returned for this session.</p>';
@@ -305,12 +310,32 @@ function renderEventFeed(substrate, telemetry, session) {
       ${rows.map((event) => `
         <li class="execution-monitor__list-item">
           <strong>${escapeHtml(event.type)}${event.id ? ` · ${escapeHtml(event.id)}` : ''}</strong>
-          <span>${escapeHtml(event.timestamp || 'unknown')}</span>
+          <span>${escapeHtml(formatTimestampEt(event.timestamp) || 'unknown')}</span>
           <em>${escapeHtml(event.label || event.detail || 'no detail')}</em>
         </li>
       `).join('')}
     </ul>
   `;
+}
+
+function formatTimestampEt(value) {
+  const parsed = Date.parse(String(value || ''));
+  if (!Number.isFinite(parsed)) return '';
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: NEW_YORK_TIME_ZONE,
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+      timeZoneName: 'short',
+    }).format(parsed);
+  } catch {
+    return String(value || '');
+  }
 }
 
 function collectEvents(substrate = {}) {

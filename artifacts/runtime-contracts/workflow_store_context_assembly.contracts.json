@@ -1,0 +1,48 @@
+[
+  {
+    "contractKey": "context_assembly_persistence_available",
+    "contractVersion": "1.0.0",
+    "description": "Check whether context assembly persistence is available.",
+    "entity": "context_assembly",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "projectionKey": "context_assembly_persistence_available",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "context_assembly_contract_upsert",
+    "contractVersion": "1.0.0",
+    "description": "Persist a context assembly contract and its associated fragments and gate decisions.",
+    "entity": "context_assembly",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["contract", "fragments", "gate_decisions"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "context_assembly_latest_projection",
+    "contractVersion": "1.0.0",
+    "description": "Fetch the latest context assembly projection for a workflow run.",
+    "entity": "context_assembly",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["workflow_run_id"],
+    "projectionKey": "context_assembly_latest_projection",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+]

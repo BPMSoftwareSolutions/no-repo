@@ -1,0 +1,74 @@
+---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.execution_telemetry_dashboard"
+projection_id: "execution-telemetry:{{workflowRunId}}"
+source_truth: "sql"
+primary_question: "What is the execution substrate doing right now?"
+workspace_mode: "focus"
+active_surfaces: "execution,session,events,promotions"
+surface_label: "Execution Telemetry Dashboard"
+---
+
+# Execution Telemetry Dashboard
+
+::focus
+question: "What is the execution substrate doing right now?"
+answer: "{{operatorSummary}}"
+status: "{{telemetryStatus}}"
+::
+
+## Runtime Posture
+
+::panel
+title: "{{statusHeadline}}"
+status: "{{telemetryStatus}}"
+owner: "{{actorLabel}}"
+::
+
+::metrics
+- label: "Last heartbeat (New York)"
+  value: "{{heartbeatAtEt}}"
+- label: "Active processes"
+  value: "{{activeProcessCount}}"
+- label: "Failed processes"
+  value: "{{failedProcessCount}}"
+- label: "Friction count"
+  value: "{{frictionCount}}"
+- label: "Promotion candidates"
+  value: "{{promotionCandidateCount}}"
+::
+
+## Recommended Next Action
+
+::panel
+title: "Next action"
+status: "{{nextActionStatus}}"
+owner: "{{nextActionOwner}}"
+::
+
+{{nextActionSummary}}
+
+## Event Stream Snapshot
+
+::table
+columns: "time_et,event_type,domain_object_type,status,title,summary"
+sort: "time_et:desc"
+rows_source: "executionEventRows"
+empty_message: "No execution telemetry events were found for this scope."
+::
+
+## Context Links
+
+::nav
+- label: "Execution Event Stream"
+  target: "operator.execution_telemetry_event_stream"
+  projection_type: "operator.execution_telemetry_event_stream"
+
+- label: "Session Metrics"
+  target: "operator.agent_session"
+  projection_type: "operator.agent_session"
+
+- label: "Workflow Run"
+  target: "operator.workflow_run"
+  projection_type: "operator.workflow_run"
+::

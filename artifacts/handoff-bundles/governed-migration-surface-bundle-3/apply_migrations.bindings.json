@@ -1,0 +1,17 @@
+{
+  "apply_migrations_history_ensure": {
+    "postgresqlSql": "CREATE SCHEMA IF NOT EXISTS public; CREATE TABLE IF NOT EXISTS public.__migration_history (migration_name VARCHAR(255) NOT NULL PRIMARY KEY, applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+    "sqlServerSql": "IF SCHEMA_ID('public') IS NULL EXEC('CREATE SCHEMA public'); IF OBJECT_ID('public.__migration_history', 'U') IS NULL CREATE TABLE public.__migration_history (migration_name NVARCHAR(255) NOT NULL PRIMARY KEY, applied_at DATETIME2(7) NOT NULL DEFAULT SYSUTCDATETIME())",
+    "parameterOrder": []
+  },
+  "apply_migrations_history_lookup": {
+    "postgresqlSql": "SELECT migration_name, applied_at FROM public.__migration_history WHERE migration_name = %s LIMIT 1",
+    "sqlServerSql": "SELECT TOP (1) migration_name, applied_at FROM public.__migration_history WHERE migration_name = ?",
+    "parameterOrder": ["migration_name"]
+  },
+  "apply_migrations_history_record_applied": {
+    "postgresqlSql": "INSERT INTO public.__migration_history (migration_name, applied_at) VALUES (%s, CURRENT_TIMESTAMP) ON CONFLICT (migration_name) DO UPDATE SET applied_at = EXCLUDED.applied_at RETURNING migration_name, applied_at",
+    "sqlServerSql": "MERGE public.__migration_history AS target USING (SELECT ? AS migration_name) AS source ON target.migration_name = source.migration_name WHEN MATCHED THEN UPDATE SET applied_at = SYSUTCDATETIME() WHEN NOT MATCHED THEN INSERT (migration_name, applied_at) VALUES (source.migration_name, SYSUTCDATETIME()) OUTPUT inserted.migration_name, inserted.applied_at;",
+    "parameterOrder": ["migration_name"]
+  }
+}

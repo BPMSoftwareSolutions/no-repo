@@ -1,0 +1,92 @@
+[
+  {
+    "contractKey": "implementation_packet_has_workflow_link_columns",
+    "contractVersion": "1.0.0",
+    "description": "Probe whether implementation packets expose workflow linkage columns.",
+    "entity": "implementation_packet",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "projectionKey": "implementation_packet_has_workflow_link_columns",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_packet_has_process_link_columns",
+    "contractVersion": "1.0.0",
+    "description": "Probe whether implementation packets expose process linkage columns.",
+    "entity": "implementation_packet",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "projectionKey": "implementation_packet_has_process_link_columns",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_evidence_has_inventory_reference_columns",
+    "contractVersion": "1.0.0",
+    "description": "Probe whether implementation evidence links expose inventory references.",
+    "entity": "implementation_evidence_link",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "projectionKey": "implementation_evidence_has_inventory_reference_columns",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_evidence_has_workflow_artifact_reference_columns",
+    "contractVersion": "1.0.0",
+    "description": "Probe whether implementation evidence links expose workflow artifact references.",
+    "entity": "implementation_evidence_link",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "projectionKey": "implementation_evidence_has_workflow_artifact_reference_columns",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "workflow_gate_tables_present",
+    "contractVersion": "1.0.0",
+    "description": "Probe whether shared workflow gate lifecycle tables are present.",
+    "entity": "workflow_gate",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "projectionKey": "workflow_gate_tables_present",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_gate_tables_present",
+    "contractVersion": "1.0.0",
+    "description": "Probe whether implementation-specific gate tables are present.",
+    "entity": "implementation_gate",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "projectionKey": "implementation_gate_tables_present",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+]

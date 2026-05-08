@@ -1,0 +1,47 @@
+{
+  "process_layer_create_process_instance": {
+    "contractKey": "process_layer_create_process_instance",
+    "contractVersion": "1.0.0",
+    "description": "Create a process instance row.",
+    "entity": "core.process_instances",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["process_instance_id", "process_type", "subject_ref", "status", "current_stage", "snapshot_json"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "process_layer_update_process_instance": {
+    "contractKey": "process_layer_update_process_instance",
+    "contractVersion": "1.0.0",
+    "description": "Update a process instance row.",
+    "entity": "core.process_instances",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["process_instance_id", "status", "current_stage", "snapshot_json"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "process_layer_get_process_instance": {
+    "contractKey": "process_layer_get_process_instance",
+    "contractVersion": "1.0.0",
+    "description": "Read a single process instance.",
+    "entity": "core.process_instances",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["process_instance_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+}

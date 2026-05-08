@@ -1,0 +1,273 @@
+[
+  {
+    "contractKey": "implementation_packet_lookup_by_packet_id",
+    "contractVersion": "1.0.0",
+    "description": "Fetch one implementation packet by packet id.",
+    "entity": "implementation_packet",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["packet_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_packets_list",
+    "contractVersion": "1.0.0",
+    "description": "List implementation packets with optional status and packet type filters.",
+    "entity": "implementation_packet",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "filters": ["status", "packet_type"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_packet_items_list_by_packet_id",
+    "contractVersion": "1.0.0",
+    "description": "List packet items for an implementation packet.",
+    "entity": "implementation_packet_item",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["implementation_packet_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_item_dependencies_list_by_packet_id",
+    "contractVersion": "1.0.0",
+    "description": "List item dependencies for an implementation packet.",
+    "entity": "implementation_item_dependency",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["implementation_packet_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_acceptance_checks_list_by_packet_id",
+    "contractVersion": "1.0.0",
+    "description": "List acceptance checks for an implementation packet.",
+    "entity": "implementation_acceptance_check",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["implementation_packet_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_evidence_links_list_by_packet_id",
+    "contractVersion": "1.0.0",
+    "description": "List evidence links for an implementation packet.",
+    "entity": "implementation_evidence_link",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["implementation_packet_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_gate_bundles_list_by_packet_id",
+    "contractVersion": "1.0.0",
+    "description": "List gate bundles for an implementation packet.",
+    "entity": "implementation_gate_bundle",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["implementation_packet_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_gate_decisions_list_by_packet_id",
+    "contractVersion": "1.0.0",
+    "description": "List gate decisions for an implementation packet.",
+    "entity": "implementation_gate_decision",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["implementation_packet_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_item_packet_lookup_detail",
+    "contractVersion": "1.0.0",
+    "description": "Fetch one packet item detail by implementation item id.",
+    "entity": "implementation_packet_item",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["implementation_item_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_item_acceptance_checks_list",
+    "contractVersion": "1.0.0",
+    "description": "List acceptance checks for an implementation item.",
+    "entity": "implementation_acceptance_check",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["implementation_item_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "implementation_evidence_links_for_item",
+    "contractVersion": "1.0.0",
+    "description": "List evidence links for a specific implementation item.",
+    "entity": "implementation_evidence_link",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["implementation_item_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "workflow_run_latest_verification_result",
+    "contractVersion": "1.0.0",
+    "description": "Fetch the latest verification result for a workflow run.",
+    "entity": "workflow_run_verification_result",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["workflow_run_id"],
+    "projectionKey": "workflow_run_latest_verification_result",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "create_implementation_packet",
+    "contractVersion": "1.0.0",
+    "description": "Create an implementation packet and persist its source payload.",
+    "entity": "implementation_packet",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["implementation_packet_id", "packet_id", "packet_type", "packet_version", "title", "status"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "create_implementation_packet_item",
+    "contractVersion": "1.0.0",
+    "description": "Create an implementation packet item.",
+    "entity": "implementation_packet_item",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["implementation_item_id", "implementation_packet_id", "item_key"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "create_implementation_acceptance_check",
+    "contractVersion": "1.0.0",
+    "description": "Create an implementation acceptance check.",
+    "entity": "implementation_acceptance_check",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["acceptance_check_id", "implementation_item_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "create_implementation_item_dependency",
+    "contractVersion": "1.0.0",
+    "description": "Create an implementation item dependency.",
+    "entity": "implementation_item_dependency",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["implementation_item_dependency_id", "implementation_item_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "create_implementation_gate_bundle",
+    "contractVersion": "1.0.0",
+    "description": "Create an implementation gate bundle.",
+    "entity": "implementation_gate_bundle",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["implementation_gate_bundle_id", "implementation_packet_id", "gate_type"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "create_implementation_item_domain_transition",
+    "contractVersion": "1.0.0",
+    "description": "Create an implementation item domain transition.",
+    "entity": "implementation_item_domain_transition",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["implementation_item_domain_transition_id", "implementation_item_id", "implementation_packet_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+]

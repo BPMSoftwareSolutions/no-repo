@@ -1,0 +1,17 @@
+{
+  "process_layer_create_process_instance": {
+    "postgresqlSql": "INSERT INTO core.process_instances (process_instance_id, process_type, subject_ref, status, current_stage, current_owner, snapshot_json) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING process_instance_id, process_type, subject_ref, status, current_stage, current_owner, snapshot_json, opened_at, closed_at, last_updated_at",
+    "sqlServerSql": "INSERT INTO core.process_instances (process_instance_id, process_type, subject_ref, status, current_stage, current_owner, snapshot_json) VALUES (?, ?, ?, ?, ?, ?, ?);",
+    "parameterOrder": ["process_instance_id", "process_type", "subject_ref", "status", "current_stage", "current_owner", "snapshot_json"]
+  },
+  "process_layer_update_process_instance": {
+    "postgresqlSql": "UPDATE core.process_instances SET status = %s, current_stage = %s, current_owner = %s, snapshot_json = %s, closed_at = %s, last_updated_at = CURRENT_TIMESTAMP WHERE process_instance_id = %s",
+    "sqlServerSql": "UPDATE core.process_instances SET status = ?, current_stage = ?, current_owner = ?, snapshot_json = ?, closed_at = ?, last_updated_at = SYSUTCDATETIME() WHERE process_instance_id = ?",
+    "parameterOrder": ["status", "current_stage", "current_owner", "snapshot_json", "closed_at", "process_instance_id"]
+  },
+  "process_layer_get_process_instance": {
+    "postgresqlSql": "SELECT process_instance_id, process_type, subject_ref, status, current_stage, current_owner, snapshot_json, opened_at, closed_at, last_updated_at FROM core.process_instances WHERE process_instance_id = %s LIMIT 1",
+    "sqlServerSql": "SELECT TOP (1) process_instance_id, process_type, subject_ref, status, current_stage, current_owner, snapshot_json, opened_at, closed_at, last_updated_at FROM core.process_instances WHERE process_instance_id = ?",
+    "parameterOrder": ["process_instance_id"]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "contractor_tax_save_run": {
+    "postgresqlSql": "INSERT INTO dbo.contractor_tax_runs (run_id, profile_name, match_rate, inferred, monolith_root, rebuild_root, status, detected_document_types_json, completed_at, payload_json) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, %s) RETURNING run_id",
+    "sqlServerSql": "INSERT INTO dbo.contractor_tax_runs (run_id, profile_name, match_rate, inferred, monolith_root, rebuild_root, status, detected_document_types_json, completed_at, payload_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, SYSUTCDATETIME(), ?);",
+    "parameterOrder": ["run_id", "profile_name", "match_rate", "inferred", "monolith_root", "rebuild_root", "status", "detected_document_types_json", "payload"]
+  },
+  "contractor_tax_apply_review_decision": {
+    "postgresqlSql": "INSERT INTO dbo.contractor_tax_review_actions (review_action_id, operation_id, run_id, contractor_name, document_type, tax_year, previous_status, new_status, reviewed_by, notes, reviewed_at) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING review_action_id",
+    "sqlServerSql": "INSERT INTO dbo.contractor_tax_review_actions (review_action_id, operation_id, run_id, contractor_name, document_type, tax_year, previous_status, new_status, reviewed_by, notes, reviewed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, SYSUTCDATETIME());",
+    "parameterOrder": ["review_action_id", "operation_id", "run_id", "contractor_name", "document_type", "tax_year", "previous_status", "new_status", "reviewed_by", "notes"]
+  },
+  "contractor_tax_load_pending_operations": {
+    "postgresqlSql": "SELECT operation_id, contractor_name, document_type, tax_year, source_path, target_path, status, reason FROM dbo.contractor_tax_rebuild_operations WHERE run_id = %s AND status = 'pending-review' ORDER BY contractor_name, document_type, tax_year",
+    "sqlServerSql": "SELECT operation_id, contractor_name, document_type, tax_year, source_path, target_path, status, reason FROM dbo.contractor_tax_rebuild_operations WHERE run_id = ? AND status = 'pending-review' ORDER BY contractor_name, document_type, tax_year",
+    "parameterOrder": ["run_id", "contractor_name", "document_type", "tax_year"]
+  }
+}

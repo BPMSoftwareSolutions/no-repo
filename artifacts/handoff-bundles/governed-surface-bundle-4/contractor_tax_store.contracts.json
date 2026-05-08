@@ -1,0 +1,47 @@
+{
+  "contractor_tax_save_run": {
+    "contractKey": "contractor_tax_save_run",
+    "contractVersion": "1.0.0",
+    "description": "Persist a contractor tax codification run bundle.",
+    "entity": "dbo.contractor_tax_runs",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["run_id", "payload"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "contractor_tax_apply_review_decision": {
+    "contractKey": "contractor_tax_apply_review_decision",
+    "contractVersion": "1.0.0",
+    "description": "Persist a contractor tax review decision and its matched operations.",
+    "entity": "dbo.contractor_tax_review_actions",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["run_id", "decision"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "contractor_tax_load_pending_operations": {
+    "contractKey": "contractor_tax_load_pending_operations",
+    "contractVersion": "1.0.0",
+    "description": "Load pending contractor tax operations for review.",
+    "entity": "dbo.contractor_tax_rebuild_operations",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "filters": ["run_id", "contractor_name", "document_type", "tax_year"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+}

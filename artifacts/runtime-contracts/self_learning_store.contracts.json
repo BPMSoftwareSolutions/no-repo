@@ -1,0 +1,168 @@
+[
+  {
+    "contractKey": "self_learning_record_upsert",
+    "contractVersion": "1.0.0",
+    "description": "Persist a self-learning record together with its nested evidence and suggested actions.",
+    "entity": "self_learning_record",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["learning_record_id", "record", "created_by"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "self_learning_record_list",
+    "contractVersion": "1.0.0",
+    "description": "List self-learning records with optional workflow, category, readiness, and limit filters.",
+    "entity": "self_learning_record",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "filters": ["workflow_run_id", "learning_category", "promotion_readiness", "limit"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "self_learning_record_get",
+    "contractVersion": "1.0.0",
+    "description": "Fetch one self-learning record by learning record id.",
+    "entity": "self_learning_record",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["learning_record_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "self_learning_posture",
+    "contractVersion": "1.0.0",
+    "description": "Return posture summary counts for the self-learning surface.",
+    "entity": "self_learning_posture",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["workflow_run_id"],
+    "projectionKey": "self_learning_posture",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "self_learning_promotion_candidate_upsert",
+    "contractVersion": "1.0.0",
+    "description": "Persist or update a self-learning promotion candidate and its candidate members.",
+    "entity": "self_learning_promotion_candidate",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["candidate", "created_by"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "self_learning_promotion_candidate_list",
+    "contractVersion": "1.0.0",
+    "description": "List self-learning promotion candidates with optional workflow, category, readiness, and limit filters.",
+    "entity": "self_learning_promotion_candidate",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "filters": ["workflow_run_id", "learning_category", "promotion_readiness", "limit"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "self_learning_promotion_candidate_get",
+    "contractVersion": "1.0.0",
+    "description": "Fetch one self-learning promotion candidate by candidate key.",
+    "entity": "self_learning_promotion_candidate",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["candidate_key"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "self_learning_promotion_flow_upsert",
+    "contractVersion": "1.0.0",
+    "description": "Persist or update a self-learning promotion flow.",
+    "entity": "self_learning_promotion_flow",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["flow", "created_by"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "self_learning_promotion_flow_list",
+    "contractVersion": "1.0.0",
+    "description": "List self-learning promotion flows with optional status, target type, candidate key, and limit filters.",
+    "entity": "self_learning_promotion_flow",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "filters": ["flow_status", "target_type", "candidate_key", "limit"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "self_learning_promotion_flow_get",
+    "contractVersion": "1.0.0",
+    "description": "Fetch one self-learning promotion flow by promotion flow key.",
+    "entity": "self_learning_promotion_flow",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["promotion_flow_key"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "self_learning_promotion_flow_decision_record",
+    "contractVersion": "1.0.0",
+    "description": "Insert a self-learning promotion flow decision and return the recorded decision payload.",
+    "entity": "self_learning_promotion_flow_decision",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["promotion_flow_key", "decision"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+]

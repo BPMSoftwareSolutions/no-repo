@@ -1,0 +1,135 @@
+[
+  {
+    "contractKey": "code_file_inventory_upsert_repository",
+    "contractVersion": "1.0.0",
+    "description": "Upsert code repository metadata and return the repository id.",
+    "entity": "code_repository",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["root_path", "repo_name", "repo_key", "metadata", "sync_include_roots", "sync_exclude_patterns"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_file_inventory_load_repository_sync_policy",
+    "contractVersion": "1.0.0",
+    "description": "Return repository include roots and exclude patterns for code file sync.",
+    "entity": "code_repository",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["code_repository_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_file_inventory_fetch_existing_file_records",
+    "contractVersion": "1.0.0",
+    "description": "Return a file-path keyed map of code files within a repository.",
+    "entity": "code_file",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["code_repository_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_file_inventory_fetch_existing_file_rows_by_path",
+    "contractVersion": "1.0.0",
+    "description": "Return a global file-path keyed map of inventory rows for rehoming logic.",
+    "entity": "code_file",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_file_inventory_batch_update_changed_code_files",
+    "contractVersion": "1.0.0",
+    "description": "Batch-update content, hash, line count, and metadata for changed code files.",
+    "entity": "code_file",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["rows"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_file_inventory_batch_insert_missing_code_files",
+    "contractVersion": "1.0.0",
+    "description": "Batch-insert missing code file inventory rows.",
+    "entity": "code_file",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["rows"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_file_inventory_batch_rehome_existing_code_files",
+    "contractVersion": "1.0.0",
+    "description": "Rehome existing code file rows to the active repository when needed.",
+    "entity": "code_file",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["rows"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_file_inventory_delete_stale_code_files",
+    "contractVersion": "1.0.0",
+    "description": "Delete stale code files and dependent rows for a repository scope.",
+    "entity": "code_file",
+    "operation": "delete",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["code_repository_id", "stale_paths"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_file_inventory_delete_orphaned_code_repositories",
+    "contractVersion": "1.0.0",
+    "description": "Delete repositories that no longer have dependent rows.",
+    "entity": "code_repository",
+    "operation": "delete",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+]

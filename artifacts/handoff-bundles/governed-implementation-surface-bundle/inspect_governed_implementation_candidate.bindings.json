@@ -1,0 +1,32 @@
+{
+  "implementation_packet_has_workflow_link_columns": {
+    "postgresqlSql": "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'decisioning' AND table_name = 'implementation_packets' AND column_name IN ('workflow_id', 'workflow_run_id')) THEN 1 ELSE 0 END AS value",
+    "sqlServerSql": "SELECT CAST(CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'decisioning' AND TABLE_NAME = 'implementation_packets' AND COLUMN_NAME IN ('workflow_id', 'workflow_run_id')) THEN 1 ELSE 0 END AS int) AS value",
+    "parameterOrder": []
+  },
+  "implementation_packet_has_process_link_columns": {
+    "postgresqlSql": "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'decisioning' AND table_name = 'implementation_packets' AND column_name IN ('process_instance_id', 'work_request_id')) THEN 1 ELSE 0 END AS value",
+    "sqlServerSql": "SELECT CAST(CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'decisioning' AND TABLE_NAME = 'implementation_packets' AND COLUMN_NAME IN ('process_instance_id', 'work_request_id')) THEN 1 ELSE 0 END AS int) AS value",
+    "parameterOrder": []
+  },
+  "implementation_evidence_has_inventory_reference_columns": {
+    "postgresqlSql": "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'decisioning' AND table_name = 'implementation_evidence_links' AND column_name IN ('evidence_record_id', 'inventory_evidence_id')) THEN 1 ELSE 0 END AS value",
+    "sqlServerSql": "SELECT CAST(CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'decisioning' AND TABLE_NAME = 'implementation_evidence_links' AND COLUMN_NAME IN ('evidence_record_id', 'inventory_evidence_id')) THEN 1 ELSE 0 END AS int) AS value",
+    "parameterOrder": []
+  },
+  "implementation_evidence_has_workflow_artifact_reference_columns": {
+    "postgresqlSql": "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'decisioning' AND table_name = 'implementation_evidence_links' AND column_name IN ('workflow_artifact_id', 'workflow_artifact_ref')) THEN 1 ELSE 0 END AS value",
+    "sqlServerSql": "SELECT CAST(CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'decisioning' AND TABLE_NAME = 'implementation_evidence_links' AND COLUMN_NAME IN ('workflow_artifact_id', 'workflow_artifact_ref')) THEN 1 ELSE 0 END AS int) AS value",
+    "parameterOrder": []
+  },
+  "workflow_gate_tables_present": {
+    "postgresqlSql": "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'governance' AND table_name IN ('workflow_gate_bundles', 'workflow_gate_decisions')) THEN 1 ELSE 0 END AS value",
+    "sqlServerSql": "SELECT CAST(CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'governance' AND TABLE_NAME IN ('workflow_gate_bundles', 'workflow_gate_decisions')) THEN 1 ELSE 0 END AS int) AS value",
+    "parameterOrder": []
+  },
+  "implementation_gate_tables_present": {
+    "postgresqlSql": "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'governance' AND table_name IN ('implementation_gate_bundles', 'implementation_gate_decisions')) THEN 1 ELSE 0 END AS value",
+    "sqlServerSql": "SELECT CAST(CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'governance' AND TABLE_NAME IN ('implementation_gate_bundles', 'implementation_gate_decisions')) THEN 1 ELSE 0 END AS int) AS value",
+    "parameterOrder": []
+  }
+}

@@ -1,0 +1,77 @@
+[
+  {
+    "contractKey": "codebase_shape_bulk_merge_projects",
+    "contractVersion": "1.0.0",
+    "description": "Bulk merge project rows.",
+    "entity": "code_project",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "many",
+    "requiredFields": ["rows"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "codebase_shape_bulk_merge_files",
+    "contractVersion": "1.0.0",
+    "description": "Bulk merge file rows.",
+    "entity": "code_file",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "many",
+    "requiredFields": ["rows"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "codebase_shape_bulk_merge_symbols",
+    "contractVersion": "1.0.0",
+    "description": "Bulk merge symbol rows.",
+    "entity": "code_symbol",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "many",
+    "requiredFields": ["rows"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "codebase_shape_bulk_update_symbol_parents",
+    "contractVersion": "1.0.0",
+    "description": "Bulk update parent symbol relationships.",
+    "entity": "code_symbol",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["rows"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "codebase_shape_bulk_merge_relationships",
+    "contractVersion": "1.0.0",
+    "description": "Bulk merge relationship rows.",
+    "entity": "code_relationship",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "many",
+    "requiredFields": ["rows"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "codebase_shape_load_repository_sync_policy": {
+    "postgresqlSql": "SELECT sync_include_roots_json, sync_exclude_patterns_json FROM inventory.code_repositories WHERE root_path = %s",
+    "sqlServerSql": "SELECT sync_include_roots_json, sync_exclude_patterns_json FROM inventory.code_repositories WHERE root_path = ?",
+    "parameterOrder": ["root_path"]
+  },
+  "codebase_shape_save_report": {
+    "postgresqlSql": "SELECT 1",
+    "sqlServerSql": "SELECT 1",
+    "parameterOrder": []
+  }
+}

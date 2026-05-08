@@ -1,0 +1,67 @@
+---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.execution_telemetry_event_stream"
+projection_id: "execution-telemetry-stream:{{workflowRunId}}"
+source_truth: "sql"
+primary_question: "What happened most recently in execution telemetry?"
+workspace_mode: "focus"
+active_surfaces: "events,filters,details"
+surface_label: "Execution Telemetry Event Stream"
+---
+
+# Execution Telemetry Event Stream
+
+::focus
+question: "What happened most recently?"
+answer: "{{streamSummary}}"
+status: "{{streamStatus}}"
+::
+
+## Active Filters
+
+::filters
+- key: "executionType"
+  label: "Execution type"
+  value: "{{filterExecutionType}}"
+- key: "domainObjectType"
+  label: "Domain object type"
+  value: "{{filterDomainObjectType}}"
+- key: "status"
+  label: "Status"
+  value: "{{filterStatus}}"
+- key: "timeRange"
+  label: "Time range"
+  value: "{{filterTimeRange}}"
+::
+
+## Events (Newest First)
+
+::table
+columns: "time_et,title,execution_type,domain_object_type,status,summary"
+sort: "time_et:desc"
+rows_source: "eventRows"
+empty_message: "No events match the current filters."
+::
+
+## Selected Event Detail
+
+::panel
+title: "{{selectedEventTitle}}"
+status: "{{selectedEventStatus}}"
+owner: "{{selectedActorLabel}}"
+::
+
+- Time (New York): {{selectedEventTimeEt}}
+- Execution type: {{selectedExecutionType}}
+- Domain object type: {{selectedDomainObjectType}}
+- Session: {{selectedSessionLabel}}
+- Workflow run: {{selectedWorkflowRunLabel}}
+
+{{selectedEventSummary}}
+
+## Metadata (Collapsed by default)
+
+::code
+language: "json"
+content: "{{selectedEventMetadataJson}}"
+::

@@ -1,0 +1,46 @@
+{
+  "apply_migrations_history_ensure": {
+    "contractKey": "apply_migrations_history_ensure",
+    "contractVersion": "1.0.0",
+    "description": "Ensure the migration history schema and table exist before applying migrations.",
+    "entity": "public.__migration_history",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "apply_migrations_history_lookup": {
+    "contractKey": "apply_migrations_history_lookup",
+    "contractVersion": "1.0.0",
+    "description": "Read the recorded migration status for a migration name.",
+    "entity": "public.__migration_history",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["migration_name"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "apply_migrations_history_record_applied": {
+    "contractKey": "apply_migrations_history_record_applied",
+    "contractVersion": "1.0.0",
+    "description": "Record a migration as applied and return the recorded row.",
+    "entity": "public.__migration_history",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["migration_name"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+}

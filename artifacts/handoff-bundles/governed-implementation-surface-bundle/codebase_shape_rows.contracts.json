@@ -1,0 +1,122 @@
+[
+  {
+    "contractKey": "codebase_shape_delete_inventory_graph",
+    "contractVersion": "1.0.0",
+    "description": "Delete the inventory graph for a repository before resync.",
+    "entity": "codebase_inventory_graph",
+    "operation": "delete",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["repository_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "codebase_shape_fetch_file_ids_for_repository",
+    "contractVersion": "1.0.0",
+    "description": "Fetch file ids keyed by normalized file path for a repository.",
+    "entity": "code_file",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["repository_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "codebase_shape_insert_file_if_missing",
+    "contractVersion": "1.0.0",
+    "description": "Insert or update a code file row when a file is missing from inventory.",
+    "entity": "code_file",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["repository_id", "file_path"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "codebase_shape_upsert_project",
+    "contractVersion": "1.0.0",
+    "description": "Insert or update a code project row.",
+    "entity": "code_project",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["repository_id", "project_path"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "codebase_shape_upsert_file",
+    "contractVersion": "1.0.0",
+    "description": "Insert or update a full code file row.",
+    "entity": "code_file",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["repository_id", "file_path"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "codebase_shape_upsert_symbol",
+    "contractVersion": "1.0.0",
+    "description": "Insert or update a symbol row for a code file.",
+    "entity": "code_symbol",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["file_id", "symbol_id", "qualified_name", "symbol_kind"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "codebase_shape_upsert_relationship",
+    "contractVersion": "1.0.0",
+    "description": "Insert or update a code relationship row.",
+    "entity": "code_relationship",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["repository_id", "relationship_type"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "codebase_shape_upsert_repository",
+    "contractVersion": "1.0.0",
+    "description": "Insert or update a code repository row.",
+    "entity": "code_repository",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["root_path", "repo_key"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+]

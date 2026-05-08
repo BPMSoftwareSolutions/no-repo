@@ -1,0 +1,77 @@
+{
+  "codebase_shape_run_record": {
+    "contractKey": "codebase_shape_run_record",
+    "contractVersion": "1.0.0",
+    "description": "Record a codebase shape run for a repository scan.",
+    "entity": "decisioning.codebase_shape_runs",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["codebase_shape_run_id", "code_repository_id", "run_key", "workflow_run_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "codebase_shape_workflow_run_file_link_record": {
+    "contractKey": "codebase_shape_workflow_run_file_link_record",
+    "contractVersion": "1.0.0",
+    "description": "Link workflow runs to files discovered during codebase shape scanning.",
+    "entity": "decisioning.workflow_run_code_files",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["workflow_run_id", "code_repository_id", "code_file_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "codebase_shape_action_observation_record": {
+    "contractKey": "codebase_shape_action_observation_record",
+    "contractVersion": "1.0.0",
+    "description": "Persist a codebase shape action observation.",
+    "entity": "decisioning.codebase_shape_action_observations",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["codebase_shape_run_id", "code_repository_id", "file_path", "action_kind"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "codebase_shape_object_flow_observation_record": {
+    "contractKey": "codebase_shape_object_flow_observation_record",
+    "contractVersion": "1.0.0",
+    "description": "Persist a codebase object flow observation.",
+    "entity": "decisioning.codebase_object_flow_observations",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["codebase_shape_run_id", "code_repository_id", "file_path", "object_kind"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  "codebase_shape_finding_record": {
+    "contractKey": "codebase_shape_finding_record",
+    "contractVersion": "1.0.0",
+    "description": "Persist a codebase shape finding.",
+    "entity": "decisioning.codebase_shape_findings",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["codebase_shape_run_id", "code_repository_id", "finding_type", "severity"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+}

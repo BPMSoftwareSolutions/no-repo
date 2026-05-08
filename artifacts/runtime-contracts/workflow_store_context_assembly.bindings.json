@@ -1,0 +1,17 @@
+{
+  "context_assembly_persistence_available": {
+    "postgresqlSql": "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'decisioning' AND table_name = 'context_assembly_contracts') AS is_available",
+    "sqlServerSql": "SELECT CAST(CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'decisioning' AND TABLE_NAME = 'context_assembly_contracts') THEN 1 ELSE 0 END AS bit) AS is_available",
+    "parameterOrder": []
+  },
+  "context_assembly_contract_upsert": {
+    "postgresqlSql": "SELECT %s::jsonb AS contract, %s::jsonb AS fragments, %s::jsonb AS gate_decisions",
+    "sqlServerSql": "SELECT ? AS contract, ? AS fragments, ? AS gate_decisions",
+    "parameterOrder": ["contract", "fragments", "gate_decisions"]
+  },
+  "context_assembly_latest_projection": {
+    "postgresqlSql": "SELECT * FROM decisioning.context_assembly_projections WHERE workflow_run_id = %s::uuid AND (%s::uuid IS NULL OR step_run_id = %s::uuid) ORDER BY created_at DESC LIMIT 1",
+    "sqlServerSql": "SELECT TOP (1) * FROM decisioning.context_assembly_projections WHERE workflow_run_id = ? AND (? IS NULL OR step_run_id = ?) ORDER BY created_at DESC",
+    "parameterOrder": ["workflow_run_id", "step_run_id"]
+  }
+}

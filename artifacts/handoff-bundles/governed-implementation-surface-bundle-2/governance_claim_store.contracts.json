@@ -1,0 +1,122 @@
+[
+  {
+    "contractKey": "governance_claim_create",
+    "contractVersion": "1.0.0",
+    "description": "Create a governance claim.",
+    "entity": "claim",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["claim_name", "context_session_id", "intent_id", "actor_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "governance_claim_get",
+    "contractVersion": "1.0.0",
+    "description": "Get a governance claim by id.",
+    "entity": "claim",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["claim_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "governance_claim_update_metadata",
+    "contractVersion": "1.0.0",
+    "description": "Update governance claim metadata.",
+    "entity": "claim",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["claim_id", "metadata"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "governance_claim_get_active_for_context_session",
+    "contractVersion": "1.0.0",
+    "description": "Get the active or blocked claim for a context session.",
+    "entity": "claim",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["context_session_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "governance_claim_get_scope_declaration",
+    "contractVersion": "1.0.0",
+    "description": "Get a scope declaration by id.",
+    "entity": "scope_declaration",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["scope_declaration_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "governance_claim_update_status",
+    "contractVersion": "1.0.0",
+    "description": "Update governance claim status.",
+    "entity": "claim",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["claim_id", "status"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "governance_claim_get_signoff",
+    "contractVersion": "1.0.0",
+    "description": "Get a claim signoff by claim id.",
+    "entity": "claim_signoff",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["claim_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "governance_claim_record_signoff",
+    "contractVersion": "1.0.0",
+    "description": "Record or update a claim signoff.",
+    "entity": "claim_signoff",
+    "operation": "upsert",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["claim_id", "context_session_id", "intent_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+]

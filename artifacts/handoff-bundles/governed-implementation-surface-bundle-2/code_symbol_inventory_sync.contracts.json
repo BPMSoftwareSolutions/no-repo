@@ -1,0 +1,91 @@
+[
+  {
+    "contractKey": "code_symbol_inventory_fetch_repositories",
+    "contractVersion": "1.0.0",
+    "description": "List repositories to process for symbol sync.",
+    "entity": "code_repository",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_symbol_inventory_fetch_files_for_repository",
+    "contractVersion": "1.0.0",
+    "description": "List files to process for symbol sync in a repository.",
+    "entity": "code_file",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["repository_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_symbol_inventory_delete_file_symbols",
+    "contractVersion": "1.0.0",
+    "description": "Delete all symbols and dependent observations for a file.",
+    "entity": "code_symbol",
+    "operation": "delete",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["file_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_symbol_inventory_fetch_symbol_ids_for_file",
+    "contractVersion": "1.0.0",
+    "description": "Fetch symbol ids for a file before deletion.",
+    "entity": "code_symbol",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["file_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_symbol_inventory_insert_symbols_batch",
+    "contractVersion": "1.0.0",
+    "description": "Insert a batch of parsed symbols for a file.",
+    "entity": "code_symbol",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "many",
+    "requiredFields": ["file_id", "rows"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "code_symbol_inventory_update_file_metadata",
+    "contractVersion": "1.0.0",
+    "description": "Update the file content metadata after symbol sync.",
+    "entity": "code_file",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["file_id", "sha256", "line_count", "symbol_count", "content_text"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+]

@@ -1,0 +1,197 @@
+[
+  {
+    "contractKey": "operator_cleanup_project_get",
+    "contractVersion": "1.0.0",
+    "description": "Load the project record for an operator cleanup execution.",
+    "entity": "project",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["project_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_workflow_get",
+    "contractVersion": "1.0.0",
+    "description": "Load the workflow record for an operator cleanup execution.",
+    "entity": "workflow",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["workflow_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_workflow_belongs_to_project",
+    "contractVersion": "1.0.0",
+    "description": "Verify that a workflow belongs to a project.",
+    "entity": "workflow_project_link",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["project_id", "workflow_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_runs_list",
+    "contractVersion": "1.0.0",
+    "description": "Load workflow runs selected for cleanup.",
+    "entity": "workflow_run",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["workflow_id", "workflow_run_ids"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_matching_claims_list",
+    "contractVersion": "1.0.0",
+    "description": "Load active claims matching the cleanup scope.",
+    "entity": "claim",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["project_id", "workflow_id", "workflow_run_ids"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_runs_close",
+    "contractVersion": "1.0.0",
+    "description": "Close workflow runs with a terminal cleanup status.",
+    "entity": "workflow_run",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "many",
+    "requiredFields": ["workflow_run_ids", "run_terminal_status"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_workflow_supersede",
+    "contractVersion": "1.0.0",
+    "description": "Mark a workflow as superseded.",
+    "entity": "workflow",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["workflow_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_project_supersede",
+    "contractVersion": "1.0.0",
+    "description": "Mark a project as superseded.",
+    "entity": "project",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["project_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_claims_close",
+    "contractVersion": "1.0.0",
+    "description": "Close active claims for the cleanup scope.",
+    "entity": "claim",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "many",
+    "requiredFields": ["claim_ids"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_completion_verify",
+    "contractVersion": "1.0.0",
+    "description": "Verify whether the cleanup completed with zero active workflow runs.",
+    "entity": "workflow_cleanup_verification",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["project_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_completion_verify_by_slug",
+    "contractVersion": "1.0.0",
+    "description": "Verify completion using a project slug.",
+    "entity": "workflow_cleanup_verification",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["project_slug"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_completion_verify_by_project_id",
+    "contractVersion": "1.0.0",
+    "description": "Verify completion using a project id.",
+    "entity": "workflow_cleanup_verification",
+    "operation": "read_one",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "one",
+    "requiredFields": ["project_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "operator_cleanup_execution_record_insert",
+    "contractVersion": "1.0.0",
+    "description": "Persist the cleanup execution record and its before/after state.",
+    "entity": "cleanup_execution_record",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["project_id", "workflow_id", "reason", "operator_identity"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+]

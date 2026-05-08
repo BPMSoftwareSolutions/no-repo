@@ -1,0 +1,92 @@
+[
+  {
+    "contractKey": "workflow_store_implementation_item_status_update",
+    "contractVersion": "1.0.0",
+    "description": "Update an implementation item status.",
+    "entity": "implementation_item",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["implementation_item_id", "status", "updated_by"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "workflow_store_implementation_item_routing_update",
+    "contractVersion": "1.0.0",
+    "description": "Record an implementation item routing transition and update its routing state.",
+    "entity": "implementation_item_domain_transition",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["implementation_item_id", "transition_id", "target_domain", "current_domain"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "workflow_store_implementation_acceptance_check_status_update",
+    "contractVersion": "1.0.0",
+    "description": "Update an implementation acceptance check status.",
+    "entity": "implementation_acceptance_check",
+    "operation": "update",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "one",
+    "requiredFields": ["implementation_item_id", "acceptance_check_id", "status", "updated_by"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "workflow_store_implementation_evidence_link_create",
+    "contractVersion": "1.0.0",
+    "description": "Create an implementation evidence link.",
+    "entity": "implementation_evidence_link",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["implementation_item_id", "evidence_type", "evidence_ref", "recorded_by"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "workflow_store_implementation_gate_decision_record",
+    "contractVersion": "1.0.0",
+    "description": "Record an implementation gate decision.",
+    "entity": "implementation_gate_decision",
+    "operation": "create",
+    "authorizationScope": "ai-engine.write",
+    "resultCardinality": "mutation",
+    "requiredFields": ["packet_id", "gate_type", "decision", "decided_by"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "high",
+      "sourceOfTruth": "postgresql"
+    }
+  },
+  {
+    "contractKey": "workflow_store_implementation_item_domain_transitions_list",
+    "contractVersion": "1.0.0",
+    "description": "List implementation item domain transitions.",
+    "entity": "implementation_item_domain_transition",
+    "operation": "read_many",
+    "authorizationScope": "ai-engine.read",
+    "resultCardinality": "many",
+    "requiredFields": ["implementation_item_id"],
+    "governance": {
+      "allowRuntimeFallback": false,
+      "auditLevel": "standard",
+      "sourceOfTruth": "postgresql"
+    }
+  }
+]

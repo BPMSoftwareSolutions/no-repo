@@ -1,0 +1,67 @@
+{
+  "operator_cleanup_project_get": {
+    "postgresqlSql": "SELECT pi.process_instance_id::text AS project_id, pi.status, pi.current_stage, pi.current_owner, pi.snapshot_json::text AS snapshot_json, projection.project_slug, projection.project_name FROM core.process_instances AS pi LEFT JOIN ui.project_charter_projection AS projection ON projection.project_id = pi.process_instance_id WHERE pi.process_instance_id = %s::uuid LIMIT 1 FOR UPDATE OF pi",
+    "sqlServerSql": "SELECT TOP (1) pi.process_instance_id AS project_id, pi.status, pi.current_stage, pi.current_owner, pi.snapshot_json, projection.project_slug, projection.project_name FROM core.process_instances AS pi LEFT JOIN ui.project_charter_projection AS projection ON projection.project_id = pi.process_instance_id WHERE pi.process_instance_id = ?",
+    "parameterOrder": ["project_id"]
+  },
+  "operator_cleanup_workflow_get": {
+    "postgresqlSql": "SELECT workflow_id::text AS workflow_id, slug, name, status, version FROM core.workflows WHERE workflow_id = %s::uuid FOR UPDATE",
+    "sqlServerSql": "SELECT TOP (1) workflow_id AS workflow_id, slug, name, status, version FROM core.workflows WHERE workflow_id = ?",
+    "parameterOrder": ["workflow_id"]
+  },
+  "operator_cleanup_workflow_belongs_to_project": {
+    "postgresqlSql": "SELECT 1 FROM ui.project_charter_projection AS projection LEFT JOIN core.workflow_links AS link ON link.parent_workflow_id = projection.workflow_id WHERE projection.project_id = %s::uuid AND (projection.workflow_id = %s::uuid OR link.child_workflow_id = %s::uuid) LIMIT 1",
+    "sqlServerSql": "SELECT TOP (1) 1 FROM ui.project_charter_projection AS projection LEFT JOIN core.workflow_links AS link ON link.parent_workflow_id = projection.workflow_id WHERE projection.project_id = ? AND (projection.workflow_id = ? OR link.child_workflow_id = ?)",
+    "parameterOrder": ["project_id", "workflow_id", "workflow_id"]
+  },
+  "operator_cleanup_runs_list": {
+    "postgresqlSql": "SELECT workflow_run_id::text AS workflow_run_id, workflow_id::text AS workflow_id, status, trigger_type, initiated_by, started_at, completed_at FROM decisioning.workflow_runs WHERE workflow_id = %s::uuid AND workflow_run_id = ANY(%s::uuid[]) FOR UPDATE",
+    "sqlServerSql": "SELECT workflow_run_id, workflow_id, status, trigger_type, initiated_by, started_at, completed_at FROM decisioning.workflow_runs WHERE workflow_id = ? AND workflow_run_id IN (?)",
+    "parameterOrder": ["workflow_id", "workflow_run_ids"]
+  },
+  "operator_cleanup_matching_claims_list": {
+    "postgresqlSql": "SELECT DISTINCT claim.claim_id::text AS claim_id, claim.claim_name, claim.actor_id, claim.claim_status AS status, claim.metadata_json::text AS metadata_json FROM governance.claims AS claim LEFT JOIN governance.agent_context_sessions AS context_session ON context_session.context_session_id = claim.context_session_id LEFT JOIN decisioning.agent_sessions AS agent_session ON agent_session.session_key = context_session.runtime_session_id OR agent_session.agent_session_id::text = context_session.runtime_session_id WHERE claim.claim_status = 'active' AND (claim.metadata_json @> jsonb_build_object('project_id', %s::text) OR claim.metadata_json @> jsonb_build_object('workflow_id', %s::text) OR claim.metadata_json ->> 'workflow_run_id' = ANY(%s::text[]) OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(CASE WHEN jsonb_typeof(claim.metadata_json -> 'workflow_run_ids') = 'array' THEN claim.metadata_json -> 'workflow_run_ids' ELSE '[]'::jsonb END) AS metadata_run(workflow_run_id) WHERE metadata_run.workflow_run_id = ANY(%s::text[])) OR agent_session.workflow_run_id = ANY(%s::uuid[]))",
+    "sqlServerSql": "SELECT DISTINCT claim.claim_id AS claim_id, claim.claim_name, claim.actor_id, claim.claim_status AS status, claim.metadata_json FROM governance.claims AS claim WHERE claim.claim_status = 'active'",
+    "parameterOrder": ["project_id", "workflow_id", "workflow_run_ids", "workflow_run_ids", "workflow_run_ids"]
+  },
+  "operator_cleanup_runs_close": {
+    "postgresqlSql": "UPDATE decisioning.workflow_runs SET status = %s::text, completed_at = COALESCE(completed_at, CURRENT_TIMESTAMP) WHERE workflow_run_id = ANY(%s::uuid[]) AND status IN ('queued', 'running', 'blocked') RETURNING workflow_run_id::text AS workflow_run_id, workflow_id::text AS workflow_id, status, completed_at",
+    "sqlServerSql": "UPDATE decisioning.workflow_runs SET status = ?, completed_at = COALESCE(completed_at, SYSUTCDATETIME()) OUTPUT INSERTED.workflow_run_id, INSERTED.workflow_id, INSERTED.status, INSERTED.completed_at WHERE workflow_run_id IN (?)",
+    "parameterOrder": ["run_terminal_status", "workflow_run_ids"]
+  },
+  "operator_cleanup_workflow_supersede": {
+    "postgresqlSql": "UPDATE core.workflows SET status = 'superseded', updated_at = CURRENT_TIMESTAMP WHERE workflow_id = %s::uuid AND status = 'active' RETURNING workflow_id::text AS workflow_id, slug, name, status, version, updated_at",
+    "sqlServerSql": "UPDATE core.workflows SET status = 'superseded', updated_at = SYSUTCDATETIME() OUTPUT INSERTED.workflow_id, INSERTED.slug, INSERTED.name, INSERTED.status, INSERTED.version, INSERTED.updated_at WHERE workflow_id = ?",
+    "parameterOrder": ["workflow_id"]
+  },
+  "operator_cleanup_project_supersede": {
+    "postgresqlSql": "UPDATE core.process_instances SET status = 'superseded', closed_at = COALESCE(closed_at, CURRENT_TIMESTAMP), last_updated_at = CURRENT_TIMESTAMP WHERE process_instance_id = %s::uuid AND status IN ('open', 'active', 'ping-review', 'blocked') RETURNING process_instance_id::text AS project_id, status, current_stage, current_owner, closed_at, last_updated_at",
+    "sqlServerSql": "UPDATE core.process_instances SET status = 'superseded', closed_at = COALESCE(closed_at, SYSUTCDATETIME()), last_updated_at = SYSUTCDATETIME() OUTPUT INSERTED.process_instance_id AS project_id, INSERTED.status, INSERTED.current_stage, INSERTED.current_owner, INSERTED.closed_at, INSERTED.last_updated_at WHERE process_instance_id = ?",
+    "parameterOrder": ["project_id"]
+  },
+  "operator_cleanup_claims_close": {
+    "postgresqlSql": "UPDATE governance.claims SET claim_status = 'closed', updated_at = CURRENT_TIMESTAMP WHERE claim_id = ANY(%s::uuid[]) AND claim_status = 'active' RETURNING claim_id::text AS claim_id, claim_name, actor_id, claim_status AS status, updated_at",
+    "sqlServerSql": "UPDATE governance.claims SET claim_status = 'closed', updated_at = SYSUTCDATETIME() OUTPUT INSERTED.claim_id, INSERTED.claim_name, INSERTED.actor_id, INSERTED.claim_status AS status, INSERTED.updated_at WHERE claim_id IN (?)",
+    "parameterOrder": ["claim_ids"]
+  },
+  "operator_cleanup_completion_verify": {
+    "postgresqlSql": "SELECT COUNT(*)::integer AS active_workflow_run_count, %s::text AS project_slug FROM decisioning.workflow_runs AS run INNER JOIN core.workflows AS workflow ON workflow.workflow_id = run.workflow_id INNER JOIN ui.project_charter_projection AS projection ON projection.workflow_id = workflow.workflow_id OR projection.workflow_run_id = run.workflow_run_id WHERE projection.project_slug = %s AND run.status IN ('queued', 'running', 'blocked')",
+    "sqlServerSql": "SELECT COUNT(*) AS active_workflow_run_count, ? AS project_slug FROM decisioning.workflow_runs AS run",
+    "parameterOrder": ["project_slug", "project_slug"]
+  },
+  "operator_cleanup_completion_verify_by_slug": {
+    "postgresqlSql": "SELECT COUNT(*)::integer AS active_workflow_run_count, %s::text AS project_slug FROM decisioning.workflow_runs AS run INNER JOIN core.workflows AS workflow ON workflow.workflow_id = run.workflow_id INNER JOIN ui.project_charter_projection AS projection ON projection.workflow_id = workflow.workflow_id OR projection.workflow_run_id = run.workflow_run_id WHERE projection.project_slug = %s AND run.status IN ('queued', 'running', 'blocked')",
+    "sqlServerSql": "SELECT COUNT(*) AS active_workflow_run_count, ? AS project_slug FROM decisioning.workflow_runs AS run",
+    "parameterOrder": ["project_slug", "project_slug"]
+  },
+  "operator_cleanup_completion_verify_by_project_id": {
+    "postgresqlSql": "SELECT COUNT(*)::integer AS active_workflow_run_count, %s::text AS project_id FROM decisioning.workflow_runs AS run INNER JOIN core.workflows AS workflow ON workflow.workflow_id = run.workflow_id INNER JOIN ui.project_charter_projection AS projection ON projection.workflow_id = workflow.workflow_id OR projection.workflow_run_id = run.workflow_run_id WHERE projection.project_id = %s::uuid AND run.status IN ('queued', 'running', 'blocked')",
+    "sqlServerSql": "SELECT COUNT(*) AS active_workflow_run_count, ? AS project_id FROM decisioning.workflow_runs AS run",
+    "parameterOrder": ["project_id", "project_id"]
+  },
+  "operator_cleanup_execution_record_insert": {
+    "postgresqlSql": "INSERT INTO governance.cleanup_execution_records (project_id, workflow_id, requested_workflow_run_ids_json, affected_workflow_run_ids_json, affected_claim_ids_json, before_state_json, after_state_json, reason, operator_identity, completion_status, active_workflow_run_count, verification_json, completed_at) VALUES (%s::uuid, %s::uuid, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb, %s, %s, %s, %s, %s::jsonb, CURRENT_TIMESTAMP) RETURNING cleanup_execution_record_id::text AS cleanup_execution_record_id, completion_status, active_workflow_run_count, created_at, completed_at",
+    "sqlServerSql": "INSERT INTO governance.cleanup_execution_records (project_id, workflow_id, requested_workflow_run_ids_json, affected_workflow_run_ids_json, affected_claim_ids_json, before_state_json, after_state_json, reason, operator_identity, completion_status, active_workflow_run_count, verification_json, completed_at) OUTPUT INSERTED.cleanup_execution_record_id, INSERTED.completion_status, INSERTED.active_workflow_run_count, INSERTED.created_at, INSERTED.completed_at VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, SYSUTCDATETIME())",
+    "parameterOrder": ["project_id", "workflow_id", "requested_workflow_run_ids_json", "affected_workflow_run_ids_json", "affected_claim_ids_json", "before_state_json", "after_state_json", "reason", "operator_identity", "completion_status", "active_workflow_run_count", "verification_json"]
+  }
+}
