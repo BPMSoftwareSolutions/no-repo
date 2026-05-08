@@ -2,258 +2,1079 @@
 
 ## Why this design exists
 
-This workspace currently renders execution telemetry, but the information architecture still over-exposes identifiers and under-exposes operator insight.
+The current cockpit renders execution telemetry but its information architecture
+over-exposes identifiers and under-exposes operator insight. Raw GUIDs lead
+every row, timestamps appear in UTC with no zone label, and the feed is sorted
+oldest-first, forcing operators to scroll past history to see current state.
 
-This design defines:
-- how to extract telemetry directly from SDK methods
-- how to normalize telemetry into a stable taxonomy
-- how to present newest signals first
-- how to display timestamps in America/New_York
-- how to filter by execution type, domain object type, and related criteria
-- how to render operator-facing markdown contracts owned in this repo
+This document specifies:
+
+- exactly what each SDK method returns and which fields matter
+- how to normalize those fields into a stable taxonomy independent of the upstream projection shape
+- how to sort, filter, and display records newest-first
+- how to display timestamps in America/New_York with DST-correct zone labels
+- how to hide identifiers behind semantic labels and expose them only in drill-down
+- how to express iteration rules as declarative contracts rather than imperative loops
+- how to own all display templates in this repo rather than relying on upstream projections
+
+---
 
 ## Design principles
 
-- Newest first: all timelines and feeds default to descending time order.
-- Operator meaning over raw IDs: labels, status, objective, and action should be prominent; GUIDs should be secondary metadata.
-- Declarative iteration: list rendering should be driven by filter and sort contracts, not hard-coded imperative loops.
-- One time standard: all displayed timestamps render in America/New_York.
-- Structured drill-down: summary, stream, and detail views each answer a distinct operator question.
+1. **Newest first.** All timelines and feeds default to descending time order. The most
+   recent signal is always visible without scrolling.
 
-## SDK telemetry extraction surfaces
+2. **Operator meaning over raw IDs.** Status, objective, action, and labels should
+   be prominent. GUIDs and raw keys are secondary metadata, visible only in drill-down.
 
-Primary methods we can use now:
+3. **Declarative iteration.** List rendering is driven by filter-and-sort contracts
+   defined in YAML. No hard-coded imperative sort/filter logic in templates.
 
-- getExecutionTelemetryCurrent()
-  - Current runtime health and counters.
-- listExecutionProcessRuns({ limit, artifactKind, status, since })
-  - Recent execution runs with server-side filtering.
-- getExecutionProcessRun(processRunId)
-  - Full details for a selected run.
-- getWorkflowRunSubstrate(workflowRunId)
-  - Context fragments and recent activity for a workflow run.
-- getSessionPerformanceMetrics({ workflowRunId, sessionId, clientType })
-  - Session-level metrics and status.
-- getLatestMemoryProjection()
-  - Hydration summary and latest status hints.
-- listPromotionCandidates({ workflowRunId, learningCategory, promotionReadiness, limit })
-  - Candidate queue and posture context.
-- listWorkflowCandidates({ limit })
-  - Fallback candidate discovery.
+4. **One time standard.** Every visible timestamp renders in America/New_York with
+   the DST-aware abbreviation (EDT / EST). Relative age may supplement but never
+   replace the absolute timestamp.
+
+5. **Structured drill-down.** Three view layers answer distinct operator questions:
+   - Command deck → Is execution healthy right now?
+   - Event stream → What happened most recently and in what order?
+   - Detail panel → What exactly occurred at this moment?
+
+6. **Owned contracts.** All markdown templates and field bindings live in this repo.
+   Upstream projection shape changes do not break our display layer.
+
+---
+
+## What the SDK can truly provide
+
+The following describes each method, its filter surface, and which fields carry
+operator-meaningful information versus which are pure identifiers.
+
+### getLatestMemoryProjection()
+
+**Purpose.** Real-time snapshot of the agent's current state — the "what is
+happening right now" signal. This is the fastest path to the operator summary
+and recommended next action.
+
+**Returns (meaningful fields):**
+
+```
+summary.session_status         — running | completed | failed | paused
+summary.session_key            — human-readable key (e.g. active-6285-463a-b81e)
+summary.operator_summary       — plain-language status narrative
+summary.next_action            — recommended operator action
+summary.updated_at             — ISO8601 of last session update
+
+workflow_run_id                — links to substrate
+workflow_run_status            — status of the parent run
+latest_turn_completed_at       — when the most recent turn finished
+latest_tool_event_kind         — type of the last tool call (read_file, bash, etc.)
+latest_tool_name               — name of that tool
+
+operator_handoff.operator_summary   — narrative for handoff
+operator_handoff.next_action        — next action at handoff point
+
+execution_context_posture.open_gap_count  — number of unresolved execution gaps
+
+current_objective              — what the agent is currently trying to accomplish
+status_headline                — one-line status label
+projected_at                   — when this projection was generated
+```
+
+**Identifiers (shown only in drill-down):**
+
+```
+summary.agent_session_id       — UUID
+summary.workflow_run_id        — UUID
+```
+
+**Filter surface:** None. Always returns latest. Use stored session ID only to
+correlate with substrate calls.
+
+---
+
+### getExecutionTelemetryCurrent()
+
+**Purpose.** Immediate process health counters. Answers: are processes running,
+failing, or idle?
+
+**Returns (meaningful fields):**
+
+```
+status                         — running | completed | idle | error
+last_observed_at               — ISO8601 of last observation
+active_process_count           — processes currently executing
+failed_process_count           — processes that failed (friction metric)
+recent_process_count           — processes in the recent window
+```
+
+**Filter surface:** None. Returns the current moment only.
+
+**Operator use:** Surface `status`, `active_process_count`, and `failed_process_count`
+in the command deck. Map `failed_process_count` to "Friction" with a severity color.
+
+---
+
+### listExecutionProcessRuns({ limit, artifactKind, status, since })
+
+**Purpose.** The primary server-side–filtered list of execution runs. This is the
+most powerful filter surface in the SDK and is currently underutilized.
+
+**Filter parameters:**
+
+```
+limit          — integer, max rows to return
+artifactKind   — filter to a specific artifact domain
+                 known values: shell_command, git_operation, test_run,
+                               projection_generation, verification_retry,
+                               remote_publish, context_fragment, workflow_turn
+status         — filter by run outcome
+                 known values: running, completed, failed, skipped, retried
+since          — ISO8601 lower bound on start time (server-side time filter)
+```
+
+**Returns per run (meaningful fields):**
+
+```
+process_run_id                 — stable ID for drill-down (not shown in list)
+workflow_run_id                — parent run reference
+artifact_kind                  — domain category of this run
+status                         — outcome
+started_at                     — ISO8601 start time
+completed_at                   — ISO8601 completion time
+duration_ms                    — elapsed time in milliseconds
+objective                      — what this run was trying to do
+summary_text                   — plain-language result narrative
+actor_label                    — which component executed this
+workflow_stage                 — stage name within the workflow
+```
+
+**Normalized to ExecutionRun record (see taxonomy).**
+
+**Operator use:** Feed the event stream. The `since` filter enables time-range
+presets (15m, 1h, 6h, 24h) without client-side date math on the full dataset.
+
+---
+
+### getExecutionProcessRun(processRunId)
+
+**Purpose.** Full details for a selected run. Used in the detail panel only.
+
+**Returns (in addition to list fields):**
+
+```
+command_text                   — the actual shell command or tool call
+output_text                    — stdout / result content
+error_text                     — error output if failed
+retry_count                    — number of retries before this outcome
+retry_reason                   — why retries were triggered
+context_summary                — context state at time of execution
+metadata                       — raw structured metadata (shown collapsed)
+```
+
+---
+
+### getWorkflowRunSubstrate(workflowRunId)
+
+**Purpose.** Full substrate for a workflow run. Returns conversation context history
+and recent activity log. This is the richest single payload in the SDK.
+
+**Returns:**
+
+**telemetry block:**
+
+```
+status                         — current substrate status
+last_observed_at               — ISO8601
+active_process_count           — live count
+failed_process_count           — failure count
+recent_process_count           — activity count
+```
+
+**context_fragments[] (conversation history):**
+
+```
+context_fragment_id            — identifier (drill-down only)
+fragment_type                  — system | user | assistant | tool_result | tool_call
+fragment_role                  — role in conversation turn
+content_text                   — the actual text content
+created_at                     — ISO8601
+metadata.agent_turn_id         — which turn
+metadata.status_headline       — one-line status for that fragment
+metadata.source_ref            — source reference label
+```
+
+**recent_activity[] (execution log):**
+
+```
+agent_turn_id                  — identifier (drill-down only)
+workflow_artifact_id           — identifier (drill-down only)
+tool_name                      — which tool was called
+model_name                     — which model was used
+workflow_stage                 — stage in the execution pipeline
+summary_text                   — what happened in plain language
+created_at                     — ISO8601
+```
+
+**Normalization strategy:**
+- context_fragments → ActivityEvent with domainObjectType = `context_fragment`
+- recent_activity → ActivityEvent with domainObjectType = `workflow_turn`
+- Map fragment_type and tool_name to execution type labels (see event type map)
+
+---
+
+### getSessionPerformanceMetrics({ workflowRunId, sessionId, clientType })
+
+**Purpose.** Session-level status and metadata. Used to resolve the current session
+from a stored ID or workflow run ID.
+
+**Returns per session (meaningful fields):**
+
+```
+agent_session_id               — identifier (drill-down only)
+session_key                    — human-readable key, show this
+session_status                 — running | completed | paused | failed
+workflow_run_id                — parent run
+session_updated_at             — ISO8601 of last activity
+```
+
+**Operator use:** Populate the session section in command deck. Always display
+`session_key` as the primary label; collapse `agent_session_id` to drill-down.
+
+---
+
+### listPromotionCandidates({ workflowRunId, learningCategory, promotionReadiness, limit })
+
+**Purpose.** Candidates queued for promotion. The filter surface enables
+category- and readiness-specific views.
+
+**Filter parameters:**
+
+```
+workflowRunId       — scope to a specific run
+learningCategory    — filter by learning domain
+                      known values: capability, pattern, constraint, heuristic
+promotionReadiness  — filter by readiness level
+                      known values: draft, ready, validated, promoted
+limit               — max rows
+```
+
+**Returns per candidate (meaningful fields):**
+
+```
+candidate_key                  — identifier (drill-down only)
+workflow_run_id                — parent run
+learning_category              — domain category
+promotion_readiness            — readiness level
+target_type                    — what type of object is being promoted
+signal_summary                 — plain-language description of the signal
+created_at                     — ISO8601
+```
+
+**Normalized to PromotionInsight record (see taxonomy).**
+
+---
+
+### listWorkflowCandidates({ limit })
+
+**Purpose.** Fallback when listPromotionCandidates scoped to a run returns nothing.
+Returns workflow-level candidates without run scoping.
+
+**Returns:** Same shape as listPromotionCandidates items.
+
+---
 
 ## Unified telemetry taxonomy
 
-Normalize all upstream payloads into these domain records.
+Normalize all upstream payloads into these canonical records. Templates bind to
+normalized records only — never directly to raw API shapes.
 
 ### ExecutionRun
 
-- runId
-- workflowRunId
-- executionType
-- status
-- startedAtUtc
-- completedAtUtc
-- durationMs
-- artifactKind
-- objective
-- summary
+```
+runId              string   — internal reference, drill-down only
+workflowRunId      string   — parent run, drill-down only
+executionType      string   — normalized type label (see event type map)
+domainObjectType   string   — normalized domain category
+status             string   — running | completed | failed | skipped | retried
+startedAtUtc       string   — ISO8601, store UTC
+completedAtUtc     string   — ISO8601, store UTC (null if running)
+durationMs         number   — elapsed time
+durationLabel      string   — derived: "1.2s", "340ms", "2m 14s"
+objective          string   — what this run was trying to do
+summary            string   — plain-language outcome
+actorLabel         string   — which component (derived from actor_label or tool_name)
+sourceSurface      string   — workflow_stage normalized label
+```
 
 ### SessionSignal
 
-- sessionId
-- sessionKey
-- workflowRunId
-- telemetryStatus
-- heartbeatAtUtc
-- activeProcessCount
-- failedProcessCount
-- recentProcessCount
-- frictionCount
+```
+sessionId          string   — internal reference, drill-down only
+sessionKey         string   — human-readable label, show prominently
+workflowRunId      string   — internal reference, drill-down only
+telemetryStatus    string   — running | completed | idle | error
+heartbeatAtUtc     string   — ISO8601 of last heartbeat
+activeProcessCount number
+failedProcessCount number
+recentProcessCount number
+frictionCount      number   — alias of failedProcessCount for display
+openGapCount       number   — from execution_context_posture
+operatorSummary    string   — narrative from memory projection
+nextAction         string   — recommended next action
+currentObjective   string   — active objective
+```
 
 ### ActivityEvent
 
-- eventId
-- eventType
-- occurredAtUtc
-- executionType
-- domainObjectType
-- status
-- title
-- summary
-- actorLabel
-- sourceSurface
-- workflowRunId
-- sessionId
-- rawMetadata
+```
+eventId            string   — internal reference, drill-down only
+eventType          string   — normalized type label (see event type map)
+domainObjectType   string   — context_fragment | workflow_turn | process_run | session
+occurredAtUtc      string   — ISO8601, store UTC
+status             string   — ok | error | running | skipped
+title              string   — semantic label derived from content (never raw ID)
+summary            string   — content_text or summary_text
+actorLabel         string   — tool_name | model_name | fragment_role
+sourceSurface      string   — workflow_stage or fragment_type
+workflowRunId      string   — drill-down only
+sessionId          string   — drill-down only
+rawMetadata        object   — full upstream record, shown collapsed
+```
 
 ### PromotionInsight
 
-- candidateKey
-- workflowRunId
-- learningCategory
-- promotionReadiness
-- targetType
-- signalSummary
+```
+candidateKey       string   — drill-down only
+workflowRunId      string   — drill-down only
+learningCategory   string   — capability | pattern | constraint | heuristic
+promotionReadiness string   — draft | ready | validated | promoted
+targetType         string   — what is being promoted
+signalSummary      string   — plain-language signal description
+occurredAtUtc      string   — ISO8601 created_at
+```
+
+---
+
+## Event type map
+
+Map upstream raw type identifiers to operator-readable labels.
+The label is what appears in the stream. The raw type goes into drill-down metadata.
+
+| Raw type / tool name                | Execution type label       | Domain object type     |
+|-------------------------------------|----------------------------|------------------------|
+| monitor_heartbeat                   | Heartbeat                  | session                |
+| process_started                     | Process started            | process_run            |
+| process_completed                   | Process completed          | process_run            |
+| shell_command_observed              | Shell command              | process_run            |
+| git_operation_observed              | Git operation              | process_run            |
+| test_run_observed                   | Test run                   | process_run            |
+| projection_generation_observed      | Projection generated       | workflow_turn          |
+| verification_retry_observed         | Verification retry         | process_run            |
+| remote_publish_failed               | Remote publish failed      | process_run            |
+| execution_telemetry_current         | Telemetry snapshot         | session                |
+| context_fragment / system           | System context             | context_fragment       |
+| context_fragment / user             | User turn                  | context_fragment       |
+| context_fragment / assistant        | Assistant turn             | context_fragment       |
+| context_fragment / tool_call        | Tool call                  | context_fragment       |
+| context_fragment / tool_result      | Tool result                | context_fragment       |
+| recent_activity (any tool_name)     | Tool: {tool_name}          | workflow_turn          |
+| read_file                           | File read                  | workflow_turn          |
+| bash                                | Shell execution            | workflow_turn          |
+| write_to_file                       | File write                 | workflow_turn          |
+| search_files                        | File search                | workflow_turn          |
+| computer_use                        | Computer use               | workflow_turn          |
+
+For any unrecognized type, derive label as: capitalize first word, replace underscores with spaces.
+
+---
 
 ## Display model
 
-### 1) Command deck (top summary)
+### Layer 1 — Command deck (top summary)
 
-Primary operator answers:
-- Is execution healthy now?
-- What changed most recently?
-- Where should I look next?
+**Primary operator question:** Is execution healthy right now?
 
-Cards:
-- Runtime status
-- Last heartbeat (New York time)
-- Active and failed process counts
-- Friction count
-- Promotion candidates
-- Recommended next action
+**Layout:** Two rows of metrics, then a next-action panel.
 
-### 2) Recent execution stream (newest first)
+**Row 1 — Runtime health:**
 
-Default behavior:
-- Sort descending by occurredAtUtc.
-- Page size 30, with Load more.
-- Timestamp format: MMM dd, yyyy, hh:mm:ss a z (America/New_York).
+| Label               | Source field                                      | Display rule                          |
+|---------------------|---------------------------------------------------|---------------------------------------|
+| Status              | sessionSignal.telemetryStatus                     | Status badge with color               |
+| Last heartbeat      | sessionSignal.heartbeatAtUtc                      | ET timestamp + relative age           |
+| Active processes    | sessionSignal.activeProcessCount                  | Number, green if > 0                  |
+| Friction            | sessionSignal.frictionCount                       | Number, red if > 0                    |
 
-Each row should prioritize meaning:
-- Title: semantic label (not raw GUID)
-- Subtitle: summary text
-- Chips: execution type, domain object type, status
-- Right rail: NY timestamp
-- Optional expandable metadata (includes IDs)
+**Row 2 — Execution posture:**
 
-### 3) Focus detail panel
+| Label               | Source field                                      | Display rule                          |
+|---------------------|---------------------------------------------------|---------------------------------------|
+| Open gaps           | sessionSignal.openGapCount                        | Number, amber if > 0                  |
+| Promotion queue     | count of promotionInsights                        | Number                                |
+| Current objective   | sessionSignal.currentObjective                    | Truncated text, max 120 chars         |
+| Session             | sessionSignal.sessionKey                          | Human key label (not UUID)            |
 
-For selected row:
-- human summary
-- objective and workflow context
-- domain object summary
-- linked session and run
-- raw metadata in collapsible section
+**Next action panel:**
 
-## Filtering model
+- Title: sessionSignal.nextAction
+- Body: sessionSignal.operatorSummary
+- Status badge: sessionSignal.telemetryStatus
 
-Mandatory filters:
-- executionType
-- domainObjectType
-- status
-- workflowRunId
-- sessionId
-- timeRange
+---
 
-Optional filters:
-- monitorId
-- actorLabel
-- artifactKind
-- learningCategory
-- promotionReadiness
+### Layer 2 — Event stream (newest first)
 
-Filter UX:
-- multi-select chips for categorical fields
-- quick presets for time range: 15m, 1h, 6h, 24h
-- clear all and save view
+**Primary operator question:** What happened most recently, and in what order?
 
-## Time standard
+**Default sort:** descending by occurredAtUtc.
 
-- Store and compare in UTC.
-- Display in America/New_York.
-- Include zone abbreviation in every visible timestamp.
-- Relative age can be shown, but never without absolute timestamp.
+**Default page size:** 30 rows. "Load more" appends next 30.
 
-## Declarative iterator contract
+**Columns:**
 
-The UI should consume a declarative query contract before rendering lists.
+| Column              | Source field                  | Width    | Notes                               |
+|---------------------|-------------------------------|----------|-------------------------------------|
+| Time (ET)           | occurredAtUtc → ET            | 180px    | Full timestamp, no truncation       |
+| Type                | eventType label               | chip     | Color-coded by domain object type   |
+| Domain              | domainObjectType label        | chip     | Secondary type chip                 |
+| Status              | status badge                  | 80px     | Color by outcome                    |
+| Title               | title (semantic)              | flex     | Never a raw ID                      |
+| Summary             | summary (truncated 200 chars) | flex     | Muted, expandable                   |
 
-Example contract:
+**Row interaction:** Click row → expand detail panel inline or push to detail view.
+
+**Empty state:** "No execution telemetry events were found for this scope and filter."
+
+---
+
+### Layer 3 — Detail panel
+
+**Primary operator question:** What exactly happened at this moment?
+
+**Sections:**
+
+1. **Header**
+   - Title (semantic)
+   - Status badge
+   - Time (ET, full format)
+   - Type chip + Domain chip
+
+2. **Narrative**
+   - summary (full text, not truncated)
+   - objective (from ExecutionRun.objective if available)
+
+3. **Context**
+   - Actor: actorLabel
+   - Surface: sourceSurface
+   - Session: sessionKey (human label)
+   - Workflow run: workflowRunId last 8 chars + "..." prefix to indicate truncation
+
+4. **Duration** (if ExecutionRun)
+   - durationLabel
+   - retry count if > 0
+
+5. **Raw metadata** (collapsed `<details>` section)
+   - Full upstream record as formatted JSON
+   - Includes all IDs, raw field names
+
+---
+
+## Filter model
+
+### Server-side filters (pass to SDK methods)
+
+These filters are sent to the server. Use them before normalizing.
+
+| Filter key       | SDK parameter          | Method                     | Values                                      |
+|------------------|------------------------|----------------------------|---------------------------------------------|
+| artifactKind     | artifactKind           | listExecutionProcessRuns   | shell_command, git_operation, test_run,     |
+|                  |                        |                            | projection_generation, verification_retry,  |
+|                  |                        |                            | remote_publish, context_fragment,           |
+|                  |                        |                            | workflow_turn                               |
+| status           | status                 | listExecutionProcessRuns   | running, completed, failed, skipped, retried|
+| since            | since (ISO8601)        | listExecutionProcessRuns   | derived from timeRange preset               |
+| learningCategory | learningCategory       | listPromotionCandidates    | capability, pattern, constraint, heuristic  |
+| promotionReady   | promotionReadiness     | listPromotionCandidates    | draft, ready, validated, promoted           |
+
+### Client-side filters (applied after normalization)
+
+| Filter key       | Normalized field       | Type              |
+|------------------|------------------------|-------------------|
+| executionType    | eventType              | multi-select      |
+| domainObjectType | domainObjectType       | multi-select      |
+| status           | status                 | multi-select      |
+| actorLabel       | actorLabel             | multi-select      |
+| workflowRunId    | workflowRunId          | single-select     |
+| sessionId        | sessionId              | single-select     |
+| timeRange        | occurredAtUtc          | preset select     |
+
+### Time range presets
+
+| Label   | since value                          |
+|---------|--------------------------------------|
+| 15m     | now − 15 minutes                     |
+| 1h      | now − 1 hour                         |
+| 6h      | now − 6 hours                        |
+| 24h     | now − 24 hours                       |
+| All     | no since filter (server default)     |
+
+### Filter UX
+
+- Active filters shown as dismissible chips below the filter bar.
+- Multi-select dropdowns for categorical fields.
+- Time range as a button group (15m · 1h · 6h · 24h · All).
+- "Clear all" resets all filters to defaults.
+- Filter state persisted in URL params or localStorage.
+
+---
+
+## Declarative iterator contracts
+
+The stream view consumes a declarative query contract before rendering any list.
+This keeps sort and filter rules explicit, testable, and separate from template markup.
+
+### Contract: execution.telemetry.stream.v1
 
 ```yaml
 contract: execution.telemetry.stream.v1
+description: "Main execution event stream — newest first with optional filters"
+
 source:
-  method: getWorkflowRunSubstrate
-  args:
-    workflowRunId: ${workflowRunId}
+  primary:
+    method: listExecutionProcessRuns
+    args:
+      limit: 30
+      artifactKind: ${filters.artifactKind}   # optional, omit if unset
+      status: ${filters.status}               # optional, omit if unset
+      since: ${filters.since}                 # derived from timeRange preset
+  supplement:
+    - method: getWorkflowRunSubstrate
+      args:
+        workflowRunId: ${workflowRunId}
+      extract:
+        - path: context_fragments
+          normalize: ActivityEvent
+          domainObjectType: context_fragment
+        - path: recent_activity
+          normalize: ActivityEvent
+          domainObjectType: workflow_turn
+
 normalize: ActivityEvent
-filters:
+
+client_filters:
   - field: executionType
     operator: in
-    value: ${filters.executionType}
+    value: ${filters.executionType}   # empty array = no filter
   - field: domainObjectType
     operator: in
     value: ${filters.domainObjectType}
-  - field: status
+  - field: actorLabel
     operator: in
-    value: ${filters.status}
+    value: ${filters.actorLabel}
+
 sort:
   - field: occurredAtUtc
     direction: desc
+
 paginate:
   size: 30
+  strategy: append   # Load more appends, does not replace
+
 render:
+  emptyMessage: "No execution telemetry events were found for this scope."
   timestamp:
+    field: occurredAtUtc
     timezone: America/New_York
-    format: MMM dd, yyyy, hh:mm:ss a z
+    format: "MMM dd, yyyy hh:mm:ss a z"
+  titleField: title
+  summaryField: summary
+  typeChipField: eventType
+  domainChipField: domainObjectType
+  statusField: status
+  idFields:
+    - eventId
+    - workflowRunId
+    - sessionId
 ```
 
-This keeps iteration rules explicit and testable.
+### Contract: execution.telemetry.promotions.v1
 
-## In-repo markdown contracts
+```yaml
+contract: execution.telemetry.promotions.v1
+description: "Promotion candidates for the current workflow run"
 
-We should own telemetry markdown templates here instead of relying on upstream projections.
+source:
+  primary:
+    method: listPromotionCandidates
+    args:
+      workflowRunId: ${workflowRunId}
+      learningCategory: ${filters.learningCategory}
+      promotionReadiness: ${filters.promotionReadiness}
+      limit: 25
+  fallback:
+    method: listWorkflowCandidates
+    args:
+      limit: 25
+    condition: primary_empty
 
-Proposed templates:
-- fixtures/templates/operator.execution_telemetry_dashboard.md.tmpl
-- fixtures/templates/operator.execution_telemetry_event_stream.md.tmpl
+normalize: PromotionInsight
 
-These templates should consume normalized records and avoid exposing raw identifiers by default.
+sort:
+  - field: occurredAtUtc
+    direction: desc
 
-## Content rules to avoid GUID noise
+render:
+  emptyMessage: "No promotion candidates found for this workflow run."
+  timestamp:
+    field: occurredAtUtc
+    timezone: America/New_York
+    format: "MMM dd, yyyy hh:mm:ss a z"
+  titleField: signalSummary
+  typeChipField: learningCategory
+  statusField: promotionReadiness
+```
 
-- Never lead with IDs in titles.
-- IDs are only shown in a metadata/details section.
-- Surface labels should be human terms: Run status, Session state, Last heartbeat, Next action.
-- If no human label exists, derive one from event type map.
+---
 
-## Event type map (starter)
+## In-repo markdown template specifications
 
-- monitor_heartbeat -> Heartbeat
-- process_started -> Process started
-- process_completed -> Process completed
-- shell_command_observed -> Shell command observed
-- git_operation_observed -> Git operation observed
-- test_run_observed -> Test run observed
-- projection_generation_observed -> Projection generated
-- verification_retry_observed -> Verification retry
-- remote_publish_failed -> Remote publish failed
+The following specifies the content and field bindings for each owned template.
+Templates live at `fixtures/templates/`. They bind only to normalized record fields.
+
+### operator.execution_telemetry_dashboard.md.tmpl
+
+```markdown
+---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.execution_telemetry_dashboard"
+projection_id: "execution-telemetry:{{workflowRunId}}"
+source_truth: "sdk"
+primary_question: "What is the execution substrate doing right now?"
+workspace_mode: "focus"
+active_surfaces: "execution,session,events,promotions"
+surface_label: "Execution Telemetry Dashboard"
+iterator_contract: "execution.telemetry.stream.v1"
+---
+
+# Execution Substrate Cockpit
+
+::focus
+question: "What is the execution substrate doing right now?"
+answer: "{{sessionSignal.operatorSummary}}"
+status: "{{sessionSignal.telemetryStatus}}"
+::
+
+## Runtime Health
+
+::metric_row
+items:
+- label: "Status"
+  value: "{{sessionSignal.telemetryStatus}}"
+- label: "Last heartbeat (New York)"
+  value: "{{sessionSignal.heartbeatAtEt}}"
+- label: "Active processes"
+  value: "{{sessionSignal.activeProcessCount}}"
+- label: "Friction"
+  value: "{{sessionSignal.frictionCount}}"
+::
+
+## Execution Posture
+
+::metric_row
+items:
+- label: "Open gaps"
+  value: "{{sessionSignal.openGapCount}}"
+- label: "Promotion queue"
+  value: "{{promotionInsights.count}}"
+- label: "Session"
+  value: "{{sessionSignal.sessionKey}}"
+- label: "Objective"
+  value: "{{sessionSignal.currentObjective}}"
+::
+
+## Recommended Next Action
+
+::panel
+title: "{{sessionSignal.nextAction}}"
+status: "{{sessionSignal.telemetryStatus}}"
+summary: "{{sessionSignal.operatorSummary}}"
+::
+
+## Recent Execution Events
+
+::table
+columns: "time_et,execution_type,domain_object_type,status,title,summary"
+sort: "time_et:desc"
+rows_source: "executionEventRows"
+empty_message: "No execution telemetry events were found for this scope."
+::
+
+## Context Links
+
+::nav
+- label: "Full Event Stream"
+  target: "operator.execution_telemetry_event_stream"
+  projection_type: "operator.execution_telemetry_event_stream"
+- label: "Session Metrics"
+  target: "operator.agent_session"
+  projection_type: "operator.agent_session"
+- label: "Promotions"
+  target: "operator.promotions"
+  projection_type: "operator.promotions"
+::
+```
+
+### operator.execution_telemetry_event_stream.md.tmpl
+
+```markdown
+---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.execution_telemetry_event_stream"
+projection_id: "execution-telemetry-stream:{{workflowRunId}}"
+source_truth: "sdk"
+primary_question: "What happened most recently in execution?"
+workspace_mode: "focus"
+active_surfaces: "events,filters,detail"
+surface_label: "Execution Event Stream"
+iterator_contract: "execution.telemetry.stream.v1"
+---
+
+# Execution Event Stream
+
+::focus
+question: "What happened most recently in execution?"
+answer: "{{streamSummary}}"
+status: "{{streamStatus}}"
+::
+
+## Filters
+
+::filters
+- key: "executionType"
+  label: "Execution type"
+  value: "{{filters.executionType}}"
+  multiSelect: true
+- key: "domainObjectType"
+  label: "Domain"
+  value: "{{filters.domainObjectType}}"
+  multiSelect: true
+- key: "status"
+  label: "Status"
+  value: "{{filters.status}}"
+  multiSelect: true
+- key: "timeRange"
+  label: "Time range"
+  value: "{{filters.timeRange}}"
+  options: ["15m", "1h", "6h", "24h", "All"]
+::
+
+## Events (Newest First)
+
+::table
+columns: "time_et,title,execution_type,domain_object_type,status,summary"
+sort: "time_et:desc"
+rows_source: "eventRows"
+page_size: 30
+load_more: true
+empty_message: "No events match the current filters."
+::
+
+## Selected Event
+
+::panel
+title: "{{selectedEvent.title}}"
+status: "{{selectedEvent.status}}"
+summary: "{{selectedEvent.summary}}"
+::
+
+- Time (New York): {{selectedEvent.occurredAtEt}}
+- Execution type: {{selectedEvent.executionType}}
+- Domain: {{selectedEvent.domainObjectType}}
+- Actor: {{selectedEvent.actorLabel}}
+- Surface: {{selectedEvent.sourceSurface}}
+- Session: {{selectedEvent.sessionKey}}
+
+{{#if selectedEvent.durationLabel}}
+- Duration: {{selectedEvent.durationLabel}}
+{{/if}}
+
+{{#if selectedEvent.retryCount}}
+- Retries: {{selectedEvent.retryCount}}
+{{/if}}
+
+<details>
+<summary>Raw metadata</summary>
+
+::code
+language: "json"
+content: "{{selectedEvent.rawMetadataJson}}"
+::
+
+</details>
+```
+
+---
+
+## GUID hiding rules
+
+### What is never shown in list or summary views
+
+- agent_session_id (UUID)
+- workflow_run_id (UUID)
+- process_run_id (UUID)
+- context_fragment_id (UUID)
+- agent_turn_id (UUID)
+- workflow_artifact_id (UUID)
+- candidate_key (UUID)
+
+### What is shown instead
+
+| Hidden field         | Shown instead                                          |
+|----------------------|--------------------------------------------------------|
+| agent_session_id     | session_key (e.g. active-6285-463a-b81e)               |
+| workflow_run_id      | Last 8 chars prefixed with "Run …" in detail           |
+| process_run_id       | derived title from objective or artifact_kind label    |
+| context_fragment_id  | fragment_role + created_at time                        |
+| agent_turn_id        | "Turn" + tool_name + created_at time                  |
+| candidate_key        | learning_category + promotion_readiness label          |
+
+### Where IDs are exposed
+
+Only in the raw metadata `<details>` section at the bottom of the detail panel.
+Formatted as JSON, labeled clearly as "Raw metadata."
+
+---
+
+## Time standard
+
+- **Store:** UTC in all normalized records (occurredAtUtc, heartbeatAtUtc, etc.)
+- **Compare:** UTC for sort and filter operations
+- **Display:** America/New_York with DST-aware abbreviation from Intl.DateTimeFormat
+- **Format:** `MMM dd, yyyy hh:mm:ss a z` — example: `May 08, 2026 02:14:33 PM EDT`
+- **Relative age:** Allowed as supplement (e.g. "14m ago"), but absolute timestamp
+  must always be visible alongside it
+- **Never:** display a raw ISO8601 string or UTC timestamp on a primary surface
+
+### Formatter reference
+
+```javascript
+const NEW_YORK = 'America/New_York';
+
+function formatEt(isoString) {
+  const ms = Date.parse(String(isoString ?? ''));
+  if (!Number.isFinite(ms)) return '—';
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: NEW_YORK,
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+    timeZoneName: 'short',
+  }).format(ms);
+}
+```
+
+---
+
+## Normalization layer specification
+
+### Normalizing ActivityEvent from context_fragments
+
+```javascript
+function normalizeContextFragment(fragment) {
+  const role = cleanText(fragment.fragment_role || fragment.fragment_type || '');
+  const typeKey = `context_fragment/${role}` || 'context_fragment';
+  return {
+    eventId: fragment.context_fragment_id || fragment.metadata?.agent_turn_id || '',
+    eventType: eventTypeLabel(typeKey),
+    domainObjectType: 'context_fragment',
+    occurredAtUtc: fragment.created_at || '',
+    status: 'ok',
+    title: deriveFragmentTitle(fragment),
+    summary: fragment.content_text || fragment.metadata?.status_headline || '',
+    actorLabel: role || 'system',
+    sourceSurface: fragment.fragment_type || '',
+    workflowRunId: '',
+    sessionId: fragment.metadata?.agent_turn_id || '',
+    rawMetadata: fragment,
+  };
+}
+
+function deriveFragmentTitle(fragment) {
+  const role = cleanText(fragment.fragment_role || '');
+  const headline = cleanText(fragment.metadata?.status_headline || '');
+  const source = cleanText(fragment.metadata?.source_ref || '');
+  if (headline) return headline;
+  if (source) return source;
+  if (role) return `${capitalize(role)} turn`;
+  return 'Context fragment';
+}
+```
+
+### Normalizing ActivityEvent from recent_activity
+
+```javascript
+function normalizeRecentActivity(entry) {
+  const tool = cleanText(entry.tool_name || '');
+  return {
+    eventId: entry.agent_turn_id || entry.workflow_artifact_id || '',
+    eventType: eventTypeLabel(tool) || 'workflow_turn',
+    domainObjectType: 'workflow_turn',
+    occurredAtUtc: entry.created_at || '',
+    status: 'ok',
+    title: deriveActivityTitle(entry),
+    summary: entry.summary_text || '',
+    actorLabel: tool || entry.model_name || 'agent',
+    sourceSurface: entry.workflow_stage || '',
+    workflowRunId: '',
+    sessionId: '',
+    rawMetadata: entry,
+  };
+}
+
+function deriveActivityTitle(entry) {
+  const tool = cleanText(entry.tool_name || '');
+  const stage = cleanText(entry.workflow_stage || '');
+  const summary = cleanText(entry.summary_text || '');
+  if (tool) return eventTypeLabel(tool) || tool;
+  if (stage) return capitalize(stage.replace(/_/g, ' '));
+  if (summary) return summary.slice(0, 80);
+  return 'Activity';
+}
+```
+
+### Normalizing SessionSignal
+
+```javascript
+function normalizeSessionSignal({ projection, session, telemetry }) {
+  return {
+    sessionId: cleanText(session?.agent_session_id || projection?.summary?.agent_session_id || ''),
+    sessionKey: cleanText(session?.session_key || projection?.summary?.session_key || ''),
+    workflowRunId: cleanText(session?.workflow_run_id || projection?.workflow_run_id || ''),
+    telemetryStatus: cleanText(telemetry?.status || session?.session_status || projection?.summary?.session_status || 'unknown'),
+    heartbeatAtUtc: cleanText(telemetry?.last_observed_at || projection?.latest_turn_completed_at || session?.session_updated_at || ''),
+    activeProcessCount: numberOrZero(telemetry?.active_process_count),
+    failedProcessCount: numberOrZero(telemetry?.failed_process_count),
+    recentProcessCount: numberOrZero(telemetry?.recent_process_count),
+    frictionCount: numberOrZero(telemetry?.failed_process_count),
+    openGapCount: numberOrZero(projection?.execution_context_posture?.open_gap_count),
+    operatorSummary: cleanText(projection?.operator_handoff?.operator_summary || projection?.operator_summary || projection?.status_headline || ''),
+    nextAction: cleanText(projection?.operator_handoff?.next_action || projection?.next_action || projection?.summary?.next_action || ''),
+    currentObjective: cleanText(projection?.current_objective || ''),
+  };
+}
+```
+
+---
+
+## Current implementation gaps
+
+The following specific gaps exist between the current cockpit and this design.
+
+### Ordering
+
+- **Gap:** `buildSummary()` sorts events ascending then takes `at(-1)`.
+  The feed in `renderEventFeed()` does sort descending, but the summary strip
+  derives its "latest event" using an ascending intermediate sort, which is
+  confusing and fragile.
+- **Fix:** Remove the intermediate ascending sort. Always sort descending from the
+  start. Latest event is always `events[0]` after descending sort.
+
+### GUID exposure
+
+- **Gap:** `renderEventFeed()` renders `event.id` inline in `<strong>` alongside
+  the type. The ID is a raw fragment UUID or timestamp string.
+- **Fix:** Replace `event.id` in the list row with the derived semantic `title`
+  from normalized ActivityEvent. Move the raw ID to the detail panel only.
+
+### listExecutionProcessRuns unused
+
+- **Gap:** `listExecutionProcessRuns` is declared in the design but never called
+  in `execution-telemetry.js`. The event feed is built entirely from substrate
+  fragments and raw telemetry, missing the richer process run records.
+- **Fix:** Call `listExecutionProcessRuns({ limit: 30, since: derivedSince })`
+  alongside the substrate fetch. Merge and normalize results using ActivityEvent.
+  The `since` parameter enables server-side time-range filtering.
+
+### Timestamp inconsistency
+
+- **Gap:** `renderEventFeed()` calls `formatTimestampEt()` correctly, but the
+  summary strip's heartbeat label uses `formatTimestampEt()` only for the
+  heartbeat, while `renderSessionDetails()` uses it for `observed_at`. The
+  raw `sessionId` and `workflowRunId` are shown plainly in session details.
+- **Fix:** Session details should show `sessionKey` as the primary label, not
+  the raw UUID. WorkflowRunId should show as "Run …{last8}" in detail.
+
+### No filter controls
+
+- **Gap:** The current cockpit has no filter UI. All events from all types
+  are shown simultaneously with no way to narrow to shell commands, git ops, etc.
+- **Fix:** Implement filter bar per the filter model spec. Use `listExecutionProcessRuns`
+  server-side filters first, then client-side normalize remaining multi-select filters.
+
+---
 
 ## Phased implementation plan
 
-1. Data contract phase
-- implement normalization layer for ExecutionRun, SessionSignal, ActivityEvent, PromotionInsight
-- enforce descending time sort at contract level
+### Phase 1 — Normalization layer
 
-2. Presentation phase
-- update telemetry page to render stream newest-first
-- apply NY timestamp formatter consistently
-- add filter panel and active filter chips
+- Implement `normalizeContextFragment(fragment) → ActivityEvent`
+- Implement `normalizeRecentActivity(entry) → ActivityEvent`
+- Implement `normalizeSessionSignal({ projection, session, telemetry }) → SessionSignal`
+- Implement `eventTypeLabel(rawType) → string` using the event type map
+- Implement `deriveFragmentTitle(fragment) → string`
+- Implement `deriveActivityTitle(entry) → string`
+- All normalization functions should be pure (no side effects, no DOM access)
+- Add `listExecutionProcessRuns` call to the refresh cycle
 
-3. Markdown contract phase
-- render dashboard and event stream using local templates
-- add test fixtures for low/no/high telemetry scenarios
+### Phase 2 — Display order and GUID removal
 
-4. Validation phase
-- verify ordering and filtering behavior
-- verify timezone rendering and DST correctness
-- verify fallback states and error handling
+- Change `renderEventFeed()` to consume normalized ActivityEvent records
+- Remove `event.id` from list row content — move to detail only
+- Use `event.title` (semantic) as the primary list label
+- Confirm descending sort at the normalization stage, not in the render function
+- Confirm `sessionKey` shown in command deck instead of `sessionId` UUID
 
-## Acceptance checks
+### Phase 3 — Filter panel
 
-- Stream shows newest event first by default.
-- All displayed timestamps are in America/New_York.
-- Filters support execution type and domain object type.
-- Primary surface is human-readable and action-oriented.
-- IDs are available but de-emphasized.
-- Contracts and templates are owned in this repo.
+- Add time range button group (15m · 1h · 6h · 24h · All)
+- Wire `since` parameter to `listExecutionProcessRuns` based on selected range
+- Add execution type multi-select (populated from known event type labels)
+- Add domain object type multi-select
+- Show active filters as dismissible chips
+- Persist filter state to localStorage
+
+### Phase 4 — Template ownership
+
+- Update `operator.execution_telemetry_dashboard.md.tmpl` to bind to
+  normalized SessionSignal and ActivityEvent fields
+- Update `operator.execution_telemetry_event_stream.md.tmpl` to include
+  filter block bindings and full column spec
+- Validate templates render correctly against test fixture data
+
+### Phase 5 — Validation
+
+- Verify descending order: newest event is always row 1
+- Verify ET timestamps: run through DST boundary (March and November dates)
+- Verify GUID suppression: no UUID visible in list or command deck
+- Verify filter behavior: time range narrows results, clear resets
+- Verify empty states: no data, no filter match, API error each render cleanly
+
+---
+
+## Acceptance criteria
+
+- [ ] Stream shows newest event first by default with no user interaction
+- [ ] All displayed timestamps are in America/New_York with EDT/EST abbreviation
+- [ ] No UUID or raw GUID appears in any list row, metric, or summary label
+- [ ] Session is identified by human session_key, not agent_session_id
+- [ ] Execution type filter narrows the event stream without page reload
+- [ ] Domain object type filter narrows the event stream without page reload
+- [ ] Time range preset (15m, 1h, 6h, 24h) passes `since` to listExecutionProcessRuns
+- [ ] listExecutionProcessRuns is called in every refresh cycle
+- [ ] Raw IDs are available in the detail panel's "Raw metadata" section
+- [ ] Normalization functions are pure and independently testable
+- [ ] Templates bind to normalized fields only, not raw API shapes
