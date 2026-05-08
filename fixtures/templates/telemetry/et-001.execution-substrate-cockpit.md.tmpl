@@ -1,0 +1,78 @@
+---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.execution_substrate_cockpit"
+projection_id: "execution-telemetry:{{workflowRunId}}"
+source_truth: "sdk"
+primary_question: "What is the execution substrate doing right now?"
+workspace_mode: "focus"
+active_surfaces: "execution,session,events,promotions"
+surface_label: "Execution Substrate Cockpit"
+iterator_contract: "execution.telemetry.stream.v1"
+---
+
+# Execution Substrate Cockpit
+
+::focus
+question: "What is the execution substrate doing right now?"
+answer: "{{sessionSignal.operatorSummary}}"
+status: "{{sessionSignal.telemetryStatus}}"
+::
+
+## Runtime Health
+
+::metric_row
+items:
+- label: "Status"
+  value: "{{sessionSignal.telemetryStatus}}"
+- label: "Last heartbeat (New York)"
+  value: "{{sessionSignal.heartbeatAtEt}}"
+- label: "Active processes"
+  value: "{{sessionSignal.activeProcessCount}}"
+- label: "Friction"
+  value: "{{sessionSignal.frictionCount}}"
+::
+
+## Execution Posture
+
+::metric_row
+items:
+- label: "Open gaps"
+  value: "{{sessionSignal.openGapCount}}"
+- label: "Promotion queue"
+  value: "{{promotionInsights.count}}"
+- label: "Session"
+  value: "{{sessionSignal.sessionKey}}"
+- label: "Objective"
+  value: "{{sessionSignal.currentObjective}}"
+::
+
+## Recommended Next Action
+
+::panel
+title: "{{sessionSignal.nextAction}}"
+status: "{{sessionSignal.telemetryStatus}}"
+summary: "{{sessionSignal.operatorSummary}}"
+::
+
+## Recent Execution Events
+
+::table
+columns: "time_et,execution_type,domain_object_type,status,title,summary"
+sort: "time_et:desc"
+rows_source: "executionEventRows"
+empty_message: "No execution telemetry events were found for this scope."
+::
+
+## Context Links
+
+::nav
+- label: "Full Event Stream"
+  target: "operator.execution_telemetry_event_stream"
+  projection_type: "operator.execution_telemetry_event_stream"
+- label: "Session Metrics"
+  target: "operator.agent_session"
+  projection_type: "operator.agent_session"
+- label: "Promotions"
+  target: "operator.promotions"
+  projection_type: "operator.promotions"
+::

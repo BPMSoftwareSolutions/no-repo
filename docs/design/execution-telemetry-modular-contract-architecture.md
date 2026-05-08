@@ -12,7 +12,8 @@ validation in Contract Lab.
 
 This document describes the target architecture. The current runtime still loads
 `src/renderer/markdown-ui-elements.json` for the existing markdown contract system
-and must be migrated incrementally.
+and must be migrated incrementally. The first modular scenario scaffolds now exist
+for ET-001 and ET-002, but they are not yet wired into the live runtime.
 
 ## Design goals
 

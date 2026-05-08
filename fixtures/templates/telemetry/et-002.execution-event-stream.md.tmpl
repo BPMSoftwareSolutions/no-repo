@@ -1,0 +1,84 @@
+---
+loga_contract: "ai-engine-ui/v1"
+projection_type: "operator.execution_telemetry_event_stream"
+projection_id: "execution-telemetry-stream:{{workflowRunId}}"
+source_truth: "sdk"
+primary_question: "What happened most recently in execution?"
+workspace_mode: "focus"
+active_surfaces: "events,filters,detail"
+surface_label: "Execution Event Stream"
+iterator_contract: "execution.telemetry.stream.v1"
+---
+
+# Execution Event Stream
+
+::focus
+question: "What happened most recently in execution?"
+answer: "{{streamSummary}}"
+status: "{{streamStatus}}"
+::
+
+## Filters
+
+::filters
+- key: "executionType"
+  label: "Execution type"
+  value: "{{filters.executionType}}"
+  multiSelect: true
+- key: "domainObjectType"
+  label: "Domain"
+  value: "{{filters.domainObjectType}}"
+  multiSelect: true
+- key: "status"
+  label: "Status"
+  value: "{{filters.status}}"
+  multiSelect: true
+- key: "timeRange"
+  label: "Time range"
+  value: "{{filters.timeRange}}"
+  options: ["15m", "1h", "6h", "24h", "All"]
+::
+
+## Events (Newest First)
+
+::table
+columns: "time_et,title,execution_type,domain_object_type,status,summary"
+sort: "time_et:desc"
+rows_source: "eventRows"
+page_size: 30
+load_more: true
+empty_message: "No events match the current filters."
+::
+
+## Selected Event
+
+::panel
+title: "{{selectedEvent.title}}"
+status: "{{selectedEvent.status}}"
+summary: "{{selectedEvent.summary}}"
+::
+
+- Time (New York): {{selectedEvent.occurredAtEt}}
+- Execution type: {{selectedEvent.executionType}}
+- Domain: {{selectedEvent.domainObjectType}}
+- Actor: {{selectedEvent.actorLabel}}
+- Surface: {{selectedEvent.sourceSurface}}
+- Session: {{selectedSessionLabel}}
+
+{{#if selectedEvent.durationLabel}}
+- Duration: {{selectedEvent.durationLabel}}
+{{/if}}
+
+{{#if selectedEvent.retryCount}}
+- Retries: {{selectedEvent.retryCount}}
+{{/if}}
+
+<details>
+<summary>Raw metadata</summary>
+
+::code
+language: "json"
+content: "{{selectedEvent.rawMetadataJson}}"
+::
+
+</details>

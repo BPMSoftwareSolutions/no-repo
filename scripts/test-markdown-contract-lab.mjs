@@ -445,6 +445,30 @@ assert.match(appendedStyles[0].textContent, /flex-wrap:nowrap;/, 'injected regis
 assert.match(elements['rendered-output'].innerHTML, /loga-toolbar--linear/, 'browser runtime must render the initial sample');
 assert.match(elements['markdown-input'].value, /variant="linear"/, 'browser runtime must load the sample into the editor');
 
+const modularTelemetryArtifacts = [
+  {
+    scenario: 'ET-001',
+    markdownPath: './fixtures/templates/telemetry/et-001.execution-substrate-cockpit.md.tmpl',
+    contractPath: './src/renderer/contracts/telemetry/et-001.execution-substrate-cockpit.ui.contract.json',
+    projectionType: 'operator.execution_substrate_cockpit',
+  },
+  {
+    scenario: 'ET-002',
+    markdownPath: './fixtures/templates/telemetry/et-002.execution-event-stream.md.tmpl',
+    contractPath: './src/renderer/contracts/telemetry/et-002.execution-event-stream.ui.contract.json',
+    projectionType: 'operator.execution_telemetry_event_stream',
+  },
+];
+
+modularTelemetryArtifacts.forEach(({ scenario, markdownPath, contractPath, projectionType }) => {
+  assert.ok(fs.existsSync(markdownPath), `${scenario} markdown contract must exist`);
+  assert.ok(fs.existsSync(contractPath), `${scenario} UI contract JSON must exist`);
+  const parsed = parseMarkdown(fs.readFileSync(markdownPath, 'utf8'));
+  assert.equal(parsed.frontmatter.projection_type, projectionType, `${scenario} markdown contract must declare the expected projection type`);
+  assert.ok(parsed.blocks.includes('focus'), `${scenario} markdown contract must include the focus block`);
+  assert.doesNotThrow(() => JSON.parse(fs.readFileSync(contractPath, 'utf8')), `${scenario} UI contract JSON must be valid JSON`);
+});
+
 elements['markdown-input'].value = '';
 elements['clear-input'].handlers.click();
 assert.equal(elements['markdown-input'].value, '', 'clear button must empty the editor');
