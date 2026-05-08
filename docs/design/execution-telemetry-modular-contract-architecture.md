@@ -8,6 +8,12 @@ has its own markdown contract and its own UI contract JSON.
 This replaces monolithic contract packaging and enables scenario-by-scenario
 validation in Contract Lab.
 
+## Current state
+
+This document describes the target architecture. The current runtime still loads
+`src/renderer/markdown-ui-elements.json` for the existing markdown contract system
+and must be migrated incrementally.
+
 ## Design goals
 
 - Per-scenario markdown files
@@ -20,7 +26,7 @@ validation in Contract Lab.
 
 1. Every scenario must have exactly one scenario markdown contract file.
 2. Every scenario must have exactly one scenario UI contract JSON file.
-3. A scenario is not testable in Contract Lab unless both files exist.
+3. A scenario is not testable in modular Contract Lab unless both files exist.
 4. Promotion is blocked if a scenario depends on monolith-only contract entries.
 5. Runtime cannot hardcode scenario names or telemetry-specific render branches.
 
@@ -48,7 +54,7 @@ src/renderer/contracts/telemetry/
 
 ## Runtime loading model
 
-Given a scenario key:
+Given a scenario key, the target runtime will:
 
 1. resolve markdown path from scenario audit
 2. resolve UI contract JSON path from scenario audit
@@ -57,6 +63,9 @@ Given a scenario key:
 5. fail fast on missing/invalid contract artifacts
 
 No runtime fallback to monolithic contract file is allowed.
+
+Implementation note: this is the desired loading model for the modular runtime,
+not the current browser implementation.
 
 ## Contract Lab workflow
 
@@ -83,6 +92,10 @@ Migration approach:
 4. remove migrated scenario dependencies from monolith
 5. repeat until ET-001..ET-007 all have standalone contracts
 6. block promotion for any scenario still requiring monolith-only entries
+
+Current audit implication:
+- ET-001 and ET-002 remain legacy-implemented scenarios, but they are not modular-ready
+  until their per-scenario JSON contracts exist.
 
 ## Validation checklist
 
