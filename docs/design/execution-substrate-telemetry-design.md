@@ -21,6 +21,9 @@ This document specifies:
 
 ## Design principles
 
+This telemetry design follows the
+[AI Engine UI Doctrine](./ai-engine-ui-doctrine.md).
+
 1. **Newest first.** All timelines and feeds default to descending time order. The most
    recent signal is always visible without scrolling.
 

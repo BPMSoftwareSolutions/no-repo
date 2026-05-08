@@ -312,6 +312,9 @@ client loads projection
 
 # 10. Design Philosophy
 
+This runtime follows the formal doctrine in
+[AI Engine UI Doctrine](./ai-engine-ui-doctrine.md).
+
 ## 10.1 No fallback rule
 
 ```text
@@ -350,6 +353,21 @@ same markdown
 → AI Engine UI
 → any future surface
 ```
+
+---
+
+## 10.5 Operator surface shape
+
+The runtime is optimized for document-first operator surfaces:
+
+```text
+Summary first
+-> diagnosis second
+-> payload third
+```
+
+Payload details must remain progressive disclosure (drawers and drill-down)
+rather than first-screen density.
 
 ---
 
