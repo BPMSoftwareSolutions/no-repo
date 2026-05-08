@@ -12,6 +12,7 @@
 - [SDK Runtime Platformization Research](./sdk-runtime-platformization-research.md)
 - [Markdown UI Runtime Spec](./markdown-ui-runtime-spec.md)
 - [Execution Substrate Telemetry Design](./execution-substrate-telemetry-design.md)
+- [Execution Telemetry Projection Scenario Audit](./execution-telemetry-projection-scenario-audit.md)
 
 ## Operator UX
 
