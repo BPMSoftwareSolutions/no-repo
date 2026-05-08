@@ -582,9 +582,13 @@ This section defines the exact runtime behavior for the stream contract: how
 pagination works, how multi-select filters map to server params, how sources
 are merged and deduplicated, and how unknown enum values are handled.
 
-### Pagination: time-window, not offset
+### Pagination: dual-mode (cursor preferred, client-slice fallback)
 
-"Load more" uses a `before` cursor, not a numeric offset.
+"Load more" extends the visible window backward in time. Two strategies are
+supported; the runtime selects based on whether the server accepts the `before`
+parameter.
+
+**Preferred — time-window cursor (if `before` is supported):**
 
 ```
 First load:
@@ -598,13 +602,27 @@ First load:
   → append to list, update oldestSeenTimestamp = E60.occurredAtUtc
 ```
 
-Why: offset pagination returns duplicates or skips records when new events
-arrive between pages. Time-window pagination is deterministic — "everything
-before timestamp X" does not shift.
+Why preferred: offset pagination returns duplicates or skips records when new
+events arrive between pages. Time-window pagination is deterministic —
+"everything before timestamp X" does not shift.
 
-Supplement sources (substrate fragments and recent activity) are fetched once
-on the first page load only. They are not re-fetched on "Load more" because
-they represent a fixed historical set for the current workflow run.
+**Fallback — client-slice (if `before` is not supported):**
+
+```
+First load:
+  listExecutionProcessRuns({ limit: 200, since, ...otherFilters })
+  → fetch full window into memory; display slice [0..29]
+  → record sliceOffset = 30
+
+"Load more" click:
+  advance sliceOffset by 30; display slice [sliceOffset..sliceOffset+29]
+  → no additional server call
+```
+
+**Supplement sources are not re-fetched during Load more under either strategy.**
+On a "Load more" click, only the primary source is extended. Supplement sources
+(context_fragments, recent_activity) are re-fetched on every poll cycle and
+every manual refresh — not on pagination. See Polling vs pagination below.
 
 ### Polling vs pagination: two distinct operations
 
@@ -1327,9 +1345,9 @@ The following specific gaps exist between the current cockpit and this design.
 - [ ] An unknown event type renders as a capitalized, space-separated label (not blank, not crash)
 
 **Pagination**
-- [ ] "Load more" uses the `before` cursor (oldest visible timestamp), not a numeric offset
-- [ ] Supplement sources are fetched only on first page load, not on "Load more"
-- [ ] Re-fetching (auto-refresh) resets to the first page; it does not accumulate
+- [ ] "Load more" uses the `before` cursor strategy when the server supports it, or the client-slice fallback otherwise
+- [ ] Supplement sources are re-fetched on every poll cycle and manual refresh; they are NOT re-fetched on "Load more"
+- [ ] Re-fetching (auto-refresh) resets to the first page; accumulated Load more pages are cleared
 
 **Data integrity**
 - [ ] Merge deduplicate step eliminates events that appear in both primary and supplement
