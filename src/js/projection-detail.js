@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   mountWorkspaceChrome({});
   renderPersistentTree(tree);
+  setupCloseProjectHandler();
 
   const renderProjectionContent = async () => {
     try {
@@ -1320,6 +1321,110 @@ async function hydrateDataSources(text, params) {
     }
   }));
   return sources;
+}
+
+// --- Close Project ---
+
+function openCloseProjectModal({ projectName, projectId }) {
+  return new Promise((resolve, reject) => {
+    const existing = document.getElementById('close-project-modal');
+    existing?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'close-project-modal';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'close-project-title');
+    overlay.innerHTML = `
+      <div style="position:fixed;inset:0;background:rgba(3,7,18,0.72);backdrop-filter:blur(6px);z-index:9998;"></div>
+      <form style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(92vw,480px);background:#111c2b;color:#d6deeb;border:1px solid rgba(239,68,68,0.3);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,0.45);padding:24px;z-index:9999;display:grid;gap:14px;">
+        <div>
+          <h2 id="close-project-title" style="margin:0 0 8px;font:600 22px/1.1 'Segoe UI',sans-serif;color:#f8fbff;">Close Project</h2>
+          <p style="margin:0;color:#a8b6cc;font:14px/1.5 'Segoe UI',sans-serif;">This will terminate all active workflow runs for <strong style="color:#f8fbff;">${escapeHtml(projectName)}</strong>. This action cannot be undone.</p>
+        </div>
+        <label style="display:grid;gap:8px;font:600 13px/1.4 'Segoe UI',sans-serif;color:#d6deeb;">
+          Reason (optional)
+          <input id="close-project-reason" type="text" placeholder="e.g. scope change, superseded by another project" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1px solid rgba(124,156,255,0.24);background:rgba(3,7,18,0.72);color:#f8fbff;font:14px/1.4 'Segoe UI',sans-serif;">
+        </label>
+        <div id="close-project-modal-error" style="min-height:1.2em;color:#fca5a5;font:13px/1.4 'Segoe UI',sans-serif;"></div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button type="button" data-action="cancel" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.14);background:transparent;color:#d6deeb;font:600 13px/1 'Segoe UI',sans-serif;cursor:pointer;">Cancel</button>
+          <button type="submit" style="padding:10px 14px;border-radius:10px;border:0;background:#ef4444;color:#fff;font:700 13px/1 'Segoe UI',sans-serif;cursor:pointer;">Close Project</button>
+        </div>
+      </form>
+    `;
+
+    const cleanup = () => overlay.remove();
+    const form = overlay.querySelector('form');
+    const input = overlay.querySelector('#close-project-reason');
+    const cancel = overlay.querySelector('[data-action="cancel"]');
+
+    cancel?.addEventListener('click', () => { cleanup(); reject(new Error('Cancelled.')); });
+
+    form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const reason = String(input?.value || '').trim() || 'manual closure';
+      cleanup();
+      resolve(reason);
+    });
+
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') { event.preventDefault(); cleanup(); reject(new Error('Cancelled.')); }
+    });
+
+    document.body.appendChild(overlay);
+    queueMicrotask(() => input?.focus());
+  });
+}
+
+function setupCloseProjectHandler() {
+  document.addEventListener('click', async (event) => {
+    const btn = event.target.closest('[data-action="close-project"]');
+    if (!btn) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const projectId = btn.dataset.projectId;
+    if (!projectId) return;
+
+    const nameEl = btn.closest('.portfolio-project-card-wrap')?.querySelector('.portfolio-project-card__name')
+      || document.querySelector('h1');
+    const projectName = nameEl?.textContent?.trim() || projectId;
+
+    let reason;
+    try {
+      reason = await openCloseProjectModal({ projectName, projectId });
+    } catch {
+      return;
+    }
+
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Closing…';
+
+    try {
+      await callAiEngine('closeProject', projectId, { reason });
+
+      btn.textContent = 'Closed';
+      setTimeout(() => {
+        window.location.href = 'projection-detail.html?type=operator.project_portfolio';
+      }, 1200);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+      const errorEl = document.getElementById('close-project-modal-error');
+      if (errorEl) {
+        errorEl.textContent = err.message || 'Failed to close project.';
+      } else {
+        const notice = document.createElement('span');
+        notice.style.cssText = 'color:#fca5a5;font:12px/1.4 var(--mono,monospace);margin-left:8px;';
+        notice.textContent = err.message || 'Failed to close project.';
+        btn.insertAdjacentElement('afterend', notice);
+        setTimeout(() => notice.remove(), 5000);
+      }
+    }
+  });
 }
 
 // --- Utility ---

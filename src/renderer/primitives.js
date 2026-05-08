@@ -105,7 +105,13 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock, d
     const label = value('label') || attrs.label || lines.join(' ').trim() || 'Action';
     const endpoint = value('endpoint') || attrs.endpoint || '';
     const method = value('method') || attrs.method || 'GET';
-    return `<div class="loga-action-group"><button class="loga-action" type="button" data-endpoint="${escapeHtml(endpoint)}" data-method="${escapeHtml(method)}">${escapeHtml(label)}</button></div>`;
+    const action = value('action') || attrs.action || '';
+    const projectId = value('project_id') || attrs.project_id || '';
+    const variant = value('variant') || attrs.variant || '';
+    const btnClass = `loga-action${variant ? ` loga-action--${escapeHtml(variant)}` : ''}`;
+    const actionAttr = action ? ` data-action="${escapeHtml(action)}"` : '';
+    const projectAttr = projectId ? ` data-project-id="${escapeHtml(projectId)}"` : '';
+    return `<div class="loga-action-group"><button class="${btnClass}" type="button" data-endpoint="${escapeHtml(endpoint)}" data-method="${escapeHtml(method)}"${actionAttr}${projectAttr}>${escapeHtml(label)}</button></div>`;
   }
 
   if (block === 'status') {
@@ -253,7 +259,10 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock, d
         || (projectId
           ? `projection-detail.html?type=operator.project_detail&projectId=${encodeURIComponent(projectId)}`
           : '#');
-      return `<a class="portfolio-project-card" href="${escapeHtml(href)}" data-status="${escapeHtml(status)}" data-tier="${escapeHtml(tier)}">
+      const closeBtn = projectId
+        ? `<button class="portfolio-project-card__close" type="button" data-action="close-project" data-project-id="${escapeHtml(projectId)}" aria-label="Close ${escapeHtml(name)}">Close</button>`
+        : '';
+      return `<div class="portfolio-project-card-wrap"><a class="portfolio-project-card" href="${escapeHtml(href)}" data-status="${escapeHtml(status)}" data-tier="${escapeHtml(tier)}">
   <div class="portfolio-project-card__header">
     <strong class="portfolio-project-card__name">${escapeHtml(name)}</strong>
     <span class="portfolio-project-card__status" data-status="${escapeHtml(status)}">${escapeHtml(status)}</span>
@@ -267,7 +276,7 @@ export function renderPrimitiveBlock({ block, name, lines, attrs, renderBlock, d
   </div>
   ${activeItem ? `<div class="portfolio-project-card__active"><span class="portfolio-project-card__active-label">Active:</span> ${escapeHtml(activeItem)}</div>` : ''}
   ${lastRun ? `<div class="portfolio-project-card__last-run">Last run ${escapeHtml(lastRun)}</div>` : ''}
-</a>`;
+</a>${closeBtn}</div>`;
     }).join('')}</section>`;
   }
 

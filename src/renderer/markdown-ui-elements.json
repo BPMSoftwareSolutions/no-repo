@@ -1342,6 +1342,15 @@
       "background": "rgba(124, 156, 255, 0.24)",
       "color": "var(--text-strong)"
     },
+    ".loga-action--danger": {
+      "borderColor": "rgba(239, 68, 68, 0.5)",
+      "color": "#ef4444"
+    },
+    ".loga-action--danger:hover, .loga-action--danger:focus-visible": {
+      "borderColor": "#ef4444",
+      "background": "rgba(239, 68, 68, 0.15)",
+      "color": "#fca5a5"
+    },
     ".loga-focus, .loga-surface": {
       "margin": "22px 0 30px",
       "padding": "22px 0 24px",
@@ -1777,6 +1786,33 @@
       "fontSize": "0.75em",
       "opacity": "0.45",
       "fontFamily": "var(--mono)"
+    },
+    ".portfolio-project-card-wrap": {
+      "position": "relative"
+    },
+    ".portfolio-project-card__close": {
+      "position": "absolute",
+      "bottom": "10px",
+      "right": "10px",
+      "padding": "3px 10px",
+      "borderRadius": "6px",
+      "border": "1px solid rgba(239, 68, 68, 0.4)",
+      "background": "transparent",
+      "color": "#ef4444",
+      "fontSize": "11px",
+      "fontFamily": "var(--mono)",
+      "cursor": "pointer",
+      "opacity": "0",
+      "transition": "opacity 0.15s, background 0.15s",
+      "lineHeight": "1.5"
+    },
+    ".portfolio-project-card-wrap:hover .portfolio-project-card__close": {
+      "opacity": "1"
+    },
+    ".portfolio-project-card__close:hover, .portfolio-project-card__close:focus-visible": {
+      "background": "rgba(239, 68, 68, 0.15)",
+      "outline": "none",
+      "borderColor": "#ef4444"
     },
     ".loga-evidence-drawer": {
       "margin": "18px 0 24px",

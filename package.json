@@ -23,7 +23,6 @@
   "directories": {
     "doc": "docs"
   },
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/BPMSoftwareSolutions/no-repo.git"
