@@ -651,27 +651,21 @@ function renderStream(model) {
 
   elements.stream.innerHTML = model.filteredEvents.map((event) => `
     <article
-      class="group-card${event.id === model.selectedEvent?.id ? ' selected' : ''}"
+      class="event${event.id === model.selectedEvent?.id ? ' selected' : ''}"
       data-event-id="${escapeAttr(event.id)}"
       tabindex="0"
       role="button"
       aria-pressed="${event.id === model.selectedEvent?.id ? 'true' : 'false'}"
     >
-      <div class="group-header">
-        <div class="group-main">
-          <div class="topline">
-            <span class="context-pill"><span class="dot ${escapeAttr(event.dot)}"></span>${escapeHtml(event.statusLabel)}</span>
-            <span class="status-pill ${escapeHtml(event.statusClass)}">${escapeHtml(event.kindLabel)}</span>
-            <span class="event-time">${escapeHtml(event.timeLabel)}</span>
-          </div>
-          <h3>${escapeHtml(event.title)}</h3>
-          <p>${escapeHtml(event.summary)}</p>
-          <div class="event-meta">
-            ${event.meta.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
-          </div>
+      <div class="event-time">${escapeHtml(event.timeLabel)}</div>
+      <div class="event-main">
+        <h3 class="event-title"><span class="dot ${escapeAttr(event.dot)}"></span><span>${escapeHtml(event.title)}</span></h3>
+        <p class="event-summary">${escapeHtml(event.summary)}</p>
+        <div class="event-meta">
+          ${event.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
         </div>
-        <div class="duration">${escapeHtml(event.durationLabel)}</div>
       </div>
+      <div class="duration">${escapeHtml(event.durationLabel)}</div>
     </article>
   `).join('');
 }
@@ -694,7 +688,7 @@ function renderDetail(model) {
     <p class="detail-summary">${escapeHtml(event.summary)}</p>
 
     <dl class="kv">
-      <dt>When</dt><dd>${escapeHtml(event.timeLabel)}</dd>
+      <dt>When</dt><dd>${escapeHtml(event.whenLabel || event.timeLabel)}</dd>
       <dt>Kind</dt><dd>${escapeHtml(event.kind)}</dd>
       <dt>Stage</dt><dd>${escapeHtml(event.stage || 'n/a')}</dd>
       <dt>Actor</dt><dd>${escapeHtml(event.actor || 'n/a')}</dd>
@@ -890,18 +884,18 @@ function createEvent({
     detailLine: normalizedDetail,
     payload: payload || {},
     source: cleanText(source || ''),
-    timeLabel: formatTimestampEt(timestamp) || 'unknown',
-    meta: buildEventMeta({ kind: normalizedKind, actor, stage, source }),
+    timeLabel: formatRowTimestampEt(timestamp) || 'unknown',
+    whenLabel: formatTimestampEt(timestamp) || 'unknown',
+    tags: buildEventTags({ kind: normalizedKind, actor, stage }),
     correlationId: cleanText(payload?.correlation_id || payload?.metadata?.correlation_id || ''),
     searchText,
   };
 }
 
-function buildEventMeta({ kind, actor, stage, source }) {
+function buildEventTags({ kind, actor, stage }) {
   const meta = [kind];
   if (actor) meta.push(`actor: ${actor}`);
   if (stage) meta.push(`stage: ${stage}`);
-  if (source) meta.push(`source: ${source}`);
   return meta;
 }
 
@@ -1212,6 +1206,23 @@ function formatTimestampEt(value) {
       month: 'short',
       day: '2-digit',
       year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+      timeZoneName: 'short',
+    }).format(parsed);
+  } catch {
+    return String(value || '');
+  }
+}
+
+function formatRowTimestampEt(value) {
+  const parsed = Date.parse(String(value || ''));
+  if (!Number.isFinite(parsed)) return '';
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: NEW_YORK_TIME_ZONE,
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',

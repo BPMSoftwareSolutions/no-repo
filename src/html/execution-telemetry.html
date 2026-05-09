@@ -389,10 +389,10 @@
     }
 
     .toolbar {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+      gap: 10px 12px;
       align-items: center;
-      justify-content: space-between;
-      gap: 10px;
       padding: 12px 14px;
       border-bottom: 1px solid var(--line-soft);
       background: rgba(17,20,27,0.52);
@@ -405,6 +405,7 @@
       min-width: 0;
       overflow-x: auto;
       padding-bottom: 1px;
+      scrollbar-width: thin;
     }
 
     .chip {
@@ -425,7 +426,9 @@
     }
 
     .search {
-      width: min(260px, 32vw);
+      width: 100%;
+      max-width: 280px;
+      justify-self: end;
       border: 1px solid var(--line);
       border-radius: 999px;
       background: rgba(11,13,18,0.42);
@@ -437,6 +440,10 @@
 
     .search:focus {
       border-color: rgba(122,167,255,0.55);
+    }
+
+    .toolbar-summary {
+      padding: 10px 14px 0;
     }
 
     .type-suggestions {
@@ -487,38 +494,35 @@
       display: grid;
     }
 
-    .group-card {
-      border-bottom: 1px solid var(--line-soft);
+    .event {
+      display: grid;
+      grid-template-columns: 116px minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: start;
       padding: 13px 14px;
+      border-bottom: 1px solid var(--line-soft);
+      cursor: pointer;
     }
 
-    .group-card:last-child {
-      border-bottom: 0;
-    }
-
-    .group-card.selected {
+    .event:hover,
+    .event.selected {
       background: rgba(122,167,255,0.065);
     }
 
-    .group-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
+    .event:last-child {
+      border-bottom: 0;
     }
 
-    .group-main {
-      min-width: 0;
-      flex: 1;
+    .event-time {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      white-space: nowrap;
+      padding-top: 2px;
     }
 
-    .topline {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+    .event-main {
       min-width: 0;
-      margin-bottom: 8px;
     }
 
     .context-pill {
@@ -534,64 +538,32 @@
       white-space: nowrap;
     }
 
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 4px 8px;
-      font-size: 11px;
-      color: var(--muted);
-      background: rgba(17, 20, 27, 0.72);
-      white-space: nowrap;
-      text-transform: lowercase;
-    }
-
-    .status-pill-success {
-      color: #d6f7e5;
-      border-color: rgba(97, 211, 148, 0.32);
-      background: rgba(97, 211, 148, 0.08);
-    }
-
-    .status-pill-warning {
-      color: #fff2c6;
-      border-color: rgba(255, 209, 102, 0.28);
-      background: rgba(255, 209, 102, 0.08);
-    }
-
-    .status-pill-danger {
-      color: #ffd5d5;
-      border-color: rgba(255, 107, 107, 0.28);
-      background: rgba(255, 107, 107, 0.08);
-    }
-
-    .status-pill-info {
-      color: #d9e4ff;
-      border-color: rgba(122, 167, 255, 0.28);
-      background: rgba(122, 167, 255, 0.08);
-    }
-
-    .group-card h3,
-    .group-card h4 {
+    .event h3 {
       margin: 0;
       line-height: 1.18;
       letter-spacing: -0.03em;
     }
 
-    .group-card h3 {
+    .event h3 {
       color: #e4e9f2;
       font-size: 14px;
       font-weight: 680;
     }
 
-    .group-card p {
+    .event p {
       margin: 4px 0 0;
       color: #aeb7c7;
       font-size: 12px;
     }
 
-    .group-card .event-meta {
+    .event-summary {
+      margin: 4px 0 0;
+      color: #aeb7c7;
+      font-size: 12px;
+      line-height: 1.38;
+    }
+
+    .event-meta {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
@@ -613,45 +585,7 @@
       text-overflow: ellipsis;
     }
 
-    .group-toggle {
-      flex: none;
-      align-self: flex-start;
-    }
-
-    .group-history {
-      margin-top: 12px;
-      display: grid;
-      gap: 8px;
-    }
-
-    .history-item {
-      display: grid;
-      grid-template-columns: 116px minmax(0, 1fr) auto;
-      gap: 14px;
-      padding: 13px 14px;
-      border: 1px solid var(--line-soft);
-      border-radius: 14px;
-      background: rgba(17,20,27,0.58);
-      cursor: pointer;
-    }
-
-    .history-item:hover,
-    .history-item.selected {
-      background: rgba(122,167,255,0.065);
-    }
-
-    .history-item .event-time {
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 11px;
-      white-space: nowrap;
-    }
-
-    .history-item .event-main {
-      min-width: 0;
-    }
-
-    .history-item .event-title {
+    .event-title {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -662,16 +596,7 @@
       color: #e4e9f2;
     }
 
-    .history-item .event-title span:last-child {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .history-item .event-summary {
-      margin: 4px 0 0;
-      color: #aeb7c7;
-      font-size: 12px;
+    .event-title span:last-child {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -679,6 +604,7 @@
 
     .duration {
       align-self: start;
+      justify-self: end;
       color: var(--faint);
       font-family: var(--mono);
       font-size: 11px;
@@ -870,17 +796,26 @@
       }
 
       .toolbar {
-        align-items: stretch;
-        flex-direction: column;
+        grid-template-columns: 1fr;
       }
 
       .search {
-        width: 100%;
+        max-width: none;
+        justify-self: stretch;
       }
 
-      .history-item {
+      .event {
         grid-template-columns: 1fr;
         gap: 6px;
+      }
+
+      .event-time,
+      .duration {
+        padding-top: 0;
+      }
+
+      .duration {
+        justify-self: start;
       }
     }
 
@@ -1035,8 +970,6 @@
               <button type="button" class="chip active" data-filter-kind="">All</button>
             </div>
 
-            <div id="telemetry-filter-summary" class="context-pill">0 of 0 event types</div>
-
             <input
               id="telemetry-search"
               class="search"
@@ -1045,6 +978,8 @@
               aria-label="Filter events"
             />
           </div>
+
+          <div id="telemetry-filter-summary" class="toolbar-summary context-pill">0 of 0 event types</div>
 
           <div id="telemetry-type-suggestions" class="type-suggestions" role="listbox" aria-label="Suggested event types" hidden></div>
 
