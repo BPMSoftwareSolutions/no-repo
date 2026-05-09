@@ -1,90 +1,1082 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Execution Telemetry</title>
-  <script src="../js/registry-styles.js" type="module"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Engine / Execution Telemetry</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #151821;
+      --panel-2: #11141b;
+      --panel-3: #191d27;
+      --text: #e7eaf0;
+      --muted: #9aa3b2;
+      --faint: #6f7787;
+      --line: #282d3a;
+      --line-soft: #202532;
+      --good: #61d394;
+      --warn: #ffd166;
+      --bad: #ff6b6b;
+      --info: #7aa7ff;
+      --accent: #b9c7ff;
+      --shadow: 0 20px 70px rgba(0, 0, 0, 0.34);
+      --radius: 18px;
+      --radius-sm: 12px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.45;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(122, 167, 255, 0.10), transparent 32rem),
+        radial-gradient(circle at 80% 20%, rgba(97, 211, 148, 0.075), transparent 28rem),
+        var(--bg);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1480px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 24px 0 48px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 4px 0 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: linear-gradient(180deg, #1c2130, #121620);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 680;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    .brand p {
+      margin: 1px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .telemetry-topbar-actions {
+      display: grid;
+      gap: 10px;
+      justify-items: end;
+    }
+
+    .telemetry-control-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .telemetry-session-input {
+      min-width: min(300px, 42vw);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(11,13,18,0.42);
+      color: var(--text);
+      padding: 7px 11px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .telemetry-session-input:focus {
+      border-color: rgba(122,167,255,0.55);
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(21, 24, 33, 0.78);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      border-color: #3a4154;
+      background: #1a1f2b;
+    }
+
+    .btn.primary {
+      border-color: rgba(122, 167, 255, 0.48);
+      background: rgba(122, 167, 255, 0.12);
+      color: #d8e3ff;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr) 390px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .rail,
+    .main,
+    .detail {
+      min-width: 0;
+    }
+
+    .card {
+      background: rgba(21, 24, 33, 0.84);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card.flush {
+      box-shadow: none;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .section-head h2,
+    .section-head h3 {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 720;
+      color: #dce3ef;
+      letter-spacing: 0.01em;
+    }
+
+    .section-head span {
+      font-family: var(--mono);
+      color: var(--faint);
+      font-size: 11px;
+    }
+
+    .focus {
+      padding: 18px 18px 16px;
+      background: linear-gradient(180deg, rgba(122,167,255,0.10), rgba(21,24,33,0));
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    .focus h2 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 34px);
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+    }
+
+    .focus .answer {
+      margin: 10px 0 0;
+      max-width: 74ch;
+      color: #c6cedb;
+      font-size: 14px;
+    }
+
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      padding: 14px;
+    }
+
+    .metric {
+      border: 1px solid var(--line-soft);
+      background: rgba(17, 20, 27, 0.78);
+      border-radius: 14px;
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .metric .value {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      margin: 0;
+      font-size: 20px;
+      font-weight: 760;
+      letter-spacing: -0.03em;
+    }
+
+    .metric .sub {
+      margin-top: 2px;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(17, 20, 27, 0.72);
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      box-shadow: 0 0 0 4px rgba(154, 163, 178, 0.08);
+    }
+
+    .dot.good {
+      background: var(--good);
+      box-shadow: 0 0 0 4px rgba(97, 211, 148, 0.10);
+    }
+
+    .dot.warn {
+      background: var(--warn);
+      box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.10);
+    }
+
+    .dot.bad {
+      background: var(--bad);
+      box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.10);
+    }
+
+    .dot.info {
+      background: var(--info);
+      box-shadow: 0 0 0 4px rgba(122, 167, 255, 0.10);
+    }
+
+    .rail-block {
+      padding: 14px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .rail-block:last-child {
+      border-bottom: 0;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      color: #ccd3df;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      background: rgba(122, 167, 255, 0.08);
+      border-color: rgba(122, 167, 255, 0.18);
+    }
+
+    .nav-count {
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .mini-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .mini-item {
+      padding: 10px;
+      border: 1px solid var(--line-soft);
+      border-radius: 12px;
+      background: rgba(17, 20, 27, 0.72);
+    }
+
+    .mini-item strong {
+      display: block;
+      font-size: 12px;
+      font-weight: 650;
+      color: #dbe1ec;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mini-item span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line-soft);
+      background: rgba(17,20,27,0.52);
+    }
+
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      overflow-x: auto;
+      padding-bottom: 1px;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 9px;
+      background: rgba(21,24,33,0.74);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .chip.active {
+      border-color: rgba(122,167,255,0.48);
+      color: #dbe5ff;
+      background: rgba(122,167,255,0.11);
+    }
+
+    .search {
+      width: min(260px, 32vw);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(11,13,18,0.42);
+      color: var(--text);
+      padding: 7px 11px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .search:focus {
+      border-color: rgba(122,167,255,0.55);
+    }
+
+    .type-suggestions {
+      display: grid;
+      gap: 8px;
+      padding: 10px 14px 0;
+    }
+
+    .type-suggestion {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px 12px;
+      align-items: center;
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: rgba(17,20,27,0.72);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .type-suggestion.selected {
+      border-color: rgba(122,167,255,0.48);
+      background: rgba(122,167,255,0.09);
+    }
+
+    .type-suggestion .kind {
+      color: #dbe1ec;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .type-suggestion .label {
+      color: #f1f4fb;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .type-suggestion .count {
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .stream {
+      display: grid;
+    }
+
+    .group-card {
+      border-bottom: 1px solid var(--line-soft);
+      padding: 13px 14px;
+    }
+
+    .group-card:last-child {
+      border-bottom: 0;
+    }
+
+    .group-card.selected {
+      background: rgba(122,167,255,0.065);
+    }
+
+    .group-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .group-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+      margin-bottom: 8px;
+    }
+
+    .context-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(17, 20, 27, 0.72);
+      white-space: nowrap;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(17, 20, 27, 0.72);
+      white-space: nowrap;
+      text-transform: lowercase;
+    }
+
+    .status-pill-success {
+      color: #d6f7e5;
+      border-color: rgba(97, 211, 148, 0.32);
+      background: rgba(97, 211, 148, 0.08);
+    }
+
+    .status-pill-warning {
+      color: #fff2c6;
+      border-color: rgba(255, 209, 102, 0.28);
+      background: rgba(255, 209, 102, 0.08);
+    }
+
+    .status-pill-danger {
+      color: #ffd5d5;
+      border-color: rgba(255, 107, 107, 0.28);
+      background: rgba(255, 107, 107, 0.08);
+    }
+
+    .status-pill-info {
+      color: #d9e4ff;
+      border-color: rgba(122, 167, 255, 0.28);
+      background: rgba(122, 167, 255, 0.08);
+    }
+
+    .group-card h3,
+    .group-card h4 {
+      margin: 0;
+      line-height: 1.18;
+      letter-spacing: -0.03em;
+    }
+
+    .group-card h3 {
+      color: #e4e9f2;
+      font-size: 14px;
+      font-weight: 680;
+    }
+
+    .group-card p {
+      margin: 4px 0 0;
+      color: #aeb7c7;
+      font-size: 12px;
+    }
+
+    .group-card .event-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 7px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      max-width: 230px;
+      border: 1px solid var(--line-soft);
+      border-radius: 999px;
+      padding: 3px 7px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .group-toggle {
+      flex: none;
+      align-self: flex-start;
+    }
+
+    .group-history {
+      margin-top: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: grid;
+      grid-template-columns: 116px minmax(0, 1fr) auto;
+      gap: 14px;
+      padding: 13px 14px;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: rgba(17,20,27,0.58);
+      cursor: pointer;
+    }
+
+    .history-item:hover,
+    .history-item.selected {
+      background: rgba(122,167,255,0.065);
+    }
+
+    .history-item .event-time {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .history-item .event-main {
+      min-width: 0;
+    }
+
+    .history-item .event-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      margin: 0;
+      font-size: 13px;
+      font-weight: 680;
+      color: #e4e9f2;
+    }
+
+    .history-item .event-title span:last-child {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-item .event-summary {
+      margin: 4px 0 0;
+      color: #aeb7c7;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .duration {
+      align-self: start;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding-top: 2px;
+      white-space: nowrap;
+    }
+
+    .detail-card {
+      position: sticky;
+      top: 18px;
+    }
+
+    .detail-body {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .detail-title {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.18;
+      letter-spacing: -0.03em;
+    }
+
+    .detail-summary {
+      margin: 0;
+      color: #b9c2d0;
+      font-size: 13px;
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 104px minmax(0, 1fr);
+      gap: 6px 10px;
+      padding: 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: rgba(17,20,27,0.58);
+      font-size: 12px;
+    }
+
+    .kv dt {
+      color: var(--faint);
+    }
+
+    .kv dd {
+      margin: 0;
+      color: #d6dce7;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    details {
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      background: rgba(17,20,27,0.58);
+      overflow: hidden;
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 11px 12px;
+      color: #dbe1eb;
+      font-size: 12px;
+      font-weight: 650;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    summary::after {
+      content: "+";
+      float: right;
+      color: var(--faint);
+      font-family: var(--mono);
+    }
+
+    details[open] summary::after {
+      content: "-";
+    }
+
+    pre {
+      margin: 0;
+      padding: 12px;
+      overflow: auto;
+      border-top: 1px solid var(--line-soft);
+      color: #c8d1df;
+      background: #0b0d12;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .copy-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--line-soft);
+      background: rgba(21,24,33,0.7);
+    }
+
+    .copy-row span {
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .footer-note {
+      margin: 16px 2px 0;
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    .focus-state-banner {
+      border: 1px solid rgba(122, 167, 255, 0.24);
+      border-radius: 14px;
+      background: rgba(122, 167, 255, 0.08);
+      color: #dbe4ff;
+      padding: 10px 12px;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .focus-state-banner-warning {
+      border-color: rgba(255, 209, 102, 0.24);
+      background: rgba(255, 209, 102, 0.08);
+      color: #fff1c4;
+    }
+
+    .focus-state-banner-error {
+      border-color: rgba(255, 107, 107, 0.24);
+      background: rgba(255, 107, 107, 0.08);
+      color: #ffd6d6;
+    }
+
+    .focus-empty-state {
+      padding: 16px 14px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 1180px) {
+      .shell {
+        grid-template-columns: 230px minmax(0, 1fr);
+      }
+
+      .detail {
+        grid-column: 1 / -1;
+      }
+
+      .detail-card {
+        position: static;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .app {
+        width: min(100vw - 24px, 760px);
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .telemetry-topbar-actions {
+        justify-items: start;
+      }
+
+      .telemetry-control-row {
+        justify-content: flex-start;
+      }
+
+      .telemetry-session-input {
+        min-width: min(100%, 360px);
+      }
+
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .state-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .toolbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .search {
+        width: 100%;
+      }
+
+      .history-item {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .state-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
-<body class="projection-shell-page">
-  <header>
-    <p><a href="index.html">Inspection Home</a></p>
-    <h1>Execution Telemetry</h1>
-    <p><strong>Primary question:</strong> What is the execution substrate doing right now?</p>
-  </header>
 
-  <main class="projection-shell">
-    <aside class="projection-shell__tree" aria-labelledby="telemetry-nav-title">
-      <h2 id="telemetry-nav-title" class="projection-shell__title">Watch Controls</h2>
-      <form class="inspection-form" id="telemetry-watch-form" style="margin-bottom:16px;">
-        <label for="telemetry-session-id">Session ID</label>
-        <input id="telemetry-session-id" type="text" placeholder="agent_session_id (leave blank for latest)" autocomplete="off" spellcheck="false">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-          <button id="telemetry-refresh-button" type="button">Refresh</button>
-          <button id="telemetry-latest-button" type="button">Use Latest</button>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">AI</div>
+        <div>
+          <h1>AI Engine / Execution Telemetry</h1>
+          <p>Thin operator surface - SQL truth - markdown-native projection</p>
         </div>
-      </form>
-      <p class="execution-monitor__status" data-state="polling">Polling</p>
-      <p id="telemetry-meta" class="execution-monitor__caption">Connecting to live telemetry...</p>
-      <div class="projection-list">
-        <a class="projection-card" href="index.html">
-          <span class="projection-card__number">01</span>
-          <span class="projection-card__copy">
-            <strong>Home</strong>
-            <span>Return to the inspection workspace.</span>
-            <em>Back to overview</em>
-          </span>
-          <span class="projection-card__meaning">Jump back to the landing screen.</span>
-          <span class="projection-card__open">Open</span>
-        </a>
-        <a class="projection-card" href="lab.html">
-          <span class="projection-card__number">02</span>
-          <span class="projection-card__copy">
-            <strong>Editor Cockpit</strong>
-            <span>Watch telemetry beside the markdown editor.</span>
-            <em>Live monitor</em>
-          </span>
-          <span class="projection-card__meaning">Open the editor with the embedded monitor.</span>
-          <span class="projection-card__open">Open</span>
-        </a>
       </div>
-    </aside>
 
-    <section class="projection-shell__surface" aria-labelledby="telemetry-main-title">
-      <h2 id="telemetry-main-title">Execution Substrate Cockpit</h2>
-      <p id="telemetry-projection-note" class="execution-monitor__caption">Loading the latest session snapshot...</p>
+      <div class="telemetry-topbar-actions" aria-label="Operator actions">
+        <div class="actions">
+          <button class="btn" id="telemetry-copy-summary" type="button">Copy summary</button>
+          <button class="btn" id="telemetry-open-evidence" type="button">Open evidence packet</button>
+          <button class="btn primary" id="telemetry-refresh-projection" type="button">Refresh projection</button>
+        </div>
 
-      <section class="execution-monitor" aria-labelledby="telemetry-summary-title">
-        <div class="execution-monitor__header">
-          <div>
-            <p class="execution-monitor__eyebrow">Live watch surface</p>
-            <h3 id="telemetry-summary-title" class="execution-monitor__title">Session telemetry</h3>
+        <div class="telemetry-control-row">
+          <input
+            id="telemetry-session-id"
+            class="telemetry-session-input"
+            type="text"
+            placeholder="Session id (leave blank for latest)"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Execution telemetry session id"
+          />
+          <button id="telemetry-watch-session" class="btn" type="button">Watch Session</button>
+          <button id="telemetry-use-latest" class="btn" type="button">Use Latest</button>
+          <button id="telemetry-refresh" class="btn primary" type="button">Refresh</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="telemetry-banner-slot" hidden></div>
+
+    <div class="shell">
+      <aside class="rail card flush" aria-label="Navigation and scope">
+        <div class="section-head">
+          <h2>Operator Scope</h2>
+          <span id="telemetry-timezone-label">ET</span>
+        </div>
+
+        <div class="rail-block">
+          <button id="telemetry-scope-cockpit" type="button" class="nav-item active">
+            <span>Execution cockpit</span>
+            <span id="telemetry-connection-state" class="nav-count">connecting</span>
+          </button>
+          <button type="button" class="nav-item">
+            <span>Event stream</span>
+            <span id="telemetry-event-count" class="nav-count">0</span>
+          </button>
+          <button type="button" class="nav-item">
+            <span>Workflow substrate</span>
+            <span id="telemetry-workflow-count" class="nav-count">0</span>
+          </button>
+          <button type="button" class="nav-item">
+            <span>Promotion lane</span>
+            <span id="telemetry-promotion-count" class="nav-count">0</span>
+          </button>
+          <button type="button" class="nav-item">
+            <span>Schema drift</span>
+            <span id="telemetry-schema-count" class="nav-count">0</span>
+          </button>
+        </div>
+
+        <div class="rail-block">
+          <div class="section-head" style="padding:0 0 10px;border-bottom:0;">
+            <h3>Current Run</h3>
           </div>
-          <span id="telemetry-connection-status" class="execution-monitor__status" data-state="polling">Polling</span>
-        </div>
 
-        <div id="telemetry-summary-strip" class="execution-monitor__metrics" aria-live="polite">
-          <div class="execution-monitor__empty">Loading live telemetry...</div>
-        </div>
-
-        <div class="execution-monitor__grid">
-          <article class="execution-monitor__card">
-            <h4>Session details</h4>
-            <div id="telemetry-session-details">
-              <p class="execution-monitor__empty">Waiting for session resolution...</p>
+          <div class="mini-list" id="telemetry-current-run-list">
+            <div class="mini-item">
+              <strong id="telemetry-current-run-headline">Waiting for telemetry data...</strong>
+              <span id="telemetry-current-run-status">connecting - n/a</span>
             </div>
+            <div class="mini-item">
+              <strong id="telemetry-session-label">Execution telemetry session</strong>
+              <span id="telemetry-session-subtitle">live watch</span>
+            </div>
+            <div class="mini-item">
+              <strong>Projection source</strong>
+              <span id="telemetry-projection-source">sql - generated now</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rail-block">
+          <div class="section-head" style="padding:0 0 10px;border-bottom:0;">
+            <h3>Compact Legend</h3>
+          </div>
+
+          <div class="mini-list">
+            <div class="pill"><span class="dot good"></span>Healthy</div>
+            <div class="pill"><span class="dot warn"></span>Attention</div>
+            <div class="pill"><span class="dot bad"></span>Blocked</div>
+            <div class="pill"><span class="dot info"></span>Informational</div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main card" aria-label="Execution telemetry">
+        <section class="focus" aria-labelledby="primary-question">
+          <p class="eyebrow">Primary question</p>
+          <h2 id="primary-question">What should I care about right now?</h2>
+          <p class="answer" id="telemetry-primary-answer">
+            Execution is live. The cockpit will update as memory hydration, agent startup, and repo-local work publish telemetry.
+          </p>
+        </section>
+
+        <section class="state-grid" aria-label="Current state summary">
+          <article class="metric">
+            <div class="label">Session posture</div>
+            <p class="value"><span id="telemetry-posture-dot" class="dot info"></span><span id="telemetry-posture-value">Running</span></p>
+            <div class="sub" id="telemetry-posture-subtitle">session - live watch</div>
           </article>
 
-          <article class="execution-monitor__card" style="grid-column:1/-1;">
-            <h4>Chronological events</h4>
-            <div id="telemetry-event-feed">
-              <p class="execution-monitor__empty">Waiting for live events...</p>
-            </div>
+          <article class="metric">
+            <div class="label">Recent processes</div>
+            <p class="value" id="telemetry-recent-processes">0</p>
+            <div class="sub">last 24h - newest first</div>
           </article>
-        </div>
-      </section>
-    </section>
-  </main>
+
+          <article class="metric">
+            <div class="label">Friction</div>
+            <p class="value"><span id="telemetry-friction-dot" class="dot warn"></span><span id="telemetry-friction-count">0</span></p>
+            <div class="sub" id="telemetry-friction-subtitle">failed/retried events</div>
+          </article>
+
+          <article class="metric">
+            <div class="label">Open gaps</div>
+            <p class="value"><span id="telemetry-gap-dot" class="dot good"></span><span id="telemetry-gap-count">0</span></p>
+            <div class="sub" id="telemetry-gap-subtitle">no substrate bypasses</div>
+          </article>
+        </section>
+
+        <section aria-label="Recent events">
+          <div class="toolbar">
+            <div class="filters" id="telemetry-filter-chips" aria-label="Event filters">
+              <button type="button" class="chip active" data-filter-kind="">All</button>
+            </div>
+
+            <div id="telemetry-filter-summary" class="context-pill">0 of 0 event types</div>
+
+            <input
+              id="telemetry-search"
+              class="search"
+              type="search"
+              placeholder="Filter events..."
+              aria-label="Filter events"
+            />
+          </div>
+
+          <div id="telemetry-type-suggestions" class="type-suggestions" role="listbox" aria-label="Suggested event types" hidden></div>
+
+          <div id="telemetry-error-banner" class="focus-state-banner focus-state-banner-error" hidden></div>
+          <div id="telemetry-stale-banner" class="focus-state-banner focus-state-banner-warning" hidden></div>
+
+          <div id="telemetry-stream" class="stream" aria-live="polite">
+            <div class="focus-empty-state">No telemetry events loaded yet.</div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="detail card" aria-label="Selected event detail">
+        <section class="detail-card card">
+          <div class="section-head">
+            <h2>Selected Event</h2>
+            <span>drill-down</span>
+          </div>
+
+          <div id="telemetry-detail-body" class="detail-body">
+            <div class="pill"><span class="dot info"></span>idle</div>
+            <h2 class="detail-title">No event selected</h2>
+            <p class="detail-summary">Once telemetry arrives, the newest event will be selected automatically for drill-down.</p>
+          </div>
+        </section>
+
+        <p class="footer-note">
+          Mock-like layout, live SQL-backed data. The main surface stays compact and copy-paste friendly while the drill-down keeps raw identifiers and evidence payloads behind disclosure.
+        </p>
+      </aside>
+    </div>
+  </div>
 
   <script src="../js/execution-telemetry.js" type="module"></script>
 </body>

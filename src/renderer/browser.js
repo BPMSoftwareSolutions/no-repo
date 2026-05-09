@@ -5,6 +5,7 @@
 
   let activeElementRegistry = null;
   let activeTelemetryScenario = null;
+  let previewMarkupPromise = null;
   const telemetryScenarioLoader = window.TelemetryContractLoader || globalThis.TelemetryContractLoader || null;
 
   function createMarkdownContractLab(documentRef = document) {
@@ -125,10 +126,28 @@
       try {
         const scenario = await telemetryScenarioLoader.loadTelemetryScenario(scenarioKey);
         activeTelemetryScenario = scenario;
+        applyScenarioStyles(scenario.uiContract);
         input.value = scenario.markdown;
         updateCounts();
+        {
+          const parsed = parseMarkdown(scenario.markdown);
+          const validation = validateContract(scenario.markdown, parsed);
+          meta.innerHTML = renderMeta(parsed.frontmatter);
+          if (scenario?.scenarioKey) {
+            meta.innerHTML += `<span>scenario: ${escapeHtml(scenario.scenarioKey)}</span>`;
+            if (scenario.uiContract?.schema) {
+              meta.innerHTML += `<span>ui: ${escapeHtml(scenario.uiContract.schema)}</span>`;
+            }
+          }
+          diagnostics.innerHTML = renderDiagnostics(scenario.markdown, parsed, validation).join('');
+          blockCount.textContent = `${parsed.blocks.length} block${parsed.blocks.length === 1 ? '' : 's'} - rendered ${new Date().toLocaleTimeString()}`;
+        }
         updateScenarioStatus(`Loaded ${scenarioKey} · UI contract resolved`);
-        render();
+        if (shouldRenderPreviewMarkup(scenario)) {
+          await renderPreviewMarkup(output);
+        } else {
+          render();
+        }
       } catch (error) {
         updateScenarioStatus(`Scenario load failed: ${error.message}`);
         diagnostics.innerHTML = `<li class="fail">Scenario load error: ${escapeHtml(error.message)}</li>`;
@@ -185,8 +204,49 @@
     if (existing && typeof existing.remove === 'function') existing.remove();
     const style = document.createElement('style');
     style.id = 'markdown-ui-registry-styles';
-    style.textContent = buildCssFromRegistry(registry);
+    style.dataset = style.dataset || {};
+    style.dataset.baseCss = buildCssFromRegistry(registry);
+    style.textContent = style.dataset.baseCss;
     document.head.appendChild(style);
+  }
+
+  function applyScenarioStyles(contract) {
+    if (!contract?.styles && !contract?.media) return;
+    const style = document.getElementById('markdown-ui-registry-styles');
+    if (!style) return;
+    const baseCss = style.dataset.baseCss || style.textContent || '';
+    const scenarioCss = buildCssFromRegistry(contract);
+    style.textContent = [baseCss, scenarioCss].filter(Boolean).join('\n');
+  }
+
+  function shouldRenderPreviewMarkup(scenario) {
+    return Boolean(window.__LOAD_TELEMETRY_PREVIEW_HTML__)
+      && (scenario?.uiContract?.contract_key === 'et-001.execution-substrate-cockpit.preview'
+      || scenario?.scenarioKey === 'ET-001');
+  }
+
+  async function renderPreviewMarkup(outputEl) {
+    if (!previewMarkupPromise) {
+      const previewUrl = SCRIPT_BASE_URL.startsWith('http')
+        ? new URL('../../docs/design/prototypes/ai-engine-execution-telemetry-preview.html', SCRIPT_BASE_URL).href
+        : '../../docs/design/prototypes/ai-engine-execution-telemetry-preview.html';
+      const fetcher = window.fetch;
+      if (typeof fetcher !== 'function') throw new Error('window.fetch is required to load the preview markup');
+      previewMarkupPromise = (async () => {
+        const response = await fetcher(previewUrl, { cache: 'no-store' });
+        if (!response.ok || typeof response.text !== 'function') {
+          throw new Error(`Preview load failed: ${response.status} ${response.statusText || ''}`.trim());
+        }
+        const html = await response.text();
+        const match = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+        return match ? match[1].trim() : html;
+      })();
+    }
+    try {
+      outputEl.innerHTML = await previewMarkupPromise;
+    } catch {
+      render();
+    }
   }
 
   function buildCssFromRegistry(registry) {

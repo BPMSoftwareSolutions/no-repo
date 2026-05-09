@@ -1,6 +1,12 @@
 {
   "name": "ai-engine-execution-telemetry-preview",
   "source": "docs/design/prototypes/ai-engine-execution-telemetry-preview.html",
+  "schema": "ai-engine-ui/v1",
+  "scenario_key": "ET-001",
+  "version": 1,
+  "contract_key": "et-001.execution-substrate-cockpit.preview",
+  "contract_version": "1.0.0",
+  "projection_type": "operator.execution_substrate_cockpit",
   "styles": {
     ":root": {
       "--bg": "#0f1115",

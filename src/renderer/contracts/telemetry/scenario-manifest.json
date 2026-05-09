@@ -5,7 +5,7 @@
       "label": "Execution Substrate Cockpit",
       "projection_type": "operator.execution_substrate_cockpit",
       "markdown_path": "../../../../fixtures/templates/telemetry/et-001.execution-substrate-cockpit.md.tmpl",
-      "ui_contract_path": "./et-001.execution-substrate-cockpit.ui.contract.json"
+      "ui_contract_path": "../../../../docs/design/prototypes/ai-engine-execution-telemetry-preview.markdown-ui-contract.json"
     },
     "ET-002": {
       "label": "Execution Event Stream",

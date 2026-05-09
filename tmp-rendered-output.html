@@ -1,0 +1,496 @@
+<div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">AI</div>
+        <div>
+          <h1>AI Engine / Execution Telemetry</h1>
+          <p>Thin operator surface · SQL truth · markdown-native projection</p>
+        </div>
+      </div>
+
+      <div class="actions" aria-label="Operator actions">
+        <button class="btn">Copy summary</button>
+        <button class="btn">Open evidence packet</button>
+        <button class="btn primary">Refresh projection</button>
+      </div>
+    </header>
+
+    <div class="shell">
+      <aside class="rail card flush" aria-label="Navigation and scope">
+        <div class="section-head">
+          <h2>Operator Scope</h2>
+          <span>EDT</span>
+        </div>
+
+        <div class="rail-block">
+          <button class="nav-item active">
+            <span>Execution cockpit</span>
+            <span class="nav-count">live</span>
+          </button>
+          <button class="nav-item">
+            <span>Event stream</span>
+            <span class="nav-count">27</span>
+          </button>
+          <button class="nav-item">
+            <span>Workflow substrate</span>
+            <span class="nav-count">1</span>
+          </button>
+          <button class="nav-item">
+            <span>Promotion lane</span>
+            <span class="nav-count">3</span>
+          </button>
+          <button class="nav-item">
+            <span>Schema drift</span>
+            <span class="nav-count">0</span>
+          </button>
+        </div>
+
+        <div class="rail-block">
+          <div class="section-head" style="padding:0 0 10px;border-bottom:0;">
+            <h3>Current Run</h3>
+          </div>
+
+          <div class="mini-list">
+            <div class="mini-item">
+              <strong>Governed Pattern Intelligence Loop</strong>
+              <span>workflow_run · active</span>
+            </div>
+            <div class="mini-item">
+              <strong>Active item: learning feedback</strong>
+              <span>execute-scope-10</span>
+            </div>
+            <div class="mini-item">
+              <strong>Projection source</strong>
+              <span>sql · generated 09:42 EDT</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rail-block">
+          <div class="section-head" style="padding:0 0 10px;border-bottom:0;">
+            <h3>Compact Legend</h3>
+          </div>
+
+          <div class="mini-list">
+            <div class="pill"><span class="dot good"></span>Healthy</div>
+            <div class="pill"><span class="dot warn"></span>Attention</div>
+            <div class="pill"><span class="dot bad"></span>Blocked</div>
+            <div class="pill"><span class="dot info"></span>Informational</div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main card" aria-label="Execution telemetry">
+        <section class="focus" aria-labelledby="primary-question">
+          <p class="eyebrow">Primary question</p>
+          <h2 id="primary-question">What should I care about right now?</h2>
+          <p class="answer">
+            Execution is healthy. The latest governed turn completed, evidence persisted,
+            and the operator should review the newest learning-feedback item before promoting
+            the next telemetry contract slice.
+          </p>
+        </section>
+
+        <section class="state-grid" aria-label="Current state summary">
+          <article class="metric">
+            <div class="label">Session posture</div>
+            <p class="value"><span class="dot good"></span>Running</p>
+            <div class="sub">active-6285-463a-b81e</div>
+          </article>
+
+          <article class="metric">
+            <div class="label">Recent processes</div>
+            <p class="value">27</p>
+            <div class="sub">last 24h · newest first</div>
+          </article>
+
+          <article class="metric">
+            <div class="label">Friction</div>
+            <p class="value"><span class="dot warn"></span>2</p>
+            <div class="sub">failed/retried events</div>
+          </article>
+
+          <article class="metric">
+            <div class="label">Open gaps</div>
+            <p class="value">0</p>
+            <div class="sub">no substrate bypasses</div>
+          </article>
+        </section>
+
+        <section aria-label="Recent events">
+          <div class="toolbar">
+            <div class="filters" aria-label="Event filters">
+              <button class="chip active">All</button>
+              <button class="chip">Failed</button>
+              <button class="chip">Workflow turns</button>
+              <button class="chip">Projection generation</button>
+              <button class="chip">Promotion</button>
+            </div>
+
+            <input class="search" type="search" placeholder="Filter events…" aria-label="Filter events" />
+          </div>
+
+          <div class="stream">
+            <article class="event selected" data-event="0">
+              <div class="event-time">09:42:18 EDT</div>
+              <div class="event-main">
+                <h3 class="event-title"><span class="dot good"></span><span>Assistant turn completed and persisted</span></h3>
+                <p class="event-summary">completeTurn wrote SQL evidence, refreshed projections, and closed the governed turn.</p>
+                <div class="event-meta">
+                  <span class="tag">workflow_turn</span>
+                  <span class="tag">actor: ai-engine-agent</span>
+                  <span class="tag">stage: learning_feedback</span>
+                </div>
+              </div>
+              <div class="duration">1.84s</div>
+            </article>
+
+            <article class="event" data-event="1">
+              <div class="event-time">09:41:53 EDT</div>
+              <div class="event-main">
+                <h3 class="event-title"><span class="dot info"></span><span>Projection generated for execution cockpit</span></h3>
+                <p class="event-summary">Markdown projection emitted with source_truth=sql and contract metadata.</p>
+                <div class="event-meta">
+                  <span class="tag">projection_generation</span>
+                  <span class="tag">operator.execution_substrate_cockpit</span>
+                  <span class="tag">source: sql</span>
+                </div>
+              </div>
+              <div class="duration">482ms</div>
+            </article>
+
+            <article class="event" data-event="2">
+              <div class="event-time">09:40:37 EDT</div>
+              <div class="event-main">
+                <h3 class="event-title"><span class="dot warn"></span><span>Validation retry succeeded after schema check</span></h3>
+                <p class="event-summary">First pass detected stale field binding; retry used current UI contract shape and passed.</p>
+                <div class="event-meta">
+                  <span class="tag">verification_retry</span>
+                  <span class="tag">contract_lab</span>
+                  <span class="tag">schema: ui_contract</span>
+                </div>
+              </div>
+              <div class="duration">6.2s</div>
+            </article>
+
+            <article class="event" data-event="3">
+              <div class="event-time">09:36:15 EDT</div>
+              <div class="event-main">
+                <h3 class="event-title"><span class="dot good"></span><span>Pattern-intelligence candidate packet persisted</span></h3>
+                <p class="event-summary">Candidate set stored with deterministic finding keys and bounded evidence references.</p>
+                <div class="event-meta">
+                  <span class="tag">architecture_integrity</span>
+                  <span class="tag">pattern_discovery</span>
+                  <span class="tag">repo-less</span>
+                </div>
+              </div>
+              <div class="duration">2.9s</div>
+            </article>
+
+            <article class="event" data-event="4">
+              <div class="event-time">09:30:44 EDT</div>
+              <div class="event-main">
+                <h3 class="event-title"><span class="dot bad"></span><span>Pagination cursor unsupported by SDK method</span></h3>
+                <p class="event-summary">Event stream paging blocked because the process-run list surface did not accept before cursor.</p>
+                <div class="event-meta">
+                  <span class="tag">telemetry_pagination_cursor_unsupported</span>
+                  <span class="tag">sdk_surface_gap</span>
+                  <span class="tag">blocked</span>
+                </div>
+              </div>
+              <div class="duration">blocked</div>
+            </article>
+
+            <article class="event" data-event="5">
+              <div class="event-time">09:22:09 EDT</div>
+              <div class="event-main">
+                <h3 class="event-title"><span class="dot info"></span><span>Workflow substrate snapshot loaded</span></h3>
+                <p class="event-summary">Context fragments and recent activity normalized into ActivityEvent records for drill-down.</p>
+                <div class="event-meta">
+                  <span class="tag">context_fragment</span>
+                  <span class="tag">workflow_substrate</span>
+                  <span class="tag">normalization</span>
+                </div>
+              </div>
+              <div class="duration">730ms</div>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <aside class="detail" aria-label="Selected event detail">
+        <section class="detail-card card">
+          <div class="section-head">
+            <h2>Selected Event</h2>
+            <span>drill-down</span>
+          </div>
+
+          <div class="detail-body">
+            <div class="pill"><span class="dot good"></span>completed</div>
+            <h2 class="detail-title">Assistant turn completed and persisted</h2>
+            <p class="detail-summary">
+              The operator-facing state is trustworthy because the turn closed through
+              a governed completion surface and generated SQL-backed evidence.
+            </p>
+
+            <dl class="kv">
+              <dt>When</dt>
+              <dd>2026-05-08 09:42:18 EDT</dd>
+              <dt>Kind</dt>
+              <dd>workflow_turn</dd>
+              <dt>Stage</dt>
+              <dd>learning_feedback</dd>
+              <dt>Actor</dt>
+              <dd>ai-engine-agent</dd>
+              <dt>Duration</dt>
+              <dd>1.84s</dd>
+            </dl>
+
+            <details open>
+              <summary>Operator summary</summary>
+              <pre>completeTurn wrote durable SQL evidence, refreshed LOGA projection metadata,
+and closed the governed execution turn. No unresolved gaps remain.</pre>
+              <div class="copy-row">
+                <span>copy-friendly text block</span>
+                <button class="btn">Copy</button>
+              </div>
+            </details>
+
+            <details>
+              <summary>Evidence payload</summary>
+              <pre>{
+  "source_truth": "sql",
+  "execution_surface": "completeTurn",
+  "workflow_stage": "learning_feedback",
+  "projection_type": "operator.execution_substrate_cockpit",
+  "status": "completed",
+  "open_gap_count": 0
+}</pre>
+            </details>
+
+            <details>
+              <summary>Identifiers</summary>
+              <pre>{
+  "workflow_run_id": "hidden-until-needed",
+  "agent_session_id": "hidden-until-needed",
+  "agent_turn_id": "hidden-until-needed",
+  "correlation_id": "hidden-until-needed"
+}</pre>
+            </details>
+
+            <details>
+              <summary>Markdown projection excerpt</summary>
+              <pre># Execution Telemetry
+
+::focus
+question: "What should I care about right now?"
+answer: "Execution is healthy. Review the newest learning-feedback item."
+status: "healthy"
+::
+
+## Recent Events
+- 09:42 EDT — Assistant turn completed and persisted
+- 09:41 EDT — Projection generated
+- 09:40 EDT — Validation retry succeeded</pre>
+            </details>
+          </div>
+        </section>
+
+        <p class="footer-note">
+          Mock data only. The layout keeps raw identifiers and payloads behind drill-down,
+          while the main surface stays compact and copy-paste friendly.
+        </p>
+      </aside>
+    </div>
+  </div>
+
+  <textarea class="plain-copy" aria-hidden="true">
+# Execution Telemetry
+
+Primary: What should I care about right now?
+
+Execution is healthy. The latest governed turn completed, evidence persisted,
+and the operator should review the newest learning-feedback item before promoting
+the next telemetry contract slice.
+
+Recent events:
+- 09:42 EDT — Assistant turn completed and persisted
+- 09:41 EDT — Projection generated for execution cockpit
+- 09:40 EDT — Validation retry succeeded after schema check
+  </textarea>
+
+  <script>
+    const events = [
+      {
+        status: "completed",
+        dot: "good",
+        title: "Assistant turn completed and persisted",
+        summary: "The operator-facing state is trustworthy because the turn closed through a governed completion surface and generated SQL-backed evidence.",
+        when: "2026-05-08 09:42:18 EDT",
+        kind: "workflow_turn",
+        stage: "learning_feedback",
+        actor: "ai-engine-agent",
+        duration: "1.84s",
+        payload: {
+          source_truth: "sql",
+          execution_surface: "completeTurn",
+          workflow_stage: "learning_feedback",
+          projection_type: "operator.execution_substrate_cockpit",
+          status: "completed",
+          open_gap_count: 0
+        }
+      },
+      {
+        status: "generated",
+        dot: "info",
+        title: "Projection generated for execution cockpit",
+        summary: "Markdown projection emitted with source_truth=sql and contract metadata.",
+        when: "2026-05-08 09:41:53 EDT",
+        kind: "projection_generation",
+        stage: "operator_projection",
+        actor: "projection-generator",
+        duration: "482ms",
+        payload: {
+          source_truth: "sql",
+          projection_type: "operator.execution_substrate_cockpit",
+          contract: "ai-engine-ui/v1",
+          refresh_policy: "manual"
+        }
+      },
+      {
+        status: "retry_succeeded",
+        dot: "warn",
+        title: "Validation retry succeeded after schema check",
+        summary: "First pass detected stale field binding; retry used current UI contract shape and passed.",
+        when: "2026-05-08 09:40:37 EDT",
+        kind: "verification_retry",
+        stage: "contract_lab",
+        actor: "validator",
+        duration: "6.2s",
+        payload: {
+          first_result: "schema_error",
+          second_result: "pass",
+          error: "stale_field_binding"
+        }
+      },
+      {
+        status: "persisted",
+        dot: "good",
+        title: "Pattern-intelligence candidate packet persisted",
+        summary: "Candidate set stored with deterministic finding keys and bounded evidence references.",
+        when: "2026-05-08 09:36:15 EDT",
+        kind: "architecture_integrity",
+        stage: "candidate_collection",
+        actor: "pattern-intelligence-loop",
+        duration: "2.9s",
+        payload: {
+          candidate_count: 18,
+          finding_key_strategy: "repo:ref:path:rule",
+          evidence: "bounded"
+        }
+      },
+      {
+        status: "blocked",
+        dot: "bad",
+        title: "Pagination cursor unsupported by SDK method",
+        summary: "Event stream paging blocked because the process-run list surface did not accept before cursor.",
+        when: "2026-05-08 09:30:44 EDT",
+        kind: "sdk_surface_gap",
+        stage: "event_stream",
+        actor: "telemetry-runtime",
+        duration: "blocked",
+        payload: {
+          error: "telemetry_pagination_cursor_unsupported",
+          required_parameter: "before",
+          action: "open_design_defect"
+        }
+      },
+      {
+        status: "loaded",
+        dot: "info",
+        title: "Workflow substrate snapshot loaded",
+        summary: "Context fragments and recent activity normalized into ActivityEvent records for drill-down.",
+        when: "2026-05-08 09:22:09 EDT",
+        kind: "workflow_substrate",
+        stage: "normalization",
+        actor: "substrate-reader",
+        duration: "730ms",
+        payload: {
+          context_fragments: 14,
+          recent_activity: 9,
+          normalized_type: "ActivityEvent"
+        }
+      }
+    ];
+
+    const detail = document.querySelector(".detail-body");
+    const eventNodes = document.querySelectorAll(".event");
+
+    function renderDetail(event) {
+      detail.innerHTML = `
+        <div class="pill"><span class="dot ${event.dot}"></span>${event.status}</div>
+        <h2 class="detail-title">${event.title}</h2>
+        <p class="detail-summary">${event.summary}</p>
+
+        <dl class="kv">
+          <dt>When</dt><dd>${event.when}</dd>
+          <dt>Kind</dt><dd>${event.kind}</dd>
+          <dt>Stage</dt><dd>${event.stage}</dd>
+          <dt>Actor</dt><dd>${event.actor}</dd>
+          <dt>Duration</dt><dd>${event.duration}</dd>
+        </dl>
+
+        <details open>
+          <summary>Operator summary</summary>
+          <pre>${event.summary}</pre>
+          <div class="copy-row">
+            <span>copy-friendly text block</span>
+            <button class="btn" onclick="navigator.clipboard && navigator.clipboard.writeText(${JSON.stringify(event.summary)})">Copy</button>
+          </div>
+        </details>
+
+        <details>
+          <summary>Evidence payload</summary>
+          <pre>${JSON.stringify(event.payload, null, 2)}</pre>
+        </details>
+
+        <details>
+          <summary>Identifiers</summary>
+          <pre>{
+  "workflow_run_id": "hidden-until-needed",
+  "agent_session_id": "hidden-until-needed",
+  "agent_turn_id": "hidden-until-needed",
+  "correlation_id": "hidden-until-needed"
+}</pre>
+        </details>
+
+        <details>
+          <summary>Markdown projection excerpt</summary>
+          <pre># Execution Telemetry
+
+::focus
+question: "What should I care about right now?"
+answer: "${event.summary}"
+status: "${event.status}"
+::</pre>
+        </details>
+      `;
+    }
+
+    eventNodes.forEach((node) => {
+      node.addEventListener("click", () => {
+        eventNodes.forEach((n) => n.classList.remove("selected"));
+        node.classList.add("selected");
+        renderDetail(events[Number(node.dataset.event)]);
+      });
+    });
+
+    node.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        node.click();
+      }
+    });
+
+    node.setAttribute("tabindex", "0");
+    node.setAttribute("role", "button");
+  </script>
