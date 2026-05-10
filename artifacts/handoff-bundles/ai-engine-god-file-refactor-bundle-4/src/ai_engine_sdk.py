@@ -1,0 +1,17 @@
+from __future__ import annotations
+
+from ai_engine_sdk_facade import AIEngineClientFacade
+from ai_engine_sdk_core import AIEngineClientCore
+from ai_engine_sdk_projections import AIEngineProjectionNamespace
+from ai_engine_sdk_retrieval import AIEngineRetrievalNamespace
+from ai_engine_sdk_repo_inventory import AIEngineRepoInventoryNamespace
+from ai_engine_sdk_agent_comms import AIEngineAgentCommsNamespace
+
+
+AIEngineClient = AIEngineClientFacade
+AIEngineClientFacade = AIEngineClientFacade
+AIEngineClientCore = AIEngineClientCore
+AIEngineProjectionNamespace = AIEngineProjectionNamespace
+AIEngineRetrievalNamespace = AIEngineRetrievalNamespace
+AIEngineRepoInventoryNamespace = AIEngineRepoInventoryNamespace
+AIEngineAgentCommsNamespace = AIEngineAgentCommsNamespace

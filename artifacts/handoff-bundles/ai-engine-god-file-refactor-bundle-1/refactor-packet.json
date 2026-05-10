@@ -1,0 +1,98 @@
+{
+  "bundle_name": "ai-engine-god-file-refactor-bundle-1",
+  "repository_name": "ai-engine",
+  "repository_root": "D:/a/ai-engine/ai-engine",
+  "analysis_mode": "remote_sdk_only",
+  "source_of_truth": "sql",
+  "status": "draft",
+  "selected_files": [
+    {
+      "file_path": "./src/orchestration/loga_projection_service.py",
+      "line_count": 5816,
+      "symbol_count": 26,
+      "refactor_intent": "Split projection contracts, formatting helpers, and rendering flows into bounded modules."
+    },
+    {
+      "file_path": "./src/persistence/sql/workflow_store_communication.py",
+      "line_count": 4516,
+      "symbol_count": 28,
+      "refactor_intent": "Split SQL row mapping, thread lifecycle, message lifecycle, evidence, and transfer concerns into separate repositories."
+    },
+    {
+      "file_path": "./src/ai_engine_sdk.py",
+      "line_count": 3272,
+      "symbol_count": 12,
+      "refactor_intent": "Split the SDK façade into smaller namespaces and a lightweight composition root."
+    }
+  ],
+  "observed_sdk_state": {
+    "listRefactorCandidates": {
+      "ok": true,
+      "count": 0
+    },
+    "getChangeAnalysis": {
+      "ok": true,
+      "symbol_count": 5,
+      "finding_count": 0,
+      "relationship_count": 0
+    }
+  },
+  "split_plan": [
+    {
+      "source": "./src/orchestration/loga_projection_service.py",
+      "targets": [
+        "src/orchestration/loga_projection_protocols.py",
+        "src/orchestration/loga_projection_rendering.py",
+        "src/orchestration/loga_projection_formatters.py",
+        "src/orchestration/loga_projection_service.py"
+      ],
+      "notes": [
+        "Keep the service as a composition root.",
+        "Move helper functions and rendering logic into bounded modules.",
+        "Preserve the public projection API signatures."
+      ]
+    },
+    {
+      "source": "./src/persistence/sql/workflow_store_communication.py",
+      "targets": [
+        "src/persistence/sql/communication_row_mappers.py",
+        "src/persistence/sql/communication_threads.py",
+        "src/persistence/sql/communication_messages.py",
+        "src/persistence/sql/communication_evidence.py",
+        "src/persistence/sql/communication_transfers.py",
+        "src/persistence/sql/workflow_store_communication.py"
+      ],
+      "notes": [
+        "Extract pure coercion and serialization first.",
+        "Split thread/message/evidence/transfer lifecycles into separate repositories.",
+        "Keep row-to-dict adapters centralized."
+      ]
+    },
+    {
+      "source": "./src/ai_engine_sdk.py",
+      "targets": [
+        "src/ai_engine_sdk_core.py",
+        "src/ai_engine_sdk_projections.py",
+        "src/ai_engine_sdk_retrieval.py",
+        "src/ai_engine_sdk_repo_inventory.py",
+        "src/ai_engine_sdk_agent_comms.py",
+        "src/ai_engine_sdk_actions.py",
+        "src/ai_engine_sdk.py"
+      ],
+      "notes": [
+        "Move namespaces into dedicated modules.",
+        "Keep AIEngineClient as a thin orchestrator.",
+        "Preserve import compatibility for existing callers."
+      ]
+    }
+  ],
+  "handoff_expectation": {
+    "recipient": "backend-ai-engine-agent",
+    "action": "integrate",
+    "acceptance": [
+      "Refactored modules exist with stable public entry points.",
+      "Compatibility shims continue to satisfy existing callers.",
+      "Focus tests cover projection, communication store, and SDK namespace behavior."
+    ]
+  }
+}

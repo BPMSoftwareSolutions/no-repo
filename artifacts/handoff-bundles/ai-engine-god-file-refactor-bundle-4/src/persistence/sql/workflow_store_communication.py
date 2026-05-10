@@ -1,0 +1,11 @@
+from __future__ import annotations
+
+from persistence.sql.communication_row_mappers import CommunicationRowMappers
+from persistence.sql.workflow_store_communication_facade import (
+    SqlWorkflowStoreCommunicationFacade,
+    build_default_workflow_store_communication_facade,
+)
+
+
+SqlWorkflowStoreCommunicationMixin = SqlWorkflowStoreCommunicationFacade
+build_default_workflow_store_communication_mixin = build_default_workflow_store_communication_facade

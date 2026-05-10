@@ -1,0 +1,907 @@
+{
+  "bundle_name": "ai-engine-god-file-refactor-bundle-4",
+  "packet_type": "refactor_packet",
+  "packet_version": 1,
+  "created_at": "2026-05-10T00:00:00Z",
+  "created_by": "shared-api-key-client",
+  "requested_by": "shared-api-key-client",
+  "dry_run": true,
+  "sourceRef": "main",
+  "baseCommit": "af221aa25f961245fe7d1416a1cf16f2df5540f8",
+  "repository_name": "ai-engine",
+  "repository_id": "f3f44a2c-7bd2-4a72-9718-26924bd3b407",
+  "repository_key": "d-a-ai-engine-ai-engine",
+  "repository_root": "D:/a/ai-engine/ai-engine",
+  "analysis_mode": "remote_sdk_only",
+  "source_of_truth": "sql",
+  "sourceRepo": {
+    "repository_name": "ai-engine",
+    "repository_id": "f3f44a2c-7bd2-4a72-9718-26924bd3b407",
+    "repository_key": "d-a-ai-engine-ai-engine",
+    "repository_root": "D:/a/ai-engine/ai-engine"
+  },
+  "intake": {
+    "request_kind": "god_file_refactor",
+    "requested_by": "shared-api-key-client",
+    "analysis_mode": "remote_sdk_only",
+    "source_of_truth": "sql",
+    "source_repository_name": "ai-engine",
+    "source_repository_id": "f3f44a2c-7bd2-4a72-9718-26924bd3b407",
+    "source_repository_root": "D:/a/ai-engine/ai-engine",
+    "source_repository_key": "d-a-ai-engine-ai-engine",
+    "refactor_goal": "Split remote God files into domain-specific modules while keeping compatibility index files thin.",
+    "validation_policy": {
+      "dry_run": true,
+      "preserve_import_paths": true,
+      "preserve_public_method_names": true,
+      "preserve_runtime_behavior": true
+    }
+  },
+  "source_repository_authority": {
+    "repository_name": "ai-engine",
+    "repository_id": "f3f44a2c-7bd2-4a72-9718-26924bd3b407",
+    "repository_key": "d-a-ai-engine-ai-engine",
+    "repository_root": "D:/a/ai-engine/ai-engine",
+    "source_of_truth": "sql"
+  },
+  "sourceLineCount": 10235,
+  "sourceSymbolCount": 40,
+  "baseFileHashes": {
+    "./src/persistence/sql/workflow_store_communication.py": "b279d6e864efd6d9f8292584bcf6a7caa852d9426e3ad91d804523cb6d6041a8",
+    "./src/ai_engine_sdk.py": "658666350aff9b88b7a7791308173fd1e978857d1f4aa8ccaae612f53982e08a"
+  },
+  "targetFiles": [
+    {
+      "file_path": "./src/persistence/sql/workflow_store_communication.py",
+      "code_file_id": "9d8d5d7c-7b9a-4cef-a6c1-f7934646890a",
+      "line_count": 5735,
+      "symbol_count": 28,
+      "role": "source_index"
+    },
+    {
+      "file_path": "./src/ai_engine_sdk.py",
+      "code_file_id": "2804b29a-0971-45cf-a297-607cb374d108",
+      "line_count": 4344,
+      "symbol_count": 12,
+      "role": "source_index"
+    }
+  ],
+  "targets": [
+    {
+      "file_path": "./src/persistence/sql/workflow_store_communication.py",
+      "code_file_id": "9d8d5d7c-7b9a-4cef-a6c1-f7934646890a",
+      "line_count": 5735,
+      "symbol_count": 28,
+      "content_hash": "b279d6e864efd6d9f8292584bcf6a7caa852d9426e3ad91d804523cb6d6041a8",
+      "source_line_count": 5735,
+      "source_symbol_count": 28,
+      "source_file_id": "9d8d5d7c-7b9a-4cef-a6c1-f7934646890a",
+      "strategy": "make the original file a thin index while moving the real implementation into domain modules for rows, threads, messages, friction, transfer packets, transfer channels, coordination, collaboration, and handoffs",
+      "ownership_movement": [
+        {
+          "from": "./src/persistence/sql/workflow_store_communication.py",
+          "to": "./src/persistence/sql/communication_row_mappers.py",
+          "responsibility": "uuid/text/json coercion and row projection"
+        },
+        {
+          "from": "./src/persistence/sql/workflow_store_communication.py",
+          "to": "./src/persistence/sql/communication_thread_repository.py",
+          "responsibility": "thread lifecycle"
+        },
+        {
+          "from": "./src/persistence/sql/workflow_store_communication.py",
+          "to": "./src/persistence/sql/communication_message_repository.py",
+          "responsibility": "message lifecycle and evidence links"
+        },
+        {
+          "from": "./src/persistence/sql/workflow_store_communication.py",
+          "to": "./src/persistence/sql/communication_friction_repository.py",
+          "responsibility": "friction taxonomy and friction events"
+        },
+        {
+          "from": "./src/persistence/sql/workflow_store_communication.py",
+          "to": "./src/persistence/sql/communication_transfer_packet_repository.py",
+          "responsibility": "transfer packet lifecycle and health"
+        },
+        {
+          "from": "./src/persistence/sql/workflow_store_communication.py",
+          "to": "./src/persistence/sql/communication_transfer_channel_repository.py",
+          "responsibility": "transfer channel state and presence"
+        },
+        {
+          "from": "./src/persistence/sql/workflow_store_communication.py",
+          "to": "./src/persistence/sql/communication_coordination_repository.py",
+          "responsibility": "coordination ping/pong and online status"
+        },
+        {
+          "from": "./src/persistence/sql/workflow_store_communication.py",
+          "to": "./src/persistence/sql/communication_collaboration_repository.py",
+          "responsibility": "collaboration review, blockers, implementation, and closure"
+        },
+        {
+          "from": "./src/persistence/sql/workflow_store_communication.py",
+          "to": "./src/persistence/sql/communication_handoff_repository.py",
+          "responsibility": "handoff lifecycle"
+        },
+        {
+          "from": "./src/persistence/sql/workflow_store_communication.py",
+          "to": "./src/persistence/sql/workflow_store_communication.py",
+          "responsibility": "thin compatibility index only"
+        }
+      ],
+      "module_plan": [
+        {
+          "file_path": "./src/persistence/sql/workflow_store_communication.py",
+          "target_loc": 12,
+          "role": "index"
+        },
+        {
+          "file_path": "./src/persistence/sql/workflow_store_communication_facade.py",
+          "target_loc": 95,
+          "role": "facade"
+        },
+        {
+          "file_path": "./src/persistence/sql/communication_row_mappers.py",
+          "target_loc": 420,
+          "role": "row_mapping"
+        },
+        {
+          "file_path": "./src/persistence/sql/communication_thread_repository.py",
+          "target_loc": 610,
+          "role": "thread_lifecycle"
+        },
+        {
+          "file_path": "./src/persistence/sql/communication_message_repository.py",
+          "target_loc": 720,
+          "role": "message_lifecycle"
+        },
+        {
+          "file_path": "./src/persistence/sql/communication_friction_repository.py",
+          "target_loc": 390,
+          "role": "friction_events"
+        },
+        {
+          "file_path": "./src/persistence/sql/communication_transfer_packet_repository.py",
+          "target_loc": 980,
+          "role": "transfer_packets"
+        },
+        {
+          "file_path": "./src/persistence/sql/communication_transfer_channel_repository.py",
+          "target_loc": 850,
+          "role": "transfer_channel"
+        },
+        {
+          "file_path": "./src/persistence/sql/communication_coordination_repository.py",
+          "target_loc": 730,
+          "role": "coordination"
+        },
+        {
+          "file_path": "./src/persistence/sql/communication_collaboration_repository.py",
+          "target_loc": 680,
+          "role": "collaboration"
+        },
+        {
+          "file_path": "./src/persistence/sql/communication_handoff_repository.py",
+          "target_loc": 353,
+          "role": "handoff"
+        }
+      ]
+    },
+    {
+      "file_path": "./src/ai_engine_sdk.py",
+      "code_file_id": "2804b29a-0971-45cf-a297-607cb374d108",
+      "line_count": 4344,
+      "symbol_count": 12,
+      "content_hash": "8dc326eedc9aff3dd13d3a9e917807b64dfc346d25133e614fe90da933f3dafa",
+      "source_line_count": 4344,
+      "source_symbol_count": 12,
+      "source_file_id": "2804b29a-0971-45cf-a297-607cb374d108",
+      "strategy": "make the original file a thin index while moving the client surface into namespaces for core transport, projections, retrieval, repo inventory, and agent communications",
+      "ownership_movement": [
+        {
+          "from": "./src/ai_engine_sdk.py",
+          "to": "./src/ai_engine_sdk_core.py",
+          "responsibility": "transport and request plumbing"
+        },
+        {
+          "from": "./src/ai_engine_sdk.py",
+          "to": "./src/ai_engine_sdk_projections.py",
+          "responsibility": "projection and report verbs"
+        },
+        {
+          "from": "./src/ai_engine_sdk.py",
+          "to": "./src/ai_engine_sdk_retrieval.py",
+          "responsibility": "retrieval and symbol query verbs"
+        },
+        {
+          "from": "./src/ai_engine_sdk.py",
+          "to": "./src/ai_engine_sdk_repo_inventory.py",
+          "responsibility": "repository and code-file inventory verbs"
+        },
+        {
+          "from": "./src/ai_engine_sdk.py",
+          "to": "./src/ai_engine_sdk_agent_comms.py",
+          "responsibility": "agent communication, bundle, transfer, and handoff verbs"
+        },
+        {
+          "from": "./src/ai_engine_sdk.py",
+          "to": "./src/ai_engine_sdk.py",
+          "responsibility": "thin compatibility index only"
+        }
+      ],
+      "module_plan": [
+        {
+          "file_path": "./src/ai_engine_sdk.py",
+          "target_loc": 3,
+          "role": "index"
+        },
+        {
+          "file_path": "./src/ai_engine_sdk_facade.py",
+          "target_loc": 460,
+          "role": "client_facade"
+        },
+        {
+          "file_path": "./src/ai_engine_sdk_core.py",
+          "target_loc": 240,
+          "role": "transport_core"
+        },
+        {
+          "file_path": "./src/ai_engine_sdk_projections.py",
+          "target_loc": 690,
+          "role": "projections"
+        },
+        {
+          "file_path": "./src/ai_engine_sdk_retrieval.py",
+          "target_loc": 620,
+          "role": "retrieval"
+        },
+        {
+          "file_path": "./src/ai_engine_sdk_repo_inventory.py",
+          "target_loc": 980,
+          "role": "repo_inventory"
+        },
+        {
+          "file_path": "./src/ai_engine_sdk_agent_comms.py",
+          "target_loc": 1351,
+          "role": "agent_comms"
+        }
+      ]
+    }
+  ],
+  "modulePlan": [
+    {
+      "source": "./src/persistence/sql/workflow_store_communication.py",
+      "targets": [
+        "./src/persistence/sql/communication_row_mappers.py",
+        "./src/persistence/sql/communication_thread_repository.py",
+        "./src/persistence/sql/communication_message_repository.py",
+        "./src/persistence/sql/communication_friction_repository.py",
+        "./src/persistence/sql/communication_transfer_packet_repository.py",
+        "./src/persistence/sql/communication_transfer_channel_repository.py",
+        "./src/persistence/sql/communication_coordination_repository.py",
+        "./src/persistence/sql/communication_collaboration_repository.py",
+        "./src/persistence/sql/communication_handoff_repository.py",
+        "./src/persistence/sql/workflow_store_communication.py"
+      ],
+      "notes": [
+        "Extract pure coercion and serialization first.",
+        "Split lifecycle responsibilities into bounded repositories.",
+        "Keep the compatibility index thin."
+      ]
+    },
+    {
+      "source": "./src/ai_engine_sdk.py",
+      "targets": [
+        "./src/ai_engine_sdk_core.py",
+        "./src/ai_engine_sdk_projections.py",
+        "./src/ai_engine_sdk_retrieval.py",
+        "./src/ai_engine_sdk_repo_inventory.py",
+        "./src/ai_engine_sdk_agent_comms.py",
+        "./src/ai_engine_sdk.py"
+      ],
+      "notes": [
+        "Move namespaces into dedicated modules.",
+        "Keep AIEngineClient as a thin orchestrator.",
+        "Preserve import compatibility for existing callers."
+      ]
+    },
+    {
+      "source": "./src/persistence/sql/workflow_store_communication.py",
+      "targets": [
+        "./src/persistence/sql/workflow_store_communication.py",
+        "./src/persistence/sql/workflow_store_communication_facade.py"
+      ],
+      "notes": [
+        "Compatibility index and facade modules are part of the output surface."
+      ]
+    },
+    {
+      "source": "./src/persistence/sql/workflow_store_communication.py",
+      "targets": [
+        "./src/persistence/sql/communication_friction_repository.py",
+        "./src/persistence/sql/communication_transfer_repository.py"
+      ],
+      "notes": [
+        "Friction and bundle lifecycle outputs are explicit modules."
+      ]
+    },
+    {
+      "source": "./src/ai_engine_sdk.py",
+      "targets": [
+        "./src/ai_engine_sdk.py",
+        "./src/ai_engine_sdk_facade.py"
+      ],
+      "notes": [
+        "SDK compatibility index and facade are part of the output surface."
+      ]
+    }
+  ],
+  "expectedOutputFiles": [
+    "./src/persistence/sql/workflow_store_communication.py",
+    "./src/persistence/sql/workflow_store_communication_facade.py",
+    "./src/persistence/sql/communication_row_mappers.py",
+    "./src/persistence/sql/communication_thread_repository.py",
+    "./src/persistence/sql/communication_message_repository.py",
+    "./src/persistence/sql/communication_friction_repository.py",
+    "./src/persistence/sql/communication_transfer_packet_repository.py",
+    "./src/persistence/sql/communication_transfer_channel_repository.py",
+    "./src/persistence/sql/communication_coordination_repository.py",
+    "./src/persistence/sql/communication_collaboration_repository.py",
+    "./src/persistence/sql/communication_transfer_repository.py",
+    "./src/persistence/sql/communication_handoff_repository.py",
+    "./src/ai_engine_sdk.py",
+    "./src/ai_engine_sdk_facade.py",
+    "./src/ai_engine_sdk_core.py",
+    "./src/ai_engine_sdk_projections.py",
+    "./src/ai_engine_sdk_retrieval.py",
+    "./src/ai_engine_sdk_repo_inventory.py",
+    "./src/ai_engine_sdk_agent_comms.py"
+  ],
+  "compatibilityPolicy": {
+    "preserve_import_paths": true,
+    "preserve_public_method_names": true,
+    "preserve_runtime_behavior": true
+  },
+  "validationPlan": [
+    "Confirm source repository authority and base commit.",
+    "Confirm source file hashes and source metrics.",
+    "Confirm target file and module ownership movement.",
+    "Confirm compatibility policy and expected output files.",
+    "Confirm trusted wrapper evidence presence."
+  ],
+  "artifactManifest": {
+    "bundle_root": "C:/source/repos/bpm/internal/no-repo/artifacts/handoff-bundles/ai-engine-god-file-refactor-bundle-4",
+    "artifact_files": [
+      "README.md",
+      "refactor-packet.json",
+      "src/persistence/sql/workflow_store_communication.py",
+      "src/persistence/sql/workflow_store_communication_facade.py",
+      "src/persistence/sql/communication_row_mappers.py",
+      "src/persistence/sql/communication_thread_repository.py",
+      "src/persistence/sql/communication_message_repository.py",
+      "src/persistence/sql/communication_friction_repository.py",
+      "src/persistence/sql/communication_transfer_packet_repository.py",
+      "src/persistence/sql/communication_transfer_channel_repository.py",
+      "src/persistence/sql/communication_coordination_repository.py",
+      "src/persistence/sql/communication_collaboration_repository.py",
+      "src/persistence/sql/communication_transfer_repository.py",
+      "src/persistence/sql/communication_handoff_repository.py",
+      "src/ai_engine_sdk.py",
+      "src/ai_engine_sdk_facade.py",
+      "src/ai_engine_sdk_core.py",
+      "src/ai_engine_sdk_projections.py",
+      "src/ai_engine_sdk_retrieval.py",
+      "src/ai_engine_sdk_repo_inventory.py",
+      "src/ai_engine_sdk_agent_comms.py"
+    ]
+  },
+  "trustedWrapperExecutionEvidence": {
+    "status": "pending",
+    "wrapper_execution_record": null,
+    "wrapper_operation_records": null,
+    "wrapper_file_manifest": null,
+    "wrapper_planned_actual_ownership": null,
+    "wrapper_verification_summary": null,
+    "validation_output": null
+  },
+  "ownership_summary": {
+    "planned_vs_actual": "planned",
+    "movement_complete": false,
+    "notes": [
+      "This packet is a dry-run refactor plan with explicit ownership movement.",
+      "Actual repo mutation is reserved for the governed integration step."
+    ]
+  },
+  "compatibility_policy": {
+    "preserve_import_paths": true,
+    "preserve_public_method_names": true,
+    "preserve_runtime_behavior": true
+  },
+  "packetId": "ai-engine-god-file-refactor-bundle-4",
+  "packetType": "implementation_plan_packet",
+  "packetVersion": "1.0",
+  "sourceModel": {
+    "producer": "replayable_refactor_plan_service",
+    "purpose": "Generate a replayable single-responsibility refactor plan from SQL-backed code metadata."
+  },
+  "system": {
+    "domain": "refactory-strategy",
+    "slug": "ai-engine"
+  },
+  "title": "Replayable refactor plan for workflow_store_communication.py and ai_engine_sdk.py",
+  "status": "draft",
+  "scope": {
+    "designIntent": "Plan and execute a bounded file split from SQL metadata first.",
+    "findingRefs": [],
+    "godFileRefactorContract": null,
+    "inScope": [
+      "./src/persistence/sql/workflow_store_communication.py",
+      "./src/ai_engine_sdk.py"
+    ],
+    "outOfScope": [
+      "handwritten DAL creation",
+      "broad raw file reads without wrapper justification",
+      "unrelated module rewrites"
+    ],
+    "productArea": "architecture-integrity",
+    "refactorIntent": {},
+    "targetSurface": "./src/persistence/sql/workflow_store_communication.py",
+    "workflowIntent": "single-responsibility-refactor"
+  },
+  "refactorIntake": {
+    "intakeStage": "candidate",
+    "sourceRepo": "ai-engine",
+    "sourceRef": "main",
+    "baseCommit": "af221aa25f961245fe7d1416a1cf16f2df5540f8",
+    "baseFileHashes": {
+      "./src/persistence/sql/workflow_store_communication.py": "b279d6e864efd6d9f8292584bcf6a7caa852d9426e3ad91d804523cb6d6041a8",
+      "./src/ai_engine_sdk.py": "658666350aff9b88b7a7791308173fd1e978857d1f4aa8ccaae612f53982e08a"
+    },
+    "sourceFilePath": "./src/persistence/sql/workflow_store_communication.py",
+    "sourceLineCount": 10235,
+    "sourceSymbolCount": 28,
+    "targetFiles": [
+      "./src/persistence/sql/workflow_store_communication.py",
+      "./src/ai_engine_sdk.py"
+    ],
+    "modulePlan": [
+      {
+        "destinationFile": "./src/persistence/sql/communication_row_mappers.py",
+        "destinationRole": "row mapping and coercion",
+        "responsibilities": [
+          "clean_text",
+          "normalize_uuid_value",
+          "serialize_json",
+          "json_payload",
+          "timestamp",
+          "current_timestamp"
+        ]
+      },
+      {
+        "destinationFile": "./src/persistence/sql/communication_thread_repository.py",
+        "destinationRole": "thread lifecycle",
+        "responsibilities": [
+          "open_communication_thread",
+          "update_communication_thread_status",
+          "close_communication_thread",
+          "get_communication_thread",
+          "list_communication_threads"
+        ]
+      },
+      {
+        "destinationFile": "./src/persistence/sql/communication_message_repository.py",
+        "destinationRole": "message lifecycle",
+        "responsibilities": [
+          "create_communication_message",
+          "accept_communication_message",
+          "respond_with_evidence",
+          "attach_message_evidence",
+          "list_message_evidence_links",
+          "list_communication_messages",
+          "list_communication_inbox"
+        ]
+      },
+      {
+        "destinationFile": "./src/persistence/sql/communication_transfer_packet_repository.py",
+        "destinationRole": "transfer packet lifecycle",
+        "responsibilities": [
+          "create_communication_transfer_packet",
+          "get_communication_transfer_packet",
+          "list_communication_transfer_packets",
+          "update_communication_transfer_packet_status",
+          "record_communication_transfer_receipt",
+          "record_communication_transfer_closure",
+          "close_communication_transfer_packet",
+          "get_communication_transfer_health"
+        ]
+      },
+      {
+        "destinationFile": "./src/persistence/sql/communication_transfer_channel_repository.py",
+        "destinationRole": "transfer channel projection",
+        "responsibilities": [
+          "connect_to_transfer_channel",
+          "list_communication_channels",
+          "list_open_communication_channels",
+          "get_communication_channel_status",
+          "get_communication_channel_participants",
+          "get_presence_board",
+          "get_channel_presence",
+          "respond_to_message_watch"
+        ]
+      },
+      {
+        "destinationFile": "./src/persistence/sql/communication_coordination_repository.py",
+        "destinationRole": "coordination",
+        "responsibilities": [
+          "start_coordination_ping_pong",
+          "send_coordination_ping",
+          "send_coordination_pong",
+          "get_coordination_ping_pong_status",
+          "stop_coordination_ping_pong",
+          "who_is_online",
+          "find_online_participant",
+          "mark_participant_online",
+          "mark_participant_offline"
+        ]
+      },
+      {
+        "destinationFile": "./src/persistence/sql/communication_collaboration_repository.py",
+        "destinationRole": "collaboration",
+        "responsibilities": [
+          "review_collaboration_proposal",
+          "revise_collaboration_proposal",
+          "raise_collaboration_blocker",
+          "begin_collaboration_implementation",
+          "request_collaboration_closure",
+          "bootstrap_communication",
+          "negotiate_communication_transfer",
+          "resolve_communication_target",
+          "create_communication_evidence_packet",
+          "transfer_work_packet"
+        ]
+      },
+      {
+        "destinationFile": "./src/persistence/sql/communication_handoff_repository.py",
+        "destinationRole": "handoff",
+        "responsibilities": [
+          "create_handoff",
+          "get_pending_handoff",
+          "acknowledge_handoff",
+          "accept_handoff",
+          "complete_handoff",
+          "cancel_handoff"
+        ]
+      },
+      {
+        "destinationFile": "./src/ai_engine_sdk_core.py",
+        "destinationRole": "sdk transport core",
+        "responsibilities": [
+          "request",
+          "from_env_config",
+          "with_override",
+          "get_config_value"
+        ]
+      },
+      {
+        "destinationFile": "./src/ai_engine_sdk_projections.py",
+        "destinationRole": "projection namespace",
+        "responsibilities": [
+          "render",
+          "run_report_definition",
+          "render_projection",
+          "get_latest_memory_projection",
+          "get_loga_generated_execution_usability",
+          "get_loga_generated_execution_usability_projection",
+          "current_workflow_status",
+          "current_architecture_integrity_status",
+          "current_security_governance_status",
+          "current_codebase_shape_status",
+          "get_execution_telemetry_current",
+          "list_execution_process_runs"
+        ]
+      },
+      {
+        "destinationFile": "./src/ai_engine_sdk_retrieval.py",
+        "destinationRole": "retrieval namespace",
+        "responsibilities": [
+          "get_symbol_definition",
+          "get_related_code",
+          "query",
+          "search_symbols",
+          "get_code_file",
+          "get_code_file_content_window",
+          "search_codebase"
+        ]
+      },
+      {
+        "destinationFile": "./src/ai_engine_sdk_repo_inventory.py",
+        "destinationRole": "repo inventory namespace",
+        "responsibilities": [
+          "list_repositories",
+          "list_code_files",
+          "list_code_symbols_by_file",
+          "get_change_analysis",
+          "list_refactor_candidates",
+          "search_code_files"
+        ]
+      },
+      {
+        "destinationFile": "./src/ai_engine_sdk_agent_comms.py",
+        "destinationRole": "agent communications namespace",
+        "responsibilities": [
+          "open_thread",
+          "get_thread",
+          "list_inbox",
+          "send_message",
+          "create_bundle",
+          "get_bundle",
+          "list_bundles",
+          "add_bundle_item",
+          "upload_bundle",
+          "attach_bundle_to_message",
+          "record_bundle_receipt",
+          "record_bundle_cleanup_event",
+          "claim_bundle",
+          "send_to_participant",
+          "send_to_role",
+          "accept_transfer_packet",
+          "close_transfer_packet",
+          "get_transfer_health",
+          "accept_message",
+          "respond_to_message",
+          "attach_message_evidence",
+          "create_handoff",
+          "accept_handoff"
+        ]
+      },
+      {
+        "destinationFile": "./src/persistence/sql/workflow_store_communication.py",
+        "destinationRole": "compatibility index",
+        "responsibilities": [
+          "compatibility imports",
+          "thin delegation"
+        ]
+      },
+      {
+        "destinationFile": "./src/persistence/sql/workflow_store_communication_facade.py",
+        "destinationRole": "compatibility facade",
+        "responsibilities": [
+          "compose repositories",
+          "delegate lifecycle methods"
+        ]
+      },
+      {
+        "destinationFile": "./src/persistence/sql/communication_friction_repository.py",
+        "destinationRole": "friction taxonomy and events",
+        "responsibilities": [
+          "list_friction_taxonomy",
+          "record_friction_event",
+          "list_friction_events",
+          "summarize_friction"
+        ]
+      },
+      {
+        "destinationFile": "./src/persistence/sql/communication_transfer_repository.py",
+        "destinationRole": "bundle lifecycle",
+        "responsibilities": [
+          "create_bundle",
+          "get_bundle",
+          "list_bundles",
+          "add_bundle_item",
+          "upload_bundle",
+          "attach_bundle_to_message",
+          "record_receipt",
+          "record_cleanup_event",
+          "claim_bundle"
+        ]
+      },
+      {
+        "destinationFile": "./src/ai_engine_sdk.py",
+        "destinationRole": "compatibility index",
+        "responsibilities": [
+          "export AIEngineClient",
+          "re-export namespace types"
+        ]
+      },
+      {
+        "destinationFile": "./src/ai_engine_sdk_facade.py",
+        "destinationRole": "client facade",
+        "responsibilities": [
+          "fromEnv",
+          "ping",
+          "projection/retrieval/repo inventory/agent comms delegation"
+        ]
+      }
+    ],
+    "expectedOutputFiles": [
+      "./src/persistence/sql/workflow_store_communication.py",
+      "./src/persistence/sql/workflow_store_communication_facade.py",
+      "./src/persistence/sql/communication_row_mappers.py",
+      "./src/persistence/sql/communication_thread_repository.py",
+      "./src/persistence/sql/communication_message_repository.py",
+      "./src/persistence/sql/communication_friction_repository.py",
+      "./src/persistence/sql/communication_transfer_packet_repository.py",
+      "./src/persistence/sql/communication_transfer_channel_repository.py",
+      "./src/persistence/sql/communication_coordination_repository.py",
+      "./src/persistence/sql/communication_collaboration_repository.py",
+      "./src/persistence/sql/communication_transfer_repository.py",
+      "./src/persistence/sql/communication_handoff_repository.py",
+      "./src/ai_engine_sdk.py",
+      "./src/ai_engine_sdk_facade.py",
+      "./src/ai_engine_sdk_core.py",
+      "./src/ai_engine_sdk_projections.py",
+      "./src/ai_engine_sdk_retrieval.py",
+      "./src/ai_engine_sdk_repo_inventory.py",
+      "./src/ai_engine_sdk_agent_comms.py"
+    ],
+    "compatibilityPolicy": {
+      "preserveImportPaths": true,
+      "preservePublicMethodNames": true,
+      "preserveRuntimeBehavior": true,
+      "retainedSourceResponsibility": "compatibility index only"
+    },
+    "validationPlan": [
+      "Confirm source repository authority and base commit.",
+      "Confirm source file hashes and source metrics.",
+      "Confirm target file and module ownership movement.",
+      "Confirm compatibility policy and expected output files.",
+      "Confirm trusted wrapper evidence presence."
+    ],
+    "artifactManifest": {
+      "sourceFilePath": "./src/persistence/sql/workflow_store_communication.py",
+      "sourceFileHash": "b279d6e864efd6d9f8292584bcf6a7caa852d9426e3ad91d804523cb6d6041a8",
+      "sourceLineCount": 10235,
+      "sourceSymbolCount": 40,
+      "modulePlanCount": 13,
+      "expectedOutputFiles": [
+        "./src/persistence/sql/workflow_store_communication.py",
+        "./src/persistence/sql/workflow_store_communication_facade.py",
+        "./src/persistence/sql/communication_row_mappers.py",
+        "./src/persistence/sql/communication_thread_repository.py",
+        "./src/persistence/sql/communication_message_repository.py",
+        "./src/persistence/sql/communication_friction_repository.py",
+        "./src/persistence/sql/communication_transfer_packet_repository.py",
+        "./src/persistence/sql/communication_transfer_channel_repository.py",
+        "./src/persistence/sql/communication_coordination_repository.py",
+        "./src/persistence/sql/communication_collaboration_repository.py",
+        "./src/persistence/sql/communication_transfer_repository.py",
+        "./src/persistence/sql/communication_handoff_repository.py",
+        "./src/ai_engine_sdk.py",
+        "./src/ai_engine_sdk_facade.py",
+        "./src/ai_engine_sdk_core.py",
+        "./src/ai_engine_sdk_projections.py",
+        "./src/ai_engine_sdk_retrieval.py",
+        "./src/ai_engine_sdk_repo_inventory.py",
+        "./src/ai_engine_sdk_agent_comms.py"
+      ],
+      "evidenceRequirements": [
+        "wrapper_execution_record",
+        "wrapper_operation_records",
+        "wrapper_file_manifest",
+        "wrapper_planned_actual_ownership",
+        "wrapper_verification_summary",
+        "validation_output"
+      ]
+    },
+    "trustedWrapperExecutionEvidence": {
+      "status": "pending",
+      "wrapper_execution_record": null,
+      "wrapper_operation_records": null,
+      "wrapper_file_manifest": null,
+      "wrapper_planned_actual_ownership": null,
+      "wrapper_verification_summary": null,
+      "validation_output": null
+    },
+    "sourceCommit": "af221aa25f961245fe7d1416a1cf16f2df5540f8",
+    "sourceIntent": {},
+    "sourceRepoRoot": "D:/a/ai-engine/ai-engine",
+    "warehouseReady": false
+  },
+  "phases": [
+    {
+      "phaseKey": "plan-from-sql-metadata",
+      "title": "Plan From SQL Metadata",
+      "items": [
+        {
+          "itemKey": "intent-gate-src-persistence-sql-workflow-store-communication-py",
+          "title": "Establish bounded refactor intent",
+          "type": "intent_gate",
+          "priority": "high",
+          "description": "Confirm the governed purpose, target responsibility split, and blast-radius boundary before metadata planning or code extraction begins.",
+          "acceptanceChecks": [
+            "The refactor intent states the bounded outcome, target surface, and explicit out-of-scope work.",
+            "The intended split is reviewed before any wrapper-driven extraction or edits begin."
+          ],
+          "artifactsExpected": [
+            "refactor-intent-record",
+            "blast-radius-note"
+          ]
+        },
+        {
+          "itemKey": "plan-sql-metadata-src-persistence-sql-workflow-store-communication-py",
+          "title": "Confirm SQL metadata split posture",
+          "type": "metadata_plan",
+          "priority": "high",
+          "dependsOn": [
+            "intent-gate-src-persistence-sql-workflow-store-communication-py"
+          ],
+          "description": "Use inventory.code_files, inventory.code_symbols, inventory.code_relationships, and active codebase-shape findings to confirm the bounded split plan before any code edits.",
+          "acceptanceChecks": [
+            "The source file hash, line count, symbol count, and finding refs are recorded in the plan lineage.",
+            "The split proposal identifies symbol clusters without requiring a full-file read."
+          ],
+          "artifactsExpected": [
+            "refactor-plan-json",
+            "metadata-evidence-snapshot"
+          ]
+        },
+        {
+          "itemKey": "plan-wrapper-steps-src-persistence-sql-workflow-store-communication-py",
+          "title": "Record governed retrieval steps",
+          "type": "wrapper_plan",
+          "priority": "high",
+          "dependsOn": [
+            "plan-sql-metadata-src-persistence-sql-workflow-store-communication-py"
+          ],
+          "description": "Define the wrapper-first extraction sequence for the target symbol groups before any fallback file inspection.",
+          "acceptanceChecks": [
+            "Each target symbol group has a bounded retrieval step recorded.",
+            "Fallback full-file reads are explicitly marked as fallback-only in the plan metadata."
+          ],
+          "artifactsExpected": [
+            "retrieval-wrapper-step-list"
+          ]
+        }
+      ]
+    },
+    {
+      "phaseKey": "extract-bounded-modules",
+      "title": "Extract Bounded Modules",
+      "items": [
+        {
+          "itemKey": "extract-misc-1",
+          "title": "Extract Auxiliary Helpers helpers",
+          "type": "module_extraction",
+          "priority": "high",
+          "dependsOn": [
+            "plan-wrapper-steps-src-persistence-sql-workflow-store-communication-py"
+          ],
+          "description": "Move the auxiliary helpers symbol cluster into a bounded module and keep the original surface delegating to the new module.",
+          "acceptanceChecks": [
+            "The destination module contains only the auxiliary helpers concern.",
+            "The source module retains stable public behavior and delegates instead of duplicating the extracted logic."
+          ],
+          "artifactsExpected": [
+            "module-diff",
+            "lineage-map"
+          ]
+        }
+      ]
+    },
+    {
+      "phaseKey": "verify-and-govern",
+      "title": "Verify And Govern",
+      "items": [
+        {
+          "itemKey": "verify-src-persistence-sql-workflow-store-communication-py",
+          "title": "Validate single-responsibility refactor slice",
+          "type": "verification",
+          "priority": "high",
+          "dependsOn": [
+            "extract-misc-1"
+          ],
+          "description": "Validate focused tests, file shrinkage, and dependency integrity after the split.",
+          "acceptanceChecks": [
+            "Focused tests covering the refactored file pass.",
+            "The original file line count drops or responsibility concentration measurably improves.",
+            "No handwritten DAL or raw SQL is introduced by the refactor slice."
+          ],
+          "artifactsExpected": [
+            "focused-test-output",
+            "post-refactor-size-check"
+          ]
+        }
+      ]
+    }
+  ]
+}

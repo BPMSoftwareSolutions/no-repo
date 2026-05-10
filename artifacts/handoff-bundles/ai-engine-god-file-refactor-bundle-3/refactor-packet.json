@@ -1,0 +1,40 @@
+{
+  "bundle_name": "ai-engine-god-file-refactor-bundle-3",
+  "repository_name": "ai-engine",
+  "repository_root": "D:/a/ai-engine/ai-engine",
+  "analysis_mode": "remote_sdk_only",
+  "source_of_truth": "sql",
+  "targets": [
+    {
+      "file_path": "./src/persistence/sql/workflow_store_communication.py",
+      "line_count": 5755,
+      "symbol_count": 28,
+      "responsibility_clusters": [
+        "uuid/text/json coercion",
+        "thread lifecycle",
+        "message lifecycle",
+        "bundle lifecycle",
+        "handoff lifecycle",
+        "evidence mapping"
+      ]
+    },
+    {
+      "file_path": "./src/ai_engine_sdk.py",
+      "line_count": 4344,
+      "symbol_count": 12,
+      "responsibility_clusters": [
+        "client core",
+        "projection namespace",
+        "retrieval namespace",
+        "repo inventory namespace",
+        "agent comms namespace",
+        "bundle and handoff surfaces"
+      ]
+    }
+  ],
+  "compatibility_policy": {
+    "preserve_import_paths": true,
+    "preserve_public_method_names": true,
+    "delegate_rather_than_duplicate": true
+  }
+}

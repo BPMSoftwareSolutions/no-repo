@@ -745,7 +745,7 @@ function buildEvents({ projection, session, telemetry, substrate, candidates }) 
       dot: 'info',
       actor: cleanText(projection.operator_handoff?.operator_role || projection.summary?.operator_role || 'projection-generator'),
       stage: cleanText(projection.workflow_stage || projection.summary?.workflow_stage || 'projection'),
-      durationLabel: cleanText(projection.generation_duration_ms ? `${projection.generation_duration_ms}ms` : 'snapshot'),
+      durationLabel: formatDurationValue(projection.generation_duration_ms),
       detailLine: cleanText(projection.current_objective || projection.summary?.current_objective || 'Live projection snapshot'),
       payload: projection,
       source: 'projection',
@@ -764,7 +764,12 @@ function buildEvents({ projection, session, telemetry, substrate, candidates }) 
       dot: statusToDot(telemetry.status),
       actor: 'telemetry-runtime',
       stage: 'live_watch',
-      durationLabel: 'current',
+      durationLabel: formatDurationValue(
+        telemetry.duration_ms
+        ?? telemetry.elapsed_ms
+        ?? telemetry.latency_ms
+        ?? telemetry.response_time_ms
+      ),
       detailLine: `Observed at ${formatTimestampEt(telemetry.last_observed_at) || 'unknown'}`,
       payload: telemetry,
       source: 'telemetry',
@@ -784,7 +789,11 @@ function buildEvents({ projection, session, telemetry, substrate, candidates }) 
       dot: statusToDot(fragment.fragment_role || fragment.fragment_type),
       actor: cleanText(fragment.metadata?.actor || fragment.source_ref || 'substrate'),
       stage: cleanText(fragment.metadata?.stage || fragment.fragment_type || 'context'),
-      durationLabel: cleanText(fragment.metadata?.duration_ms ? `${fragment.metadata.duration_ms}ms` : 'fragment'),
+      durationLabel: formatDurationValue(
+        fragment.metadata?.duration_ms
+        ?? fragment.metadata?.elapsed_ms
+        ?? fragment.metadata?.latency_ms
+      ),
       detailLine: cleanText(fragment.metadata?.source || fragment.source_ref || ''),
       payload: fragment,
       source: 'substrate',
@@ -804,7 +813,7 @@ function buildEvents({ projection, session, telemetry, substrate, candidates }) 
       dot: statusToDot(entry.tool_name || entry.workflow_stage),
       actor: cleanText(entry.model_name || entry.tool_name || 'runtime'),
       stage: cleanText(entry.workflow_stage || entry.tool_name || 'activity'),
-      durationLabel: cleanText(entry.duration_ms ? `${entry.duration_ms}ms` : 'activity'),
+      durationLabel: formatDurationValue(entry.duration_ms ?? entry.elapsed_ms ?? entry.latency_ms),
       detailLine: cleanText(entry.source_ref || entry.artifact_type || ''),
       payload: entry,
       source: 'activity',
@@ -824,7 +833,7 @@ function buildEvents({ projection, session, telemetry, substrate, candidates }) 
       dot: candidate.status && String(candidate.status).toLowerCase().includes('reject') ? 'bad' : 'good',
       actor: cleanText(candidate.actor || candidate.owner || 'promotion-lane'),
       stage: cleanText(candidate.stage || candidate.workflow_stage || 'promotion'),
-      durationLabel: cleanText(candidate.score != null ? `score ${candidate.score}` : 'candidate'),
+      durationLabel: formatDurationValue(candidate.duration_ms ?? candidate.elapsed_ms ?? candidate.latency_ms),
       detailLine: cleanText(candidate.evidence || candidate.match_reason || ''),
       payload: candidate,
       source: 'candidates',
@@ -915,7 +924,7 @@ function buildFallbackEvent({ projection, session, telemetry }) {
     dot: 'info',
     actor: 'operator-console',
     stage: 'summary',
-    durationLabel: 'n/a',
+    durationLabel: '—',
     detailLine: 'Fallback event generated from the current snapshot.',
     payload: projection || telemetry || session || {},
     source: 'fallback',
@@ -1215,6 +1224,22 @@ function formatTimestampEt(value) {
   } catch {
     return String(value || '');
   }
+}
+
+function formatDurationValue(value) {
+  if (value == null || value === '') return '—';
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) return '—';
+  if (numeric < 1000) {
+    return `${Math.round(numeric)}ms`;
+  }
+  const seconds = numeric / 1000;
+  const rounded = seconds >= 10 ? seconds.toFixed(1) : seconds.toFixed(2);
+  return `${stripTrailingZeros(rounded)}s`;
+}
+
+function stripTrailingZeros(value) {
+  return String(value).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
 }
 
 function formatRowTimestampEt(value) {
