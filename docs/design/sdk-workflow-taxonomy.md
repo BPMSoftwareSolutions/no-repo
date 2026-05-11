@@ -1,8 +1,8 @@
 # AI Engine SDK — Workflow Taxonomy
 
-**SDK:** `@bpmsoftwaresolutions/ai-engine-client` v1.1.64  
-**Methods inventoried:** 280+ public | 50 functional groups  
-**Analysis date:** 2026-05-10
+**SDK:** `@bpmsoftwaresolutions/ai-engine-client` v1.1.71  
+**Methods inventoried:** 349+ public | 363 total (incl. internal) | 50 functional groups  
+**Analysis date:** 2026-05-10 — updated 2026-05-11
 
 ---
 
@@ -130,6 +130,8 @@ The governance envelope around any agent doing actual work. Claims are the atomi
 | 10 | `blockIfNonCompliant(sessionId)` | Block progression if turn is non-compliant |
 | 11 | `signoffClaim(claimId, body)` | Close the claim and sign off |
 
+**Claim preflight _(v1.1.71)_:** `claimIsValid(claimId)` — call before any governed write when the claim was opened in a prior session. Returns a boolean. If `false`, start a fresh claim via `startClaimedWork` before proceeding. The backend does not expose `getActiveClaim(projectId)` yet; this is the governed fallback path.
+
 ---
 
 ## 5. Roadmap Item Execution
@@ -154,6 +156,8 @@ The innermost execution loop: working through one item on the roadmap under an a
 **Decision gate (optional between steps 11–12):** `createImplementationPacketGateDecision(packetId, body)` — required when a gate review must be recorded before closure.
 
 **Item activity log:** `addImplementationItemActivity` / `listImplementationItemActivity` — append and read freeform activity at any step.
+
+**Full closure composite _(v1.1.71)_:** `closeRoadmapItemWorkflow({ projectIdentifier, claimId, gateType, gateDecision, closeProjectIfNoRemainingOpenItems, ... })` — wraps steps 1–12 and project closure into a single governed call. Internally it: resumes the project, loads the active item, validates or creates the claim via `claimIsValid`, verifies acceptance checks and artifacts, records the gate decision, advances to terminal status, attaches evidence, signs off the claim, reloads the active item, and closes the project when no open items remain. Use this instead of the manual sequence wherever the full closure path is needed.
 
 ---
 
@@ -500,6 +504,10 @@ Human-in-the-loop steps where workflow execution pauses for manual completion or
 
 ## 24. Gap Analysis
 
+> **v1.1.71 update:** Gap re: claim validity check is now **partially closed**. `claimIsValid(claimId)` was added and provides a boolean preflight before governed writes. The backend still does not expose a project-scoped `getActiveClaim(projectId)` — that remains a server-side gap. See the note in Workflow 4.
+
+---
+
 ### Gap 1 — No Push/Subscribe Mechanism
 
 **Location:** Workflows 8, 9  
@@ -583,13 +591,15 @@ Human-in-the-loop steps where workflow execution pauses for manual completion or
 
 ## 25. Coverage Summary Table
 
+_Updated for v1.1.71. New composites marked **†**._
+
 | Workflow | Steps | Composite Helpers | Gaps |
 |----------|-------|-------------------|------|
 | 1. Agent Session Startup | 4 | `resumeProjectWork`, `getExternalProjectResumeContext` | None |
 | 2. Project Chartering | 5 | `getProjectBundle`, `runCharter` | None |
 | 3. Implementation Planning | 6 | `importImplementationPacketAndMaterializeRoadmap` | None |
-| 4. Governed Work — Claim Lifecycle | 11 | `startClaimedWork` | None |
-| 5. Roadmap Item Execution | 12 | — | Gap 8 (no rollback) |
+| 4. Governed Work — Claim Lifecycle | 11 | `startClaimedWork`, `claimIsValid` **†** | Partial (no server-side `getActiveClaim`) |
+| 5. Roadmap Item Execution | 12 | `closeRoadmapItemWorkflow` **†** | Gap 8 (no rollback) |
 | 6. Commit Governance & Ship Readiness | 5 | — | None |
 | 7. UX Gate Remediation | 6 | — | None |
 | 8. Agent Communication — Channel Establishment | 12 | — | Gap 2 (presence TTL) |
@@ -609,5 +619,6 @@ Human-in-the-loop steps where workflow execution pauses for manual completion or
 | 22. Design Intelligence | 8 | — | Gap 4 (no execute path) |
 | 23. Manual & Approval Tasks | 4 | — | Gap 6 (no rejection path) |
 
-**Total identified gaps: 9**  
-**Workflows fully covered (no gaps): 14 of 23**
+**Total identified gaps: 9** (1 partially closed in v1.1.71)  
+**Workflows fully covered (no gaps): 14 of 23**  
+**New composite helpers added in v1.1.71:** `closeRoadmapItemWorkflow`, `claimIsValid`, `getPortfolioClosureReadiness`

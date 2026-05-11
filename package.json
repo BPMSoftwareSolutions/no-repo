@@ -18,7 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@bpmsoftwaresolutions/ai-engine-client": "^1.1.64"
+    "@bpmsoftwaresolutions/ai-engine-client": "^1.1.71"
   },
   "directories": {
     "doc": "docs"

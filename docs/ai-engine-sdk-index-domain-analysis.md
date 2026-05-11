@@ -1,44 +1,52 @@
-# AI Engine SDK `index.js` Domain Analysis
+# AI Engine SDK `index.js` Domain Split Analysis
 
-Date: 2026-05-10
+Date: 2026-05-11
 
-Package analyzed: `@bpmsoftwaresolutions/ai-engine-client@1.1.64`
+Package analyzed: `@bpmsoftwaresolutions/ai-engine-client@1.1.71`
 
 File analyzed: `node_modules/@bpmsoftwaresolutions/ai-engine-client/src/index.js`
 
 ## Executive Summary
 
-The AI Engine SDK currently exposes almost the entire client through one massive entrypoint:
+The current AI Engine SDK package is still published as a single source file:
 
-- Approximately 6,026 physical lines.
-- One exported client class, `AIEngineClient`.
-- One exported factory, `createAIEngineClient(options)`.
-- 15 exported constants.
-- 33 top-level helper functions.
-- 364 class methods.
-- 330 direct HTTP request calls.
-- 8 constructor-created compatibility facades.
+- `src/index.js` is the only file under the package `src/` directory.
+- The file has approximately 6,456 physical lines.
+- It exports one client class, `AIEngineClient`.
+- It exports one factory, `createAIEngineClient(options)`.
+- It exports 15 public constants.
+- It contains 34 top-level helper functions.
+- It contains 369 class methods.
+- It contains 331 direct request calls.
+- It creates 8 constructor facades.
 
-The file is not just a transport client. It currently mixes:
+This is an updated analysis after the latest upstream workflow additions. The biggest change from the prior analysis is that the SDK now contains higher-level project and portfolio closure workflows in addition to the previous endpoint-wrapper surface.
 
-- HTTP transport concerns.
-- Auth/header/version/capability concerns.
-- Input normalization and enum coercion.
-- Governance gate enforcement.
-- Post-mutation verification.
-- Collaboration choreography.
-- Agent communication channel management.
-- Project chartering and roadmap orchestration.
-- Implementation packet workflows.
-- LOGA projection download/render helpers.
-- Repo/retrieval intelligence APIs.
-- Skill, tool, context, portfolio, performance, design, notes, search, and benchmark APIs.
+The file should be split by domain modules, but the public API should remain stable. The right upstream implementation is a composed client where `index.js` exports constants, constructs domain clients, and preserves top-level compatibility aliases.
 
-The shape is a classic SDK god file. It is still valuable because it has already discovered a broad domain surface, but it has outgrown a single source file. The upstream remediation should preserve the public API while moving implementation into domain modules with one responsibility each.
+## What Changed Since The Prior Pass
+
+Prior analysis was against `@bpmsoftwaresolutions/ai-engine-client@1.1.64`.
+
+Current analysis is against `@bpmsoftwaresolutions/ai-engine-client@1.1.71`.
+
+Notable changes:
+
+- Class method count increased from 364 to 369.
+- Request call count increased from 330 to 331.
+- Top-level helper count increased from 33 to 34.
+- The package source layout is again a single `src/index.js`.
+- New or newly important workflow methods are now present:
+  - `claimIsValid(claimId)`
+  - `resumeProjectWork(...)`
+  - `closeRoadmapItemWorkflow(...)`
+  - `getPortfolioClosureReadiness(...)`
+
+The new methods are not just thin endpoint wrappers. They stitch together governance, claims, roadmaps, implementation checks, artifact verification, gate decisions, evidence recording, claim signoff, project close behavior, and portfolio readiness evaluation.
 
 ## Current Public Surface
 
-The top-level exports are intentionally small:
+The top-level export surface remains compact:
 
 - `AI_ENGINE_CLIENT_VERSION`
 - `GOVERNED_MUTATION_REQUIRED_CAPABILITIES`
@@ -59,74 +67,74 @@ The top-level exports are intentionally small:
 - `AIEngineClient`
 - `createAIEngineClient(options)`
 
-This is good news for migration. The package can keep `src/index.js` as a stable export barrel and compatibility facade while moving implementation into modules behind it.
+This means the upstream refactor can keep `src/index.js` as the public barrel and move implementation behind that API without a breaking package-level change.
 
-## Constructor Facades Already Present
+## Constructor Facades
 
-The constructor currently builds several nested convenience namespaces. These are useful seams for module extraction:
+The constructor still builds facades by assigning function pointers back to methods on the same class.
 
 | Facade | Method count | Current role |
 |---|---:|---|
 | `loga` | 8 | UX remediation and LOGA projection convenience methods |
-| `executionTelemetry` | 4 | Current execution/process run telemetry |
+| `executionTelemetry` | 4 | Current execution and process run telemetry |
 | `scripts` | 4 | Script generation, rendering, artifact submission, evidence |
 | `reports` | 1 | Report runner |
-| `projections` | 8 | Projection rendering and transfer projections |
+| `projections` | 8 | Projection rendering and transfer projection helpers |
 | `actions` | 1 | Action intent submission |
-| `agentComms` | 63 | Agent communication, bundles, transfers, presence, ping-pong |
-| `collaboration` | 37 | Collaboration-oriented aliases over communication methods |
+| `agentComms` | 63 | Agent communication, channels, bundles, transfers, presence, ping-pong |
+| `collaboration` | 37 | Collaboration-oriented aliases over agent communication methods |
 
-The facades are currently just function pointers back into the same large class. Upstream should convert these into actual domain clients that share a common transport instance.
+These facades are good migration anchors. They should become actual domain client objects that share one transport instance.
 
-## Existing Section Inventory
+## Section Inventory
 
-The file already has section markers, but one section is too broad. In particular, `Data Access Gateway` spans line 651 through line 3882 and includes gateway APIs plus most communication/collaboration/governance/database/work APIs.
-
-| Existing section | Line span | Method count | Observed concern |
+| Current section | Line span | Methods | Refactor interpretation |
 |---|---:|---:|---|
-| Constructor / compatibility facades | 406-581 | 2 | Setup, env loading, facade aliases |
-| Health | 582-596 | 1 | Health plus workflow summary |
-| Operator Status | 597-650 | 11 | Status, telemetry, usability, memory |
-| Data Access Gateway | 651-3882 | 119 | Mixed gateway, comms, collaboration, database, governance, work, external project APIs |
-| Retrieval Wrapper | 3883-3924 | 4 | Command card and code lookup wrappers |
-| Repo Inventory | 3925-4051 | 21 | Repository, files, symbols, relationships, findings |
-| Retrieval Management | 4052-4093 | 10 | Retrieval metrics, packet selection, prompt assembly validation |
-| Workflows | 4094-4124 | 6 | Workflow CRUD/publish/clone |
-| Workflow Governance | 4125-4160 | 8 | Governance decisions, simulations, bundles, approvals |
-| Workflow Runs | 4161-4186 | 6 | Run lifecycle, artifacts, playback, resume |
-| Workflow Inspector | 4187-4196 | 2 | Inspector run listing and inspection |
-| Manual & Approval Tasks | 4197-4214 | 4 | Human/manual task completion and approval |
-| Projects & Chartering | 4215-4570 | 36 | Project lifecycle, chartering, markdown downloads, LOGA projections, UX remediations, scripts |
-| Roadmaps | 4571-4769 | 13 | Roadmaps, active items, packet materialization helpers |
-| Implementation Tasks | 4770-4890 | 6 | Implementation task CRUD/assignment/completion |
-| Governed Implementation | 4891-5236 | 19 | Packets, checks, evidence, verified mutation helpers |
-| Skills | 5237-5285 | 9 | Skill registry and contracts |
-| Skill Governance | 5286-5301 | 3 | Skill governance changes |
-| Capabilities | 5302-5315 | 3 | Capability listing, creation, test |
-| Tool Registry | 5316-5363 | 10 | Tool registry, history, governance, replay, gates |
-| Context Assembly | 5364-5399 | 6 | Context contracts, fragments, reuse, prompt assemblies |
-| Performance | 5400-5437 | 7 | Metrics, benchmark snapshots, dashboard |
-| Portfolio | 5438-5463 | 6 | Portfolio status, summaries, exceptions, reports |
-| Self-Learning | 5464-5512 | 6 | Learning records, promotion candidates/flows |
-| Self-Optimization | 5513-5541 | 4 | Optimization dashboard, queue, backlog, handoffs |
-| Design Intelligence | 5542-5591 | 12 | Decisions, variants, critique, lineage, patterns, recommendations |
-| Script Discovery | 5592-5615 | 5 | Script scanning and workflow candidate promotion |
-| Notes Lab | 5616-5629 | 3 | Config, submit, approve review |
-| Search & Contacts | 5630-5643 | 3 | Search, organizations, contacts |
-| Benchmarks | 5644-5653 | 2 | Recent benchmark runs |
-| Commit Governance | 5654-5731 | 4 | Commit governance and ship readiness |
-| Context Session Orientation | 5732-5824 | 7 | Orientation window, reminders, locking, gate status |
-| Core HTTP | 5825-6026 | 7 | Auth, headers, JSON/text/binary requests |
+| Constructor / compatibility facades | 406-581 | 2 | Client construction, env factory, facade wiring |
+| Health | 582-596 | 1 | Health domain |
+| Operator Status | 597-650 | 11 | Operator status and telemetry domain |
+| Data Access Gateway | 651-3887 | 120 | Overloaded: gateway, agent comms, collaboration, database, governance, work, external project APIs |
+| Retrieval Wrapper | 3888-3929 | 4 | Retrieval wrapper domain |
+| Repo Inventory | 3930-4056 | 21 | Repository intelligence domain |
+| Retrieval Management | 4057-4098 | 10 | Retrieval optimization domain |
+| Workflows | 4099-4129 | 6 | Workflow definitions domain |
+| Workflow Governance | 4130-4165 | 8 | Workflow governance domain |
+| Workflow Runs | 4166-4191 | 6 | Workflow run lifecycle domain |
+| Workflow Inspector | 4192-4201 | 2 | Workflow inspection domain |
+| Manual & Approval Tasks | 4202-4219 | 4 | Human task domain |
+| Projects & Chartering | 4220-4876 | 38 | Project lifecycle, chartering, LOGA, UX remediation, new closure workflow |
+| Roadmaps | 4877-5075 | 13 | Roadmap read/materialization helpers |
+| Implementation Tasks | 5076-5196 | 6 | Implementation task domain |
+| Governed Implementation | 5197-5542 | 19 | Packets, checks, artifacts, verified mutations |
+| Skills | 5543-5591 | 9 | Skill registry and contract domain |
+| Skill Governance | 5592-5607 | 3 | Skill governance changes |
+| Capabilities | 5608-5621 | 3 | Capability registry domain |
+| Tool Registry | 5622-5669 | 10 | Tool registry and governance domain |
+| Context Assembly | 5670-5705 | 6 | Context assembly domain |
+| Performance | 5706-5743 | 7 | Performance and benchmark metrics |
+| Portfolio | 5744-5893 | 7 | Portfolio domain plus new closure readiness workflow |
+| Self-Learning | 5894-5942 | 6 | Learning records and promotion candidates |
+| Self-Optimization | 5943-5971 | 4 | Optimization queue and handoffs |
+| Design Intelligence | 5972-6021 | 12 | Design decision intelligence |
+| Script Discovery | 6022-6045 | 5 | Script discovery and workflow candidate promotion |
+| Notes Lab | 6046-6059 | 3 | Notes review workflow |
+| Search & Contacts | 6060-6073 | 3 | Search and CRM-like lookup |
+| Benchmarks | 6074-6083 | 2 | Benchmark run lookup |
+| Commit Governance | 6084-6161 | 4 | Commit review and ship readiness |
+| Context Session Orientation | 6162-6254 | 7 | Context-session orientation workflow |
+| Core HTTP | 6255-6456 | 7 | Transport, auth, headers, timeout, response parsing |
 
-## Hot Endpoint Areas
+The biggest structural issue remains the `Data Access Gateway` section. It is named as one thing but contains most of the agent communication, collaboration, governance, work, database, project-delivery, and external project surfaces.
 
-The largest endpoint clusters by direct request count are:
+## Endpoint Hot Spots
+
+Top request clusters:
 
 | Request count | Endpoint prefix |
 |---:|---|
 | 20 | `/api/agent-communications/transfer-channels` |
+| 16 | `/api/operator/projects` |
 | 15 | `/api/operator/projections` |
-| 15 | `/api/operator/projects` |
 | 14 | `/api/operator/retrieval` |
 | 13 | `/api/workflows/:id` |
 | 9 | `/api/agent-communications/bundles` |
@@ -144,52 +152,105 @@ The largest endpoint clusters by direct request count are:
 | 5 | `/api/design-intelligence/decisions` |
 | 5 | `/api/context-session/:id` |
 
-This confirms the file should be split by backend bounded context, not just by arbitrary line ranges.
+These clusters confirm that the SDK should be split by backend bounded context rather than by current comment blocks alone.
 
-## Helper Function Clusters
+## New Workflow Areas To Preserve
 
-Top-level helper functions currently sit beside domain exports. They should move into small utility modules:
+The newer methods are valuable because they encode user-level workflows, not just HTTP calls.
 
-| Lines | Helpers | Proposed module |
+### `resumeProjectWork(...)`
+
+Current location: Projects & Chartering
+
+Purpose:
+
+- Load a project resume context.
+- Support actor mode, execution intent, claim requirements, and workflow run limits.
+
+Recommended home:
+
+- `domains/projects/resume.js`
+- Or `domains/project-work/resume.js` if project-work becomes a first-class workflow domain.
+
+### `closeRoadmapItemWorkflow(...)`
+
+Current location: Projects & Chartering
+
+Purpose:
+
+- Resume project work.
+- Load the active roadmap item.
+- Validate or create a governance claim.
+- Verify acceptance checks.
+- Verify required artifacts.
+- Create a packet gate decision.
+- Update implementation item status through verified mutation.
+- Add closure evidence.
+- Sign off the claim.
+- Reload roadmap/project state.
+- Optionally close the project if no open work remains.
+
+Recommended home:
+
+- `domains/project-closure/close-roadmap-item-workflow.js`
+
+This should not stay in a generic projects module. It coordinates projects, roadmaps, governance, implementation packets, evidence, and project close behavior.
+
+### `getPortfolioClosureReadiness(...)`
+
+Current location: Portfolio
+
+Purpose:
+
+- Load portfolio bundle.
+- List active projects.
+- Read roadmap summaries and active items.
+- Read open project tasks.
+- Optionally include LOGA portfolio and roadmap projections.
+- Produce closure readiness and blocking reasons.
+
+Recommended home:
+
+- `domains/portfolio/closure-readiness.js`
+
+This should become a portfolio workflow module that composes project and roadmap domain clients.
+
+### `claimIsValid(claimId)`
+
+Current location: Data Access Gateway / governance cluster
+
+Purpose:
+
+- Lightweight claim validity check used by closure workflows.
+
+Recommended home:
+
+- `domains/governance/claims.js`
+
+## Long Methods That Should Move First
+
+| Lines | Method | Why it should move |
 |---:|---|---|
-| 8 | `readPackageVersion` | `version.js` |
-| 79-153 | `normalizeEnum`, communication enum normalizers | `agent-communications/normalizers.js` |
-| 157-177 | `trimTrailingSlash`, `appendQuery`, `readJson`, `parseContentDispositionFilename` | `transport/http-utils.js` |
-| 185-190 | Header readers and LOGA projection metadata extraction | `projections/loga-metadata.js` |
-| 225-239 | Body classifiers | `transport/body.js` |
-| 245-299 | `cleanText`, version comparison, UUID check, list/object helpers | `utils/validation.js` |
-| 268 | `countRoadmapProjectionLines` | `roadmaps/projection-metrics.js` |
-| 303-341 | Task binding and registry helpers | `governance/task-binding.js` |
-| 355-367 | Reminder and context session helpers | `context-sessions/helpers.js` |
-| 377-399 | Expected-state matching and error builders | `governance/verification.js` |
+| 4398-4678 | `closeRoadmapItemWorkflow` | Largest workflow, crosses governance, roadmaps, implementation, evidence, project close |
+| 1265-1427 | `startAgentConnection` | Agent connection bootstrap orchestration |
+| 407-567 | `constructor` | Builds facades inline and hides domain boundaries |
+| 5770-5895 | `getPortfolioClosureReadiness` | Portfolio closure workflow, repeated project/roadmap/task reads |
+| 3447-3555 | `bindClaimedWorkItem` | Claim binding policy and metadata workflow |
+| 5317-5419 | `executeVerifiedMutation` | Governance primitive used by verified implementation mutations |
+| 930-1031 | `_resolveCoordinationChannelContext` | Agent communication context resolution |
+| 4920-5019 | `importImplementationPacketAndMaterializeRoadmap` | Implementation packet to roadmap materialization |
+| 5078-5167 | `createImplementationTask` | Task creation with claim and workflow binding behavior |
+| 1174-1260 | `connectToTransferChannel` | Transfer-channel connection workflow |
+| 2002-2082 | `transferWorkPacket` | Work packet delivery workflow |
+| 2310-2389 | `startCoordinationPingPong` | Coordination lifecycle workflow |
+| 758-830 | `checkCoordinationPingPongPreflight` | Capability and deployment drift check |
+| 4286-4348 | `closeProject` | Project cleanup with workflow/run resolution |
+| 5484-5544 | `verifyImplementationItemArtifacts` | Artifact source-of-truth verification |
+| 6210-6256 | `conductOrientation` | Context session orientation orchestration |
 
-## Long Methods That Need Extraction First
+These should be extracted as workflow modules with tests or at least request-contract fixtures upstream.
 
-These are the highest-value first extractions because they contain orchestration logic, validation, fallback behavior, or post-condition checks:
-
-| Lines | Method | Why it matters |
-|---:|---|---|
-| 407-567 | `constructor` | Builds all compatibility facades inline and hides domain boundaries |
-| 1265-1427 | `startAgentConnection` | Multi-step collaboration/channel bootstrap workflow |
-| 3447-3555 | `bindClaimedWorkItem` | Work claim binding logic with policy/metadata handling |
-| 5011-5113 | `executeVerifiedMutation` | Reusable verified mutation orchestration should be a governance primitive |
-| 930-1031 | `_resolveCoordinationChannelContext` | Communication context resolution and fallback behavior |
-| 4614-4713 | `importImplementationPacketAndMaterializeRoadmap` | Cross-domain project/roadmap/workflow materialization |
-| 4772-4861 | `createImplementationTask` | Task creation payload normalization and workflow binding concerns |
-| 1174-1260 | `connectToTransferChannel` | Collaboration transfer workflow, validation, and response shaping |
-| 2002-2082 | `transferWorkPacket` | Work transfer bundle/payload orchestration |
-| 2310-2389 | `startCoordinationPingPong` | Coordination workflow with preflight and control lifecycle |
-| 758-830 | `checkCoordinationPingPongPreflight` | Capability/version drift detection |
-| 2390-2519 | `sendCoordinationPing`, `sendCoordinationPong` | Repeated ping/pong behavior and verification semantics |
-| 4281-4343 | `closeProject` | Project close operation with explicit verification |
-| 1482-1542 | `postAgentHeartbeat` | Channel heartbeat normalization and status reporting |
-| 5178-5238 | `verifyImplementationItemArtifacts` | Artifact source-truth verification |
-| 3598-3655 | `promoteClaimSurface` | Claim promotion governance |
-| 5912-6026 | `_requestText`, `_requestBinary` | Duplicated request/error/timeout behavior across response types |
-
-## Proposed Module Architecture
-
-Keep `src/index.js` as the public entrypoint, but reduce it to exports and object composition.
+## Proposed Target Layout
 
 ```text
 src/
@@ -208,31 +269,59 @@ src/
     text.js
     version.js
     validation.js
+    roadmap-projection.js
   domains/
     health.js
     operator-status.js
     gateway.js
+    database.js
+    dashboard.js
     agent-communications/
-      client.js
+      capabilities.js
       channels.js
+      presence.js
       messages.js
       bundles.js
       transfers.js
-      presence.js
       ping-pong.js
+      handoffs.js
+      friction.js
+      connection-workflows.js
       normalizers.js
-    collaboration.js
-    database.js
+    collaboration/
+      proposals.js
+      closure.js
+      aliases.js
     governance/
       claims.js
       execution-eligibility.js
       verified-mutations.js
       workflow-tool-bindings.js
       turn-compliance.js
-    work.js
-    external-projects.js
+    projects/
+      chartering.js
+      lifecycle.js
+      reports.js
+      resume.js
+      projections.js
+      ux-remediation.js
+    project-closure/
+      close-roadmap-item-workflow.js
+    roadmaps/
+      reads.js
+      reports.js
+      task-surface.js
+      implementation-packet-materializer.js
+    implementation/
+      tasks.js
+      packets.js
+      acceptance-checks.js
+      artifacts.js
+      evidence.js
+      gates.js
+      verified-actions.js
     retrieval/
-      wrappers.js
+      wrapper.js
       repo-inventory.js
       management.js
     workflows/
@@ -240,33 +329,20 @@ src/
       governance.js
       runs.js
       inspector.js
-      manual-tasks.js
-    projects/
-      chartering.js
-      lifecycle.js
-      reports.js
-      projections.js
-      ux-remediation.js
-    roadmaps/
-      client.js
-      implementation-packet-materializer.js
-    implementation/
-      tasks.js
-      packets.js
-      artifacts.js
-      acceptance-checks.js
+      human-tasks.js
+    portfolio/
+      reads.js
+      closure-readiness.js
     skills/
       registry.js
       governance.js
-    capabilities.js
     tools/
       registry.js
       governance.js
     context-assembly.js
     performance.js
-    portfolio.js
-    learning.js
-    optimization.js
+    self-learning.js
+    self-optimization.js
     design-intelligence.js
     script-discovery.js
     notes-lab.js
@@ -274,11 +350,159 @@ src/
     benchmarks.js
     commit-governance.js
     context-sessions.js
+    external-projects.js
+    audio-renders.js
+    scripts.js
 ```
 
-## Recommended Client Composition Pattern
+## Transformation Taxonomy
 
-Use one shared transport plus domain clients:
+This table is the working taxonomy for splitting `index.js`. Each row names a target module file or module family, the category it belongs to, and the current methods that should move there.
+
+| Category | Target module | Current methods / exports | Notes |
+|---|---|---|---|
+| Public composition | `src/index.js` | Public exports, `createAIEngineClient` | Keep as export barrel and compatibility entrypoint |
+| Public composition | `src/client.js` | `AIEngineClient`, `constructor`, `fromEnv` | Own construction and domain wiring only |
+| Public composition | `src/compat/aliases.js` | Top-level method aliases, constructor facade aliases | Keeps existing call sites working while preferred domain namespaces mature |
+| Constants | `src/constants/capabilities.js` | `GOVERNED_MUTATION_REQUIRED_CAPABILITIES`, `AI_ENGINE_CLIENT_CAPABILITIES` | Capability headers and SDK advertised features |
+| Constants | `src/constants/contracts.js` | `LOGA_CONTRACT`, `LOGA_INTERACTION_CONTRACT`, `LOGA_NAVIGATION_CONTRACT`, `LOGA_PROJECTION_WORKFLOW`, `TASK_BOUND_SUBSTRATE_EXECUTION_POLICY` | Contract identifiers |
+| Constants | `src/constants/agent-communications.js` | `AGENT_COMMUNICATION_*` constants | Thread/message/transfer enums |
+| Transport | `src/transport/http-client.js` | `_request`, `_requestText`, `_requestBinary`, `_requestLogaProjection` | Shared request implementation |
+| Transport | `src/transport/auth.js` | `_resolveAccessToken`, `_buildHeaders` | Token resolution, API key fallback, client headers |
+| Transport | `src/transport/body.js` | `isFormDataBody`, `isBinaryBody`, `isJsonBody` | Body classification |
+| Transport | `src/transport/response.js` | `readJson`, `parseContentDispositionFilename`, `readResponseHeader`, `extractLogaProjectionMetadata` | Response parsing and projection metadata |
+| Utilities | `src/utils/version.js` | `readPackageVersion`, `AI_ENGINE_CLIENT_VERSION` | Package version read |
+| Utilities | `src/utils/text.js` | `cleanText`, `cleanList`, `isPlainObject`, `looksLikeUuid`, `compareSemanticVersions` | Common normalization |
+| Utilities | `src/utils/roadmap-projection.js` | `countRoadmapProjectionLines` | Markdown roadmap summary helper |
+| Utilities | `src/utils/task-binding.js` | `normalizeTaskBindingPolicy`, `normalizeMetadataTaskBinding`, `isActiveBinding`, `activeToolKeysFromRegistry` | Claim/tool binding policy helpers |
+| Utilities | `src/utils/context-session.js` | `reminderTokens`, `contextSessionIdFromInput` | Orientation workflow helpers |
+| Utilities | `src/utils/verification.js` | `matchesExpectedState`, `buildVerificationError`, `buildEligibilityError` | Post-condition and eligibility errors |
+| Gateway | `src/domains/gateway.js` | `query`, `runReportDefinition`, `renderProjection`, `submitActionIntent` | Generic gateway/report/projection/action APIs |
+| Health | `src/domains/health.js` | `ping` | Health plus workflow status summary |
+| Operator status | `src/domains/operator-status.js` | `currentWorkflowStatus`, `currentArchitectureIntegrityStatus`, `currentSecurityGovernanceStatus`, `getExecutionTelemetryCurrent`, `listExecutionProcessRuns`, `getExecutionProcessRun`, `getGeneratedExecutionUsability`, `getLogaGeneratedExecutionUsabilityProjection`, `getAntiPatternRules`, `currentCodebaseShapeStatus`, `getLatestMemoryProjection` | Operator status and telemetry |
+| Agent communications | `src/domains/agent-communications/capabilities.js` | `getCommunicationCapabilities`, `getCollaborationCapabilities`, `getDeploymentCapabilities`, `checkCoordinationPingPongPreflight` | Capability discovery and readiness |
+| Agent communications | `src/domains/agent-communications/channels.js` | `listCommunicationChannels`, `listOpenCommunicationChannels`, `getCommunicationChannelStatus`, `getCommunicationChannelParticipants`, `_resolveCoordinationChannelContext` | Transfer channel lookup and disambiguation |
+| Agent communications | `src/domains/agent-communications/presence.js` | `getPresenceBoard`, `getChannelPresence`, `markParticipantOnline`, `markParticipantOffline`, `whoIsOnline`, `findOnlineParticipant` | Presence board and participant status |
+| Agent communications | `src/domains/agent-communications/messages.js` | `_resolveMessageWatchId`, `postAgentMessage`, `acknowledgeAgentMessage`, `respondToMessageWatch`, `verifyMessageSent`, `verifyMessageReceived`, `getMessageDeliveryReceipt`, `_sendAgentCommsMessage`, `sendCommunicationMessage`, `acceptCommunicationMessage`, `respondToCommunicationMessage`, `attachCommunicationMessageEvidence` | Message send/ack/watch/evidence behavior |
+| Agent communications | `src/domains/agent-communications/bundles.js` | `createCommunicationBundle`, `getCommunicationBundle`, `listCommunicationBundles`, `addCommunicationBundleItem`, `uploadCommunicationBundle`, `attachCommunicationBundleToMessage`, `recordCommunicationBundleReceipt`, `recordCommunicationBundleCleanupEvent`, `claimCommunicationBundle` | Bundle lifecycle |
+| Agent communications | `src/domains/agent-communications/transfers.js` | `bootstrapCommunication`, `negotiateCommunicationTransfer`, `resolveCommunicationTarget`, `createCommunicationEvidencePacket`, `transferWorkPacket`, `recordCommunicationTransferReceipt`, `acceptCommunicationTransferPacket`, `closeCommunicationTransferPacket`, `getCommunicationTransferHealth` | Transfer packet and receipt lifecycle |
+| Agent communications | `src/domains/agent-communications/handoffs.js` | `createCommunicationHandoff`, `acceptCommunicationHandoff` | Handoff lifecycle |
+| Agent communications | `src/domains/agent-communications/threads.js` | `openCommunicationThread`, `getCommunicationThread`, `listCommunicationInbox`, `getMyInbox` | Threads and inboxes |
+| Agent communications | `src/domains/agent-communications/ping-pong.js` | `startCoordinationPingPong`, `sendCoordinationPing`, `sendCoordinationPong`, `getCoordinationPingPongStatus`, `stopCoordinationPingPong` | Coordination heartbeat workflow |
+| Agent communications | `src/domains/agent-communications/connection-workflows.js` | `connectToTransferChannel`, `openAgentChannel`, `startAgentConnection`, `acceptAgentChannel`, `postAgentHeartbeat`, `closeAgentChannel` | Agent channel bootstrap and lifecycle |
+| Agent communications | `src/domains/agent-communications/friction.js` | `listCommunicationFrictionTaxonomy`, `recordCommunicationFrictionEvent` | Friction taxonomy/event recording |
+| Collaboration | `src/domains/collaboration/proposals.js` | `reviewCollaborationProposal`, `reviseCollaborationProposal`, `raiseCollaborationBlocker`, `beginCollaborationImplementation`, `requestCollaborationClosure` | Collaboration proposal choreography |
+| Collaboration | `src/domains/collaboration/facade.js` | `collaboration` constructor facade | Friendly aliases over agent communication and proposal modules |
+| Operations | `src/domains/operator/current-project.js` | `currentProjectStatus`, `getDashboard` | Operator dashboard state |
+| Operations | `src/domains/database/backups.js` | `createDatabaseBackup`, `listDatabaseBackups`, `getDatabaseBackup`, `listDatabaseBackupOperations`, `runAzureSqlBacpacBackup`, `listAzureSqlBacpacBackups`, `listAzureSqlBacpacBackupOperations` | Database and Azure SQL backup surfaces |
+| Governance | `src/domains/governance/session.js` | `startSessionGovernance`, `startReviewGovernance`, `completeTurn`, `evaluateTurnCompliance`, `blockIfNonCompliant` | Session/review/turn governance |
+| Governance | `src/domains/governance/claims.js` | `startWork`, `startClaimedWork`, `claimWorkItem`, `bindClaimedWorkItem`, `getClaim`, `claimIsValid`, `signoffClaim`, `promoteClaimSurface` | Work claims and signoff |
+| Governance | `src/domains/governance/execution-eligibility.js` | `getExecutionEligibility`, `_assertExecutionEligibility` | Mutation gate eligibility |
+| Governance | `src/domains/governance/tool-binding-approvals.js` | `createWorkflowToolBindingApprovalLane`, `recordWorkflowToolBindingApprovalDecision`, `executeWorkflowToolBindingApprovalBinding`, `revalidateWorkflowToolBindingStartup` | Tool binding approval workflow |
+| Governance | `src/domains/governance/verified-mutations.js` | `executeVerifiedMutation` | Generic post-condition verification primitive |
+| Project delivery | `src/domains/project-delivery/charter.js` | `runCharter`, `createProjectDelivery`, `approveProjectCharterIntent`, `approveImplementationRoadmap`, `runProjectCharter`, `beginImplementationRoadmap`, `routeImplementationItem` | Delivery facade and charter/roadmap approvals |
+| Project delivery | `src/domains/project-delivery/assistant-turns.js` | `persistAssistantTurn` | Assistant turn persistence |
+| External execution | `src/domains/external-projects/status.js` | `getExternalProjectStatus`, `getExternalProjectRoadmapSummary`, `getExternalProjectRoadmapActiveItem`, `listExternalProjectOpenTasks`, `getExternalProjectStatusBundle` | External project reads |
+| External execution | `src/domains/external-projects/audio-renders.js` | `createExternalAudioRender`, `getExternalAudioRender`, `downloadExternalAudioRender` | Audio render lifecycle |
+| External execution | `src/domains/external-projects/artifacts.js` | `listExternalWorkflowRunArtifacts`, `downloadExternalWorkflowRunArtifact` | External workflow artifacts |
+| Retrieval | `src/domains/retrieval/wrapper.js` | `getCommandCard`, `resolveOperatingProcedure`, `getSymbolDefinition`, `getRelatedCode` | Retrieval wrapper endpoints |
+| Retrieval | `src/domains/retrieval/repo-inventory.js` | `listRepositories`, `getRepository`, `listProjects`, `getProject`, `listCodeFiles`, `getCodeFile`, `getCodeFileContentWindow`, `listCodeSymbolsByFile`, `getCodeSymbol`, `searchSymbols`, `getSymbolRelationships`, `listCodeRelationships`, `listActionObservations`, `listCodebaseShapeFindings`, `listObjectFlowObservations`, `getChangeAnalysis`, `listRefactorCandidates`, `analyzeRefactorCandidate`, `getRepoRetrievalPacket`, `getRepoRetrievalPacketFragments`, `evaluateProposalScope` | Repository intelligence |
+| Retrieval | `src/domains/retrieval/management.js` | `getRetrievalStatus`, `getRetrievalProfileMetrics`, `getRetrievalFeedbackMetrics`, `getRetrievalQuery`, `getRetrievalPacket`, `generateRetrievalCandidates`, `selectRetrievalPacket`, `recordRetrievalFeedback`, `deriveRetrievalOptimizationCandidates`, `validatePromptAssembly` | Retrieval lifecycle and feedback |
+| Workflows | `src/domains/workflows/definitions.js` | `listWorkflows`, `createWorkflow`, `getWorkflow`, `replaceWorkflowSteps`, `publishWorkflow`, `cloneWorkflow` | Workflow definition lifecycle |
+| Workflows | `src/domains/workflows/governance.js` | `evaluateWorkflowGovernance`, `listWorkflowGovernanceDecisions`, `getWorkflowGovernanceSimulation`, `listWorkflowGovernanceBundles`, `listWorkflowGovernanceApprovals`, `listWorkflowGovernanceEvents`, `getWorkflowGovernanceReview`, `createWorkflowGovernanceReviewDecision` | Workflow governance reads/writes |
+| Workflows | `src/domains/workflows/runs.js` | `createWorkflowRun`, `getWorkflowRun`, `listWorkflowArtifacts`, `getWorkflowRunSubstrate`, `getWorkflowPlayback`, `resumeWorkflowRun` | Workflow run lifecycle |
+| Workflows | `src/domains/workflows/inspector.js` | `listRecentInspectorRuns`, `inspectWorkflowRun` | Run inspection |
+| Workflows | `src/domains/workflows/human-tasks.js` | `listManualTasks`, `listApprovalTasks`, `completeManualTask`, `approveTask` | Human task completion |
+| Projects | `src/domains/projects/chartering.js` | `createProjectCharter` | Project charter creation |
+| Projects | `src/domains/projects/lifecycle.js` | `listProjects`, `getProject`, `listProjectWorkflowRuns`, `closeProject`, `closeActiveProject`, `getProjectBundle` | Project reads and close behavior |
+| Projects | `src/domains/projects/reports.js` | `getProjectCharterReport`, `createProjectMarkdownDownload`, `downloadProjectMarkdownReport`, `downloadProjectCharterReportMarkdown` | Project reports/downloads |
+| Projects | `src/domains/projects/resume.js` | `resumeProjectWork` | Project resume context |
+| Project workflows | `src/domains/project-closure/close-roadmap-item-workflow.js` | `closeRoadmapItemWorkflow` | Cross-domain closure workflow; depends on projects, roadmaps, governance, implementation |
+| LOGA projections | `src/domains/projections/loga-projects.js` | `getLogaOperatorHomeProjection`, `getLogaProjectCatalogProjection`, `getLogaProjectPortfolioProjection`, `getLogaProjectRoadmapProjection`, `getLogaRoadmapItemProjection`, `getLogaWorkflowRunProjection`, `getLogaEvidencePacketProjection` | Project/operator LOGA projections |
+| LOGA projections | `src/domains/projections/loga-transfers.js` | `getLogaTransferHomeProjection`, `getLogaTransferInboxProjection`, `getLogaTransferPacketProjection`, `getLogaTransferNegotiationEventsProjection`, `getLogaTransferFrictionLaneProjection`, `getLogaTransferReceiptsProjection`, `getLogaTransferClosureReviewProjection` | Transfer LOGA projections |
+| UX remediation | `src/domains/loga/ux-remediation.js` | `submitUxGateRemediation`, `listUxGateRemediations`, `getUxGateRemediation`, `appendUxRemediationTicketNote`, `listUxRemediationTicketNotes`, `promoteUxGateRemediationImplementationCandidate`, `getLogaUxGateRemediationProjection` | UX gate remediation workflow |
+| Scripts | `src/domains/scripts/generated-scripts.js` | `generateScript`, `renderScript`, `submitScriptArtifact`, `getScriptRunEvidence` | Script generation and evidence |
+| Roadmaps | `src/domains/roadmaps/reads.js` | `listProjectRoadmaps`, `getProjectRoadmap`, `getProjectRoadmapSummary`, `getProjectRoadmapActiveItem`, `listProjectOpenTasks`, `getProjectPerformanceMetrics` | Roadmap/task/project metrics reads |
+| Roadmaps | `src/domains/roadmaps/reports.js` | `getProjectImplementationRoadmapReport`, `downloadProjectImplementationRoadmapReportMarkdown` | Roadmap report downloads |
+| Roadmaps | `src/domains/roadmaps/task-surface.js` | `ensureProjectRoadmapTaskSurface` | Task surface materialization |
+| Roadmaps | `src/domains/roadmaps/implementation-packet-materializer.js` | `importImplementationPacketAndMaterializeRoadmap`, `_resolveImplementationPacketProjectReference`, `_resolveImplementationPacketWorkflowReference`, `_resolveImplementationPacketWorkflowId` | Packet import plus roadmap/workflow binding |
+| Implementation | `src/domains/implementation/tasks.js` | `createImplementationTask`, `listImplementationTasks`, `listImplementationSubtasks`, `updateImplementationTask`, `assignImplementationTask`, `completeImplementationTask` | Implementation item task lifecycle |
+| Implementation | `src/domains/implementation/packets.js` | `importImplementationPacket`, `listImplementationPackets`, `getImplementationPacket`, `createImplementationPacketGateDecision`, `bindImplementationPacketToWorkflow`, `getWorkflowImplementationRoadmap`, `getWorkflowResumeContext` | Packets, gates, workflow binding |
+| Implementation | `src/domains/implementation/checks.js` | `getImplementationItemAcceptanceChecks`, `updateAcceptanceCheckStatus`, `updateAcceptanceCheckStatusVerified` | Acceptance checks and verified updates |
+| Implementation | `src/domains/implementation/artifacts.js` | `getArtifactManifest`, `getDecisionPacket`, `verifyImplementationItemArtifacts` | Artifact reads and verification |
+| Implementation | `src/domains/implementation/items.js` | `updateImplementationItemStatus`, `updateImplementationItemStatusVerified`, `addImplementationItemEvidence`, `addImplementationItemActivity`, `listImplementationItemActivity` | Item status, evidence, activity |
+| Skills | `src/domains/skills/registry.js` | `currentSkillRegistryStatus`, `getSkillContract`, `getSkillGovernance`, `createSkillContractDraft`, `recordSkillPatternReview`, `approveSkillContract`, `createWorkflowSkillContract`, `listWorkflowSkillBindings`, `seedFrequentOperationSkills` | Skill registry and workflow skill contracts |
+| Skills | `src/domains/skills/governance.js` | `createSkillGovernanceChange`, `listSkillGovernanceChanges`, `getSkillGovernanceChange` | Skill governance changes |
+| Capabilities | `src/domains/capabilities.js` | `listCapabilities`, `createCapability`, `testCapability` | Capability registry |
+| Tools | `src/domains/tools/registry.js` | `currentToolRegistryStatus`, `getWorkflowToolRegistry`, `currentAssistantToolContext`, `getTool`, `getToolHistory`, `getToolInvocations`, `getToolEventReplayBundle` | Tool registry reads |
+| Tools | `src/domains/tools/governance.js` | `getToolGovernance`, `createToolReviewDecision`, `createToolGateDecision` | Tool governance decisions |
+| Context | `src/domains/context-assembly.js` | `getContextAssemblyContract`, `getContextAssemblyStatus`, `getOperatorContext`, `getContextFragments`, `getContextReuse`, `listPromptAssemblies` | Context assembly |
+| Performance | `src/domains/performance.js` | `getSessionPerformanceMetrics`, `captureBenchmarkSnapshot`, `listBenchmarks`, `getBenchmarkMetrics`, `getBenchmarkDelta`, `getBenchmarkTrend`, `getPerformanceDashboard` | Metrics and benchmark snapshots |
+| Portfolio | `src/domains/portfolio/reads.js` | `getPortfolioStatus`, `getPortfolioSummary`, `getPortfolioExceptions`, `getPortfolioProject`, `getPortfolioReport`, `getPortfolioBundle` | Portfolio reads |
+| Portfolio | `src/domains/portfolio/closure-readiness.js` | `getPortfolioClosureReadiness` | Cross-domain portfolio closure readiness workflow |
+| Learning | `src/domains/self-learning.js` | `getSelfLearningPosture`, `listLearningRecords`, `getLearningRecord`, `listPromotionCandidates`, `getPromotionCandidate`, `listPromotionFlows` | Learning and promotion flow reads |
+| Optimization | `src/domains/self-optimization.js` | `getSelfOptimizationDashboard`, `getSelfOptimizationCandidateQueue`, `getSelfOptimizationBacklogPosture`, `getSelfOptimizationPendingHandoffs` | Optimization backlog and handoffs |
+| Design | `src/domains/design-intelligence.js` | `getDesignIntelligenceDashboard`, `listDesignDecisions`, `getDesignDecision`, `getDesignDecisionVariants`, `getDesignDecisionCritique`, `getDesignDecisionLineage`, `listDesignPatterns`, `getDecisionLabCanvas`, `getDesignRecommendations`, `getDesignPromotions`, `previewDesignPromotion`, `getDesignIntelligenceMetrics` | Design intelligence |
+| Discovery | `src/domains/script-discovery.js` | `scanScripts`, `listDiscoveredScriptAssets`, `listDiscoveredCapabilities`, `listWorkflowCandidates`, `promoteWorkflowCandidate` | Script and workflow discovery |
+| Notes | `src/domains/notes-lab.js` | `getNotesLabConfig`, `submitNote`, `approveNoteReview` | Notes review |
+| Search | `src/domains/search-contacts.js` | `search`, `getOrganization`, `getContact` | Search and contact lookup |
+| Benchmarks | `src/domains/benchmarks.js` | `listRecentBenchmarkRuns`, `getBenchmarkRun` | Benchmark runs |
+| Commit governance | `src/domains/commit-governance.js` | `evaluateCommitGovernance`, `checkGitShipReadiness`, `getCommitGovernanceEvaluation`, `listCommitGovernanceEvaluationsByClaim` | Commit readiness workflow |
+| Context sessions | `src/domains/context-sessions.js` | `openContextSession`, `getOrientationWindow`, `acknowledgeReminder`, `completeOrientation`, `lockContextSessionClaim`, `getContextSessionGateStatus`, `conductOrientation` | Orientation and context-session gates |
+
+## Slice Strategy
+
+The transformation should move in dependency order. Early slices create shared infrastructure, middle slices move thin endpoint groups, and late slices move cross-domain workflows that depend on the extracted modules.
+
+| Slice | Theme | Modules | Why this order works |
+|---:|---|---|---|
+| 0 | Fixtures and compatibility harness | Request fixtures for `ping`, `query`, `startAgentConnection`, `startClaimedWork`, `resumeProjectWork`, `closeRoadmapItemWorkflow`, `getPortfolioClosureReadiness`, `conductOrientation`; `src/compat/aliases.js` scaffold | Establishes behavior guardrails and a place for aliases before moving code |
+| 1 | Core substrate | `constants/*`, `transport/*`, `utils/*`, `client.js`, `index.js` barrel | Every later module depends on constants, transport, and helpers |
+| 2 | Small endpoint domains | `health.js`, `operator-status.js`, `gateway.js`, `operator/current-project.js`, `database/backups.js`, `capabilities.js`, `benchmarks.js`, `search-contacts.js`, `notes-lab.js` | Low orchestration risk; proves the module pattern quickly |
+| 3 | Retrieval and workflow reads | `retrieval/*`, `workflows/definitions.js`, `workflows/governance.js`, `workflows/runs.js`, `workflows/inspector.js`, `workflows/human-tasks.js` | Mostly request wrappers with clear endpoint ownership |
+| 4 | Agent communications base | `agent-communications/capabilities.js`, `channels.js`, `presence.js`, `threads.js`, `messages.js`, `bundles.js`, `friction.js`, `handoffs.js` | Splits the largest current cluster into testable communication primitives |
+| 5 | Agent communication workflows | `agent-communications/transfers.js`, `ping-pong.js`, `connection-workflows.js`, `collaboration/*` | Builds on the communication primitives from Slice 4 |
+| 6 | Governance substrate | `governance/session.js`, `claims.js`, `execution-eligibility.js`, `tool-binding-approvals.js`, `verified-mutations.js` | Must exist before implementation and closure workflows move |
+| 7 | Projects and project delivery | `project-delivery/*`, `external-projects/*`, `projects/chartering.js`, `projects/lifecycle.js`, `projects/reports.js`, `projects/resume.js` | Separates project APIs from LOGA, roadmaps, and closure orchestration |
+| 8 | Projections and script surfaces | `projections/*`, `loga/ux-remediation.js`, `scripts/generated-scripts.js`, `script-discovery.js` | Pulls rendering/script surfaces out of the project section |
+| 9 | Roadmaps and implementation | `roadmaps/*`, `implementation/*` | Creates the dependencies needed by roadmap closure workflows |
+| 10 | Registry and intelligence domains | `skills/*`, `tools/*`, `context-assembly.js`, `performance.js`, `self-learning.js`, `self-optimization.js`, `design-intelligence.js` | Medium-sized but mostly independent operator domains |
+| 11 | Cross-domain workflows | `project-closure/close-roadmap-item-workflow.js`, `portfolio/closure-readiness.js`, `commit-governance.js`, `context-sessions.js` | These compose many earlier domains and should move after their dependencies exist |
+| 12 | Final cleanup | Remove moved code from `index.js`, tighten barrel exports, update README examples | Leaves `index.js` as composition root and compatibility layer |
+
+## Slice Workload Grouping
+
+For the acceleration engine, the slices can be batched by risk profile:
+
+| Batch | Contains slices | Approximate module count | Risk profile |
+|---|---|---:|---|
+| Batch A | 0-2 | 20-25 | Low; infrastructure and small wrappers |
+| Batch B | 3-5 | 20-25 | Medium; retrieval, workflow wrappers, communication workflows |
+| Batch C | 6-9 | 25-35 | High; governance, projects, roadmaps, implementation |
+| Batch D | 10-12 | 20-25 | Medium-high; intelligence domains plus cross-domain workflows and cleanup |
+
+Recommended operating mode:
+
+- Use Batch A as the pilot.
+- Run Batches B and C only after alias preservation and request fixtures are working.
+- Keep Batch D last because it contains workflows that should compose already-extracted modules.
+
+## Module Ownership Rules
+
+Use these rules when a method could belong to more than one module:
+
+- Endpoint wrappers belong to the module named after the backend resource path.
+- Methods that coordinate three or more domains belong to a workflow module.
+- Methods that only normalize inputs for a resource stay with that resource module.
+- Methods that enforce mutation eligibility or post-condition verification belong to governance.
+- LOGA projection methods belong to projections unless they mutate remediation state.
+- Constructor facade methods are aliases, not ownership boundaries.
+- Private helpers move with their owning workflow unless more than one module needs them.
+- `index.js` should not import individual endpoint functions directly once a domain client exists; it should compose domain clients and attach aliases.
+
+## Composition Pattern
+
+The public `AIEngineClient` should become a composition root:
 
 ```js
 export class AIEngineClient {
@@ -291,614 +515,254 @@ export class AIEngineClient {
     this.collaboration = createCollaborationClient(this.agentComms);
     this.governance = createGovernanceClient(this.transport);
     this.projects = createProjectsClient(this.transport);
-    this.roadmaps = createRoadmapsClient(this.transport, this.projects);
+    this.roadmaps = createRoadmapsClient(this.transport);
     this.implementation = createImplementationClient(this.transport, this.governance);
+    this.projectClosure = createProjectClosureWorkflows({
+      projects: this.projects,
+      roadmaps: this.roadmaps,
+      governance: this.governance,
+      implementation: this.implementation,
+    });
+    this.portfolio = createPortfolioClient(this.transport, {
+      projects: this.projects,
+      roadmaps: this.roadmaps,
+      projections: this.projections,
+    });
 
-    attachBackwardCompatibleMethods(this);
-    attachLegacyFacades(this);
+    attachBackwardCompatibleAliases(this);
   }
 }
 ```
 
-The key is not to break existing consumers. Existing methods like `client.createProjectCharter(...)` can remain as thin aliases:
+Existing top-level methods should remain as aliases for at least one major version:
 
 ```js
-createProjectCharter(payload) {
-  return this.projects.createCharter(payload);
+closeRoadmapItemWorkflow(input) {
+  return this.projectClosure.closeRoadmapItemWorkflow(input);
+}
+
+getPortfolioClosureReadiness(input) {
+  return this.portfolio.getClosureReadiness(input);
 }
 ```
 
-## Proposed Domain Boundaries
+## Recommended Extraction Flow
 
-### 1. Transport Core
+### Phase 1: Transport, Constants, And Helpers
 
-Owns:
+Extract:
 
-- Base URL trimming.
-- Auth token resolution.
-- API key/client ID fallback headers.
-- Actor/session headers.
-- SDK version and capability headers.
-- Timeout/abort handling.
-- JSON/text/binary response readers.
-- Error shaping.
+- Version/package reading.
+- Constants.
+- Text/list/object helpers.
+- Communication enum normalizers.
+- Task binding helpers.
+- Roadmap projection line counting.
+- Verification and eligibility error builders.
+- JSON/text/binary request functions.
+- Header construction and auth token resolution.
 
-Move from current methods:
+Outcome:
 
-- `_resolveAccessToken`
-- `_buildHeaders`
-- `_request`
-- `_requestText`
-- `_requestLogaProjection`
-- `_requestBinary`
-- `appendQuery`
-- `readJson`
-- `parseContentDispositionFilename`
-- `isJsonBody`
-- `isFormDataBody`
-- `isBinaryBody`
+- `index.js` no longer owns utility code.
+- Every domain can share one transport.
 
-Why:
+### Phase 2: Thin Endpoint Domains
 
-Transport is the substrate every domain needs. It should be stable, independently testable, and free of business semantics.
-
-### 2. Agent Communications
-
-Owns:
-
-- Communication capabilities.
-- Channels.
-- Transfer channels.
-- Agent channel open/accept/close.
-- Heartbeats.
-- Messages.
-- Message watches.
-- Bundles.
-- Transfer receipts.
-- Presence.
-- Inbox.
-- Direct participant/role sending.
-- Ping-pong coordination.
-- Handoffs.
-- Friction taxonomy/events.
-
-Move from current methods:
-
-- `getCommunicationCapabilities`
-- `getCollaborationCapabilities`
-- `getDeploymentCapabilities`
-- `checkCoordinationPingPongPreflight`
-- `listCommunicationChannels`
-- `getCommunicationChannelStatus`
-- `getPresenceBoard`
-- `markParticipantOnline`
-- `markParticipantOffline`
-- `connectToTransferChannel`
-- `openAgentChannel`
-- `startAgentConnection`
-- `acceptAgentChannel`
-- `postAgentHeartbeat`
-- `postAgentMessage`
-- `acknowledgeAgentMessage`
-- `closeAgentChannel`
-- `respondToMessageWatch`
-- `bootstrapCommunication`
-- `negotiateCommunicationTransfer`
-- `transferWorkPacket`
-- `openCommunicationThread`
-- `sendCommunicationMessage`
-- `createCommunicationBundle`
-- `recordCommunicationTransferReceipt`
-- `acceptCommunicationTransferPacket`
-- `closeCommunicationTransferPacket`
-- `createCommunicationHandoff`
-- `startCoordinationPingPong`
-- `sendCoordinationPing`
-- `sendCoordinationPong`
-- `stopCoordinationPingPong`
-
-Submodules should be `channels`, `messages`, `bundles`, `transfers`, `presence`, and `coordination`.
-
-### 3. Collaboration Facade
-
-Owns:
-
-- Human-friendly choreography aliases over agent communications.
-- Proposal review/revise/blocker/begin/closure workflows.
-- Backward-compatible `client.collaboration.*` names.
-
-This should not own its own HTTP paths unless the backend has collaboration-specific endpoints. It can compose `agentComms`.
-
-### 4. Data Gateway
-
-Owns:
-
-- Generic query gateway.
-- Report definition execution.
-- Projection rendering gateway.
-- Action intent submission.
-
-Move from current methods:
-
-- `query`
-- `runReportDefinition`
-- `renderProjection`
-- `submitActionIntent`
-
-This should be small. The current `Data Access Gateway` section is overloaded because unrelated communication and governance methods are living under it.
-
-### 5. Operator Status And Telemetry
-
-Owns:
-
-- Current workflow status.
-- Architecture/security/codebase status.
-- Execution telemetry current/process runs.
-- Generated execution usability.
-- Anti-pattern rules.
-- Latest memory projection.
-
-Move from current methods:
-
-- `currentWorkflowStatus`
-- `currentArchitectureIntegrityStatus`
-- `currentSecurityGovernanceStatus`
-- `getExecutionTelemetryCurrent`
-- `listExecutionProcessRuns`
-- `getExecutionProcessRun`
-- `getGeneratedExecutionUsability`
-- `getLogaGeneratedExecutionUsabilityProjection`
-- `getAntiPatternRules`
-- `currentCodebaseShapeStatus`
-- `getLatestMemoryProjection`
-
-### 6. Governance Core
-
-Owns:
-
-- Execution eligibility.
-- Claims.
-- Claim binding/promotion/signoff.
-- Verified mutation helper.
-- Verification errors.
-- Task binding policy helpers.
-- Workflow tool binding approval lanes.
-- Turn compliance.
-- Commit governance can either live here or remain a separate `commit-governance` domain.
-
-Move from current methods:
-
-- `startSessionGovernance`
-- `startReviewGovernance`
-- `startWork`
-- `startClaimedWork`
-- `claimWorkItem`
-- `bindClaimedWorkItem`
-- `getClaim`
-- `getExecutionEligibility`
-- `signoffClaim`
-- `promoteClaimSurface`
-- `createWorkflowToolBindingApprovalLane`
-- `recordWorkflowToolBindingApprovalDecision`
-- `executeWorkflowToolBindingApprovalBinding`
-- `revalidateWorkflowToolBindingStartup`
-- `completeTurn`
-- `evaluateTurnCompliance`
-- `blockIfNonCompliant`
-- `executeVerifiedMutation`
-
-### 7. Projects And Chartering
-
-Owns:
-
-- Project charter creation/execution.
-- Project listing/get/close.
-- Project workflow runs.
-- Project reports and markdown downloads.
-- Project bundles.
-- LOGA project projections.
-
-Move from current methods:
-
-- `createProjectCharter`
-- `runCharter`
-- `runProjectCharter`
-- `createProjectDelivery`
-- `approveProjectCharterIntent`
-- `listProjects`
-- `getProject`
-- `listProjectWorkflowRuns`
-- `closeProject`
-- `closeActiveProject`
-- `getProjectCharterReport`
-- `createProjectMarkdownDownload`
-- `downloadProjectMarkdownReport`
-- `downloadProjectCharterReportMarkdown`
-- `getProjectBundle`
-- `getLogaOperatorHomeProjection`
-- `getLogaProjectCatalogProjection`
-- `getLogaProjectPortfolioProjection`
-- `getLogaProjectRoadmapProjection`
-- `getLogaRoadmapItemProjection`
-- `getLogaWorkflowRunProjection`
-- `getLogaEvidencePacketProjection`
-
-### 8. Roadmaps
-
-Owns:
-
-- Project roadmap list/get/summary/active item.
-- Implementation roadmap reports.
-- Task surface ensure.
-- Implementation packet materialization into roadmaps.
-- Project open tasks and project performance metrics.
-
-Move from current methods:
-
-- `listProjectRoadmaps`
-- `getProjectRoadmap`
-- `getProjectRoadmapSummary`
-- `getProjectRoadmapActiveItem`
-- `getProjectImplementationRoadmapReport`
-- `downloadProjectImplementationRoadmapReportMarkdown`
-- `ensureProjectRoadmapTaskSurface`
-- `importImplementationPacketAndMaterializeRoadmap`
-- `listProjectOpenTasks`
-- `getProjectPerformanceMetrics`
-- `_resolveImplementationPacketProjectReference`
-- `_resolveImplementationPacketWorkflowReference`
-- `_resolveImplementationPacketWorkflowId`
-
-### 9. Governed Implementation
-
-Owns:
-
-- Implementation packets.
-- Implementation tasks.
-- Acceptance checks.
-- Artifact manifests.
-- Decision packets.
-- Evidence/activity recording.
-- Verified status changes.
-- Workflow roadmap/resume context bindings.
-
-Move from current methods:
-
-- `createImplementationTask`
-- `listImplementationTasks`
-- `listImplementationSubtasks`
-- `updateImplementationTask`
-- `assignImplementationTask`
-- `completeImplementationTask`
-- `importImplementationPacket`
-- `listImplementationPackets`
-- `getImplementationPacket`
-- `getImplementationItemAcceptanceChecks`
-- `getArtifactManifest`
-- `getDecisionPacket`
-- `updateImplementationItemStatus`
-- `addImplementationItemEvidence`
-- `addImplementationItemActivity`
-- `listImplementationItemActivity`
-- `updateAcceptanceCheckStatus`
-- `createImplementationPacketGateDecision`
-- `bindImplementationPacketToWorkflow`
-- `getWorkflowImplementationRoadmap`
-- `getWorkflowResumeContext`
-- `updateImplementationItemStatusVerified`
-- `updateAcceptanceCheckStatusVerified`
-- `verifyImplementationItemArtifacts`
-
-### 10. Retrieval And Repo Intelligence
-
-Owns:
-
-- Retrieval wrapper APIs.
-- Repository inventory.
-- Code files.
-- Symbols.
-- Relationships.
-- Codebase shape/object-flow findings.
-- Change analysis.
-- Refactor candidates.
-- Retrieval packet generation/selection/feedback.
-
-Move from current methods:
-
-- `getCommandCard`
-- `resolveOperatingProcedure`
-- `getSymbolDefinition`
-- `getRelatedCode`
-- `listRepositories`
-- `getRepository`
-- `listCodeFiles`
-- `getCodeFile`
-- `getCodeFileContentWindow`
-- `listCodeSymbolsByFile`
-- `getCodeSymbol`
-- `searchSymbols`
-- `getSymbolRelationships`
-- `listCodeRelationships`
-- `listActionObservations`
-- `listCodebaseShapeFindings`
-- `listObjectFlowObservations`
-- `getChangeAnalysis`
-- `listRefactorCandidates`
-- `analyzeRefactorCandidate`
-- `getRepoRetrievalPacket`
-- `getRepoRetrievalPacketFragments`
-- `evaluateProposalScope`
-- `getRetrievalStatus`
-- `getRetrievalProfileMetrics`
-- `getRetrievalFeedbackMetrics`
-- `getRetrievalQuery`
-- `getRetrievalPacket`
-- `generateRetrievalCandidates`
-- `selectRetrievalPacket`
-- `recordRetrievalFeedback`
-- `deriveRetrievalOptimizationCandidates`
-- `validatePromptAssembly`
-
-### 11. Workflow Runtime
-
-Owns:
-
-- Workflow definitions.
-- Governance surfaces.
-- Runs.
-- Artifacts.
-- Playback.
-- Resume.
-- Inspector.
-- Manual and approval tasks.
-
-Move from current methods:
-
-- `listWorkflows`
-- `createWorkflow`
-- `getWorkflow`
-- `replaceWorkflowSteps`
-- `publishWorkflow`
-- `cloneWorkflow`
-- `evaluateWorkflowGovernance`
-- `listWorkflowGovernanceDecisions`
-- `getWorkflowGovernanceSimulation`
-- `listWorkflowGovernanceBundles`
-- `listWorkflowGovernanceApprovals`
-- `listWorkflowGovernanceEvents`
-- `getWorkflowGovernanceReview`
-- `createWorkflowGovernanceReviewDecision`
-- `createWorkflowRun`
-- `getWorkflowRun`
-- `listWorkflowArtifacts`
-- `getWorkflowRunSubstrate`
-- `getWorkflowPlayback`
-- `resumeWorkflowRun`
-- `listRecentInspectorRuns`
-- `inspectWorkflowRun`
-- `listManualTasks`
-- `listApprovalTasks`
-- `completeManualTask`
-- `approveTask`
-
-### 12. Projection And LOGA Runtime
-
-Owns:
-
-- Projection metadata extraction.
-- LOGA operator/project/roadmap/workflow/evidence/transfer projections.
-- Text/markdown projection request handling.
-- Projection constants.
-
-This can sit under `projects/projections.js` and `agent-communications/transfer-projections.js`, or become a shared `projections` domain if projection behavior is a platform feature.
-
-### 13. Smaller Operator Domains
-
-These are already naturally bounded and can each become small modules:
-
-- `skills`
-- `skill-governance`
-- `capabilities`
-- `tools`
-- `context-assembly`
-- `performance`
-- `portfolio`
-- `self-learning`
-- `self-optimization`
-- `design-intelligence`
-- `script-discovery`
-- `notes-lab`
-- `search-contacts`
-- `benchmarks`
-- `context-sessions`
-- `database`
-- `external-projects`
-- `scripts`
-- `ux-remediation`
-
-## Workflow Stitches To Preserve
-
-The SDK contains higher-level workflows that are more valuable than raw endpoint wrappers. These should be kept, named explicitly, and tested as orchestration modules:
-
-| Workflow | Current methods involved | Recommended home |
-|---|---|---|
-| Agent connection bootstrap | `connectToTransferChannel`, `startAgentConnection`, `openAgentChannel`, `acceptAgentChannel`, `respondToMessageWatch` | `agent-communications/connection-workflows.js` |
-| Coordination ping-pong | `checkCoordinationPingPongPreflight`, `startCoordinationPingPong`, `sendCoordinationPing`, `sendCoordinationPong`, `getCoordinationPingPongStatus`, `stopCoordinationPingPong` | `agent-communications/ping-pong.js` |
-| Work transfer packet delivery | `transferWorkPacket`, bundle methods, transfer receipt methods | `agent-communications/transfers.js` |
-| Claimed work startup | `startWork`, `startClaimedWork`, `claimWorkItem`, `bindClaimedWorkItem` | `governance/work-claims.js` |
-| Verified implementation mutation | `updateImplementationItemStatus`, `updateImplementationItemStatusVerified`, `updateAcceptanceCheckStatusVerified`, `executeVerifiedMutation` | `governance/verified-mutations.js` plus `implementation/verified-actions.js` |
-| Project charter to roadmap | `createProjectCharter`, `runCharter`, `createProjectDelivery`, `importImplementationPacketAndMaterializeRoadmap` | `projects/chartering.js` and `roadmaps/materializer.js` |
-| Context session orientation | `openContextSession`, `getOrientationWindow`, `acknowledgeReminder`, `completeOrientation`, `lockContextSessionClaim`, `conductOrientation` | `context-sessions.js` |
-
-## Migration Strategy
-
-### Phase 1: Stabilize Tests Around Existing Behavior
-
-- Add smoke tests for constructor behavior and `fromEnv`.
-- Add transport tests for JSON, text, binary, timeout, and non-JSON error bodies.
-- Add alias tests proving `client.agentComms.*`, `client.collaboration.*`, and top-level `client.*` methods still point to equivalent behavior.
-- Add snapshot-style request tests using a fake `fetchImpl` so endpoint paths/methods/bodies are locked down before extraction.
-
-### Phase 2: Extract Transport And Utilities
-
-- Move low-risk helpers first.
-- Keep function signatures unchanged.
-- Replace direct helper references from `index.js` with imports.
-- Verify no public export changes.
-
-### Phase 3: Extract Small Wrapper Domains
-
-Start with domains whose methods are mostly one-line request wrappers:
+Extract mostly one-call wrappers:
 
 - Health.
 - Operator status.
 - Gateway.
-- Workflows.
+- Database.
+- Retrieval wrapper.
+- Repo inventory.
+- Retrieval management.
+- Workflow definitions.
+- Workflow governance.
 - Workflow runs.
-- Manual/approval tasks.
+- Workflow inspector.
+- Manual and approval tasks.
 - Skills.
 - Capabilities.
 - Tools.
-- Portfolio.
+- Context assembly.
 - Performance.
+- Self-learning.
+- Self-optimization.
+- Design intelligence.
+- Script discovery.
 - Notes lab.
-- Search/contacts.
+- Search and contacts.
 - Benchmarks.
 
-### Phase 4: Extract Orchestration Domains
+Outcome:
 
-Move the risky workflows after transport and simple wrappers are stable:
+- The file shrinks quickly.
+- Request paths become owned by clear domains.
 
-- Agent communications.
-- Collaboration.
-- Governance.
-- Roadmaps.
-- Governed implementation.
-- Context sessions.
+### Phase 3: Agent Communication And Collaboration
 
-### Phase 5: Shrink `index.js`
+Extract:
 
-The final `index.js` should:
+- Capabilities.
+- Channels.
+- Presence.
+- Transfer channels.
+- Messages.
+- Message watches.
+- Bundles.
+- Transfer receipts.
+- Handoffs.
+- Friction events.
+- Ping-pong coordination.
+- Connection bootstrap workflows.
+- Collaboration proposal/revision/blocker/closure workflows.
 
-- Export constants.
-- Export `AIEngineClient`.
-- Export `createAIEngineClient`.
-- Compose domain clients.
-- Attach backward-compatible aliases.
-- Avoid containing endpoint implementation details.
+Outcome:
+
+- The overloaded `Data Access Gateway` section loses its largest cluster.
+- `agentComms` and `collaboration` become real clients, not constructor alias bags.
+
+### Phase 4: Governance And Verified Mutations
+
+Extract:
+
+- Session governance.
+- Review governance.
+- Work start.
+- Claims.
+- Claim validity.
+- Claimed work binding.
+- Execution eligibility.
+- Signoff.
+- Claim surface promotion.
+- Workflow tool binding approvals.
+- Turn compliance.
+- `executeVerifiedMutation`.
+
+Outcome:
+
+- Verified mutation behavior becomes reusable by implementation and closure workflows.
+
+### Phase 5: Projects, Roadmaps, And Implementation
+
+Extract:
+
+- Project chartering and delivery.
+- Project lifecycle and reports.
+- Project resume context.
+- Roadmap reads/reports.
+- Roadmap task surface.
+- Implementation packet materialization.
+- Implementation tasks.
+- Implementation packets.
+- Acceptance checks.
+- Artifacts.
+- Evidence.
+- Gate decisions.
+- Verified implementation actions.
+
+Outcome:
+
+- Project delivery and roadmap implementation workflows become composable modules.
+
+### Phase 6: Cross-Domain Workflows
+
+Extract these last, after their dependencies are real modules:
+
+- `closeRoadmapItemWorkflow(...)`
+- `getPortfolioClosureReadiness(...)`
+- `conductOrientation(...)`
+- `checkGitShipReadiness(...)`
+
+Outcome:
+
+- Workflow modules compose domain clients instead of calling dozens of sibling methods on one large class.
 
 ## Backward Compatibility Contract
 
-Do not break these consumer patterns:
+Preserve all current call styles:
 
 ```js
-import { AIEngineClient, createAIEngineClient } from '@bpmsoftwaresolutions/ai-engine-client';
-
 const client = createAIEngineClient({ baseUrl });
+
 await client.ping();
 await client.createProjectCharter(payload);
+await client.resumeProjectWork({ projectIdentifier });
+await client.closeRoadmapItemWorkflow({ projectIdentifier });
+await client.getPortfolioClosureReadiness();
 await client.agentComms.openThread(payload);
 await client.collaboration.reviewProposal(payload);
-await client.implementation?.getPacket?.(packetId);
 ```
 
-Recommended compatibility rule:
+Recommended rule:
 
-- Top-level methods remain for at least one major version.
-- New domain namespaces are introduced as the preferred API.
-- Deprecated top-level methods log nothing and behave exactly as before.
-- Documentation marks top-level methods as compatibility aliases after the domain modules exist.
+- Existing top-level methods stay as aliases.
+- Existing constructor facades stay available.
+- New domain namespaces become the preferred documented API.
+- No endpoint path, HTTP method, body shape, or return shape should change during extraction.
 
-## Suggested Domain Namespace Target
+## Request Contract Fixtures To Generate Upstream
 
-The eventual SDK should feel like this:
+Before implementation, upstream agents should generate fake-fetch request fixtures for:
 
-```js
-client.health.ping();
-client.operator.status.currentWorkflow();
-client.gateway.query(...);
-client.agentComms.channels.open(...);
-client.agentComms.messages.send(...);
-client.agentComms.bundles.create(...);
-client.agentComms.transfers.accept(...);
-client.collaboration.reviewProposal(...);
-client.governance.claims.startWork(...);
-client.governance.verifiedMutations.execute(...);
-client.projects.charters.create(...);
-client.projects.lifecycle.close(...);
-client.roadmaps.getActiveItem(...);
-client.implementation.tasks.create(...);
-client.implementation.packets.import(...);
-client.retrieval.repo.searchSymbols(...);
-client.workflows.runs.resume(...);
-client.contextSessions.conductOrientation(...);
-```
+- `ping`
+- `query`
+- `startAgentConnection`
+- `connectToTransferChannel`
+- `startCoordinationPingPong`
+- `transferWorkPacket`
+- `startClaimedWork`
+- `bindClaimedWorkItem`
+- `claimIsValid`
+- `resumeProjectWork`
+- `closeProject`
+- `closeRoadmapItemWorkflow`
+- `importImplementationPacketAndMaterializeRoadmap`
+- `updateImplementationItemStatusVerified`
+- `verifyImplementationItemArtifacts`
+- `getPortfolioClosureReadiness`
+- `conductOrientation`
 
-## Risks If Left As-Is
+These fixtures are the guardrails for making the split without changing behavior.
 
-- Every new API increases merge conflict risk in the same file.
-- Transport changes are risky because they sit beside unrelated business workflows.
-- Domain ownership is hard to assign to upstream agents.
-- Discoverability is poor despite the large method surface.
-- High-level workflows are hidden among raw endpoint wrappers.
-- Tests will tend to be broad and brittle instead of domain-specific.
-- The constructor will keep accumulating ad hoc facades and aliases.
-- Refactoring one area, such as agent communication, can accidentally affect project delivery or governance.
-
-## Recommended Upstream Remediation Ticket Shape
+## Upstream Remediation Ticket Draft
 
 Title:
 
-Refactor AI Engine SDK `src/index.js` into domain modules while preserving public API compatibility
+Refactor AI Engine SDK `src/index.js` into composed domain modules while preserving compatibility
 
 Problem:
 
-`src/index.js` has grown to roughly 6,000 lines and 364 class methods. It mixes transport, auth, normalization, governance verification, agent communications, project delivery, roadmaps, implementation packets, retrieval, workflow runtime, and operator intelligence surfaces in a single class. This creates high change risk and makes domain ownership unclear.
+`@bpmsoftwaresolutions/ai-engine-client@1.1.71` publishes a single `src/index.js` file with roughly 6,456 lines, 369 class methods, 34 top-level helpers, and 331 request calls. The file mixes transport, constants, normalization, agent communications, collaboration, governance, projects, roadmaps, implementation packets, portfolio readiness, retrieval, workflows, and context-session orchestration.
+
+Recent workflow additions such as `closeRoadmapItemWorkflow(...)` and `getPortfolioClosureReadiness(...)` are valuable, but they make the single-file structure harder to maintain because they coordinate multiple backend domains from inside one class.
 
 Acceptance criteria:
 
-- `src/index.js` is reduced to exports, client composition, and compatibility alias wiring.
-- Shared transport lives in `src/transport/*` and has focused tests for JSON/text/binary/timeout/error behavior.
-- Helper functions move into focused utility/domain modules.
-- Agent communications, governance, projects, roadmaps, implementation, retrieval, workflows, and operator domains each live in separate modules.
-- Existing top-level method names remain backward-compatible.
-- Existing constructor facades remain backward-compatible.
-- Domain namespaces are documented as the preferred API.
-- Request path/method/body behavior is covered by fake-fetch tests before and after extraction.
-- Long orchestration methods are tested at the workflow level.
+- `src/index.js` becomes a public export barrel and compatibility composition root.
+- Constants move into dedicated constant modules.
+- HTTP behavior moves into `src/transport/*`.
+- Helper functions move into focused utility modules.
+- Agent communications, collaboration, governance, projects, roadmaps, implementation, retrieval, workflows, portfolio, context sessions, and operator intelligence live in separate domain modules.
+- `closeRoadmapItemWorkflow(...)` moves into a project closure workflow module.
+- `getPortfolioClosureReadiness(...)` moves into a portfolio closure readiness workflow module.
+- All existing top-level client methods remain callable.
+- Existing constructor facades remain callable.
+- Request contract fixtures prove endpoint paths, methods, query params, bodies, and response handling did not change.
 
-Suggested first PR:
+Suggested PR order:
 
-- Extract transport helpers and request methods.
-- Extract constants.
-- Add fake-fetch request contract tests.
-- Keep `AIEngineClient` behavior unchanged.
-
-Suggested second PR:
-
-- Extract simple request-wrapper domains.
-- Add alias-preservation tests.
-
-Suggested third PR:
-
-- Extract agent communications and collaboration.
-- Add workflow tests for connection bootstrap and ping-pong.
-
-Suggested fourth PR:
-
-- Extract governance, roadmaps, and governed implementation.
-- Add verified mutation and materialization tests.
+1. Extract constants, helpers, and transport.
+2. Extract thin endpoint domains.
+3. Extract agent communications and collaboration.
+4. Extract governance and verified mutations.
+5. Extract projects, roadmaps, and implementation.
+6. Extract cross-domain workflows.
 
 ## Bottom Line
 
-The SDK already contains meaningful domain seams. The right remediation is not a rewrite; it is a careful extraction that turns the current god class into a composed client.
+The current SDK has evolved beyond an endpoint wrapper. It now contains real AI Engine workflows. That is useful and worth preserving, but those workflows need to live as composed modules with explicit dependencies.
 
-The safest path is:
-
-1. Freeze current behavior with fake-fetch tests.
-2. Extract transport/utilities first.
-3. Move one domain at a time.
-4. Keep top-level method aliases.
-5. Promote domain namespaces as the new mental model.
-
-That gives the upstream AI Engine team a cleaner SDK without forcing downstream consumers to absorb a breaking API migration.
+The upstream agents should not rewrite behavior. They should first freeze request behavior with fixtures, then move implementation behind the same public API one domain at a time.
