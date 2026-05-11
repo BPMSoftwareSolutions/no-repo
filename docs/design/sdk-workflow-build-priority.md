@@ -2,7 +2,7 @@
 
 **Context:** Modernization Warehouse platform, active project portfolio, multi-agent coordination substrate  
 **Reference taxonomy:** [sdk-workflow-taxonomy.md](sdk-workflow-taxonomy.md)  
-**Date:** 2026-05-10 — updated 2026-05-11 for SDK v1.1.71
+**Date:** 2026-05-10 — updated 2026-05-11 for SDK v1.1.102
 
 ---
 
@@ -17,6 +17,24 @@ Prioritization is driven by three parallel realities:
 3. **The modernization warehouse is the destination.** The workflows built now must be the paved road that warehouse agents walk. Every workflow that is ad hoc today becomes a friction source in the warehouse at scale.
 
 The priority ordering below reflects those three realities in order.
+
+---
+
+## Operating Model — Tight Feedback Loop
+
+This document is not just a static reference. It is a live product input that feeds directly into backend development.
+
+The loop works like this:
+
+1. **Operator analysis** — gaps, missing composites, and priority ordering are identified here in `no-repo` through SDK inspection, workflow taxonomy, and real usage.
+2. **Backend implementation** — the backend team reads the analysis and implements the prioritized workflows. New SDK methods, composites, and namespace refactors follow the gap list.
+3. **SDK version bump** — a new npm version is published. The operator installs it and reads the updated README.
+4. **Docs updated in real time** — both the taxonomy and this priority doc are updated immediately to reflect what shipped.
+5. **New gaps identified** — the updated SDK exposes new surfaces, which reveal the next set of gaps.
+
+The cycle completes in hours, not sprints. The operator communicates with AI in real time, the AI produces structured analysis, the backend team executes, and the SDK ships. **The analysis documents are the spec. The README is the receipt.**
+
+---
 
 ---
 
@@ -121,7 +139,21 @@ These workflows are the backbone of multi-agent coordination. They must exist be
 - Communication should never require a full `memory:load` or `project:resume`. Channel actions use channel primitives only.
 - `postAgentHeartbeat` maintains liveness but does not update global presence. Presence is still manually managed (Gap 2 from taxonomy).
 
-**SDK methods (in order):**
+**SDK methods — canonical single-call path _(v1.1.101)_:**
+
+```js
+const channel = await client.agentComms.establishAgentCommunicationChannel({
+  projectIdentifier: projectId,
+});
+// channel.channel_id, channel.transfer_packet_id
+// channel.missing_surfaces[] — inspect before treating as fully established
+```
+
+`establishAgentCommunicationChannel` composes: `resumeProjectWork` → `transferWorkPacket` → `openTransferChannel` → `joinTransferChannel` / `resumeTransferChannel` → `postCollaborationHeartbeat` → `getTransferChannelProjection`. Always inspect `missing_surfaces[]` — the substrate may return a safe partial result if projection surfaces are absent.
+
+**Manual path (if step-level control is needed):**
+
+| Step | Method | Purpose |
 
 | Step | Method | Purpose |
 |------|--------|---------|
@@ -149,7 +181,21 @@ Presence TTL (Gap 2). If an agent crashes after step 9, it remains marked online
 
 **Why here:** Once a channel is established, agents need to send and receive messages reliably. The delivery verification model (`send → persisted → receipt → recipient visibility → watch acknowledgement`) must be the standard pattern.
 
-**SDK methods (in order):**
+**SDK methods — canonical single-call path _(v1.1.101)_:**
+
+```js
+const loop = await client.agentComms.runInterAgentMessagingLoop({
+  channelId: channel.channel_id,
+  workTransferPacketId: channel.transfer_packet_id,
+  replyBodyMarkdown: 'Confirmed. Proceeding with the next step.',
+  closeWhenAcknowledged: true,
+});
+// loop.missing_surfaces[] — inspect before assuming full delivery
+```
+
+`runInterAgentMessagingLoop` composes: `resumeTransferChannel` → `replyToTransferChannel` → `startMessageWatch` → `acknowledgeExpectedMessage` → `postCollaborationHeartbeat` → `closeTransferChannel` (when `closeWhenAcknowledged` is set and satisfied) → `getTransferChannelProjection`. Returns `missing_surfaces[]` — no message should be considered delivered until the watch acknowledgement completes.
+
+**Manual path (if step-level control is needed):**
 
 | Step | Method | Purpose |
 |------|--------|---------|
@@ -179,7 +225,25 @@ No message should be considered delivered until `verifyMessageReceived` returns 
 **What this workflow does:**  
 One agent discovers a gate failure, UX issue, or quality gap. It files a remediation ticket, notifies the responsible agent via the communication channel, and attaches the ticket to the message. The receiving agent can then inspect the ticket via LOGA projection and act.
 
-**SDK methods (in order):**
+**SDK methods — canonical single-call path _(v1.1.101)_:**
+
+```js
+const ticket = await client.communicationTickets.createCrossAgentRemediationTicket({
+  channelId: channel.channel_id,
+  workTransferPacketId: channel.transfer_packet_id,
+  assignedTo: 'agent-upstream',
+  requestedBy: 'agent-downstream',
+  sourceRef: 'finding-42',
+  blockerSummary: 'Gate failure — remediation ownership must move upstream.',
+  expectedResponse: 'Assignee acknowledgement',
+});
+// ticket.remediation_ticket_id or ticket.blocker_id
+// ticket.missing_surfaces[] — inspect before assuming full ticket establishment
+```
+
+`createCrossAgentRemediationTicket` composes: `resumeTransferChannel` → `transferWorkPacket` (when ownership must move) → `raiseCollaborationBlocker` → `reviewCollaborationProposal` (when a proposal id is supplied) → `startMessageWatch` → `postCollaborationHeartbeat` → `getTransferChannelProjection`. Returns `missing_surfaces[]` — callers see any absent governed surface rather than an invented success response.
+
+**Manual path (for UX-gate-specific tickets or when step-level control is needed):**
 
 | Step | Method | Purpose |
 |------|--------|---------|
@@ -204,7 +268,28 @@ One agent discovers a gate failure, UX issue, or quality gap. It files a remedia
 **What this workflow does:**  
 One agent runs code analysis, packages a refactoring proposal into a bundle, and transfers it to the agent responsible for execution or review. The receiving agent inspects the bundle and begins implementation.
 
-**SDK methods (in order):**
+**SDK methods — canonical single-call path _(v1.1.101)_:**
+
+```js
+const bundle = await client.refactoringTransfers.transferRefactoringBundle({
+  projectIdentifier: projectId,
+  sourceAgent: 'agent-downstream',
+  targetAgent: 'agent-upstream',
+  sourceRef: 'refactor-42',
+  problemStatement: 'Extract the transport orchestration into a shared helper.',
+  affectedFilesOrSymbols: ['src/index.js', 'transferRefactoringBundle'],
+  recommendedAction: 'Create a shared transfer orchestration helper.',
+  acceptanceCriteria: ['bundle received', 'ownership assigned', 'acknowledgement posted'],
+  evidenceRefs: ['commit:abc123'],
+  riskLevel: 'medium',
+  handoffNotes: 'Please review and wire the new helper into the bundle flow.',
+});
+// bundle.missing_surfaces[] — inspect before assuming full transfer
+```
+
+`transferRefactoringBundle` composes: `resumeProjectWork` / `startWork` → `transferWorkPacket` → `openTransferChannel` / `resumeTransferChannel` → `assignCollaborationOwnership` → `postCollaborationProposal` → `startMessageWatch` → `postCollaborationHeartbeat` → `getTransferChannelProjection`. Fails closed if no explicit `targetAgent` is supplied.
+
+**Manual path (if step-level control is needed):**
 
 | Step | Method | Purpose |
 |------|--------|---------|
@@ -260,6 +345,90 @@ The `declaredScopeFiles` in `startClaimedWork` must align with the `warehouse.as
 
 ---
 
+#### 3.4 — Warehouse Asset Pipeline _(v1.1.101)_
+
+**Why here:** The SDK now has a full native pipeline for the modernization warehouse — from intake registration through gate decision. This is no longer a future capability; it is a first-class SDK surface as of v1.1.101.
+
+**What this workflow does:**  
+Takes a legacy asset from intake all the way through the warehouse: registers it, classifies it, discovers salvage candidates, packages a governed work packet, requests wrapper execution, collects evidence, and records a gate decision — all through the SDK without external tooling.
+
+**SDK methods — canonical pipeline _(v1.1.101)_:**
+
+```js
+// Step 1 — Intake
+const intake = await client.workflowComposition.registerModernizationAsset({
+  projectIdentifier: projectId,
+  assetName: 'legacy-auth-module',
+  assetType: 'module',
+  sourceRef: 'src/auth/legacy.js',
+  originSystem: 'monolith-v1',
+  businessContext: 'Auth flows that predate OAuth2 adoption.',
+  suspectedValue: 'high',
+});
+
+// Step 2 — Classify
+const classification = await client.workflowComposition.classifyModernizationAsset({
+  projectIdentifier: projectId,
+  assetId: intake.asset_id,
+  classificationCategory: 'salvageable',
+  reusePotential: 'high',
+  modernizationNeed: 'refactor',
+});
+
+// Step 3 — Discover salvage candidates
+const candidates = await client.workflowComposition.discoverSalvageCandidates({
+  projectIdentifier: projectId,
+  assetId: intake.asset_id,
+  candidateSearchIntent: 'Find reusable auth patterns',
+  maxCandidates: 10,
+});
+
+// Step 4 — Create work packet
+const packet = await client.workflowComposition.createModernizationWorkPacket({
+  projectIdentifier: projectId,
+  selectedCandidates: candidates.salvage_candidates,
+  packetTitle: 'Auth module refactor',
+  problemStatement: 'Extract and modernize the legacy auth patterns.',
+  riskLevel: 'medium',
+  targetAgent: 'agent-upstream',
+});
+
+// Step 5 — Request wrapper execution
+const execution = await client.workflowComposition.requestModernizationWrapperExecution({
+  projectIdentifier: projectId,
+  modernizationPacketId: packet.modernization_packet_id,
+  wrapperName: 'auth-refactor-wrapper',
+  executionScope: ['src/auth/'],
+  allowedBlastRadius: 'module',
+  targetAgent: 'agent-upstream',
+});
+
+// Step 6 — Collect evidence
+const evidence = await client.workflowComposition.getModernizationWrapperEvidence({
+  projectIdentifier: projectId,
+  modernizationPacketId: packet.modernization_packet_id,
+  includeOperations: true,
+  includeFileManifest: true,
+  includeVerificationSummary: true,
+});
+
+// Step 7 — Gate decision
+const gate = await client.workflowComposition.decideModernizationGate({
+  projectIdentifier: projectId,
+  modernizationPacketId: packet.modernization_packet_id,
+  requiredEvidence: evidence,
+  decisionMode: 'conservative',
+  reviewer: 'operator:sid',
+  recordDecision: true,
+});
+```
+
+**Missing surfaces rule:** Every step returns `missing_surfaces[]`. Inspect it at each step before continuing. If a surface is absent, record the gap and decide whether to proceed or pause for server-side deployment.
+
+**SDK reference:** See [sdk-workflow-taxonomy.md — Workflow 24](sdk-workflow-taxonomy.md#24-warehouse-modernization-pipeline).
+
+---
+
 ### Tier 4 — Governance & Structural Workflows
 
 These workflows are necessary for the warehouse at scale but are not blocking immediate progress.
@@ -292,16 +461,17 @@ As the warehouse processes assets at scale, performance baselines need to be tra
 
 ## Gap Impact on Priority
 
-_Updated for v1.1.71. Closed gaps are marked **✓**._
+_Updated for v1.1.101. Closed and partially-closed gaps are marked **✓**._
 
 | Gap | Impacted Tier | Status | Current Workaround |
 |-----|--------------|--------|-------------------|
 | Claim validity check | Tier 1.1 (roadmap closure) | **✓ Partially closed** — `claimIsValid(claimId)` added in v1.1.71 | Server-side `getActiveClaim(projectId)` still missing; use `claimIsValid` + `startClaimedWork` fallback |
-| Gap 1 — No push/subscribe (polling only) | Tier 2 (messaging) | Open | Implement polling loop; use short intervals during active coordination |
-| Gap 2 — Presence has no auto-expiry | Tier 2 (channel establishment) | Open | Call `markParticipantOffline` in all error/shutdown handlers |
+| Gap 1 — No push/subscribe (polling only) | Tier 2 (messaging) | **✓ Reduced** — `runInterAgentMessagingLoop` wraps the poll loop; underlying transport gap still open | Composite handles the loop internally; inspect `missing_surfaces[]` on return |
+| Gap 2 — Presence has no auto-expiry | Tier 2 (channel establishment) | **✓ Reduced** — `establishAgentCommunicationChannel` handles channel ramp; presence TTL gap still open | Call `markParticipantOffline` in all error/shutdown handlers |
 | Gap 5 — Workflow runs have no cancel/abort | Tier 3 (warehouse execution) | Open | Operator must intervene at data layer; document escalation path |
 | Gap 6 — Approval tasks have no rejection path | Tier 3 (gate workflows) | Open | Use `appendUxRemediationTicketNote` to capture rejection rationale; re-open manually |
 | Gap 8 — No rollback for verified mutations | Tier 2 (refactoring bundle execution) | Open | Treat all mutations as irreversible; require `evaluateProposalScope` gate before execution |
+| Warehouse `missing_surfaces[]` (new in v1.1.101) | Tier 3.4 (warehouse pipeline) | Partial — by design | Server-side `warehouse.*` schemas are partially deployed; inspect `missing_surfaces[]` at every pipeline step |
 
 The three known issues from the communication substrate docs — ping-pong state reconciliation noise, projection size explosion (~15MB), and role router reliability — are pre-existing and should be addressed as part of the Tier 2 channel establishment build, not deferred.
 
@@ -311,19 +481,20 @@ The three known issues from the communication substrate docs — ping-pong state
 
 ```text
 Tier 1 — Ship Now
-├── 1.1  Roadmap Closure Workflow
-└── 1.2  Portfolio / Project Status Visibility
+├── 1.1  Roadmap Closure Workflow          [single-call: closeRoadmapItemWorkflow]
+└── 1.2  Portfolio / Project Status        [single-call: getPortfolioClosureReadiness]
 
 Tier 2 — Build Next
-├── 2.1  Agent Communication Channel Establishment
-├── 2.2  Inter-Agent Messaging Loop
-├── 2.3  Remediation Ticket Creation (Cross-Agent)
-└── 2.4  Refactoring Bundle Transfer
+├── 2.1  Agent Channel Establishment       [single-call: establishAgentCommunicationChannel ✓ v1.1.101]
+├── 2.2  Inter-Agent Messaging Loop        [single-call: runInterAgentMessagingLoop ✓ v1.1.101]
+├── 2.3  Cross-Agent Remediation Ticket    [single-call: createCrossAgentRemediationTicket ✓ v1.1.101]
+└── 2.4  Refactoring Bundle Transfer       [single-call: transferRefactoringBundle ✓ v1.1.101]
 
 Tier 3 — Modernization Warehouse Core
 ├── 3.1  Collaboration Proposal (Joint Work Agreement)
 ├── 3.2  Governed Work Execution for Warehouse Items
-└── 3.3  Commit Governance & Ship Readiness
+├── 3.3  Commit Governance & Ship Readiness
+└── 3.4  Warehouse Asset Pipeline          [7-step: register → classify → discover → packet → execute → evidence → gate ✓ v1.1.101]
 
 Tier 4 — Governance & Structural
 ├── 4.1  Workflow Definition & Governance

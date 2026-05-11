@@ -1,7 +1,7 @@
 # AI Engine SDK — Workflow Taxonomy
 
-**SDK:** `@bpmsoftwaresolutions/ai-engine-client` v1.1.71  
-**Methods inventoried:** 349+ public | 363 total (incl. internal) | 50 functional groups  
+**SDK:** `@bpmsoftwaresolutions/ai-engine-client` v1.1.102  
+**Methods inventoried:** 370+ public | 70 domain namespaces | 87 source files  
 **Analysis date:** 2026-05-10 — updated 2026-05-11
 
 ---
@@ -20,6 +20,7 @@ Where the workflow model has gaps — missing steps, one-way lanes, or pull-only
 - Methods marked `*` are **composite helpers** that internally wrap multiple steps
 - **Gaps** at the end of each workflow flag broken or missing links in the chain
 - Steps labeled _(receiver)_ are called by the other party in a two-agent exchange
+- **Namespace paths** _(v1.1.101)_: every top-level method is also accessible as `client.domain.method()`. The SDK was refactored from a flat class into 70 typed domain namespaces (87 source files). The flat `client.method()` style is preserved as a backward-compatible alias. New code should use namespace paths. See the domain surface map in each workflow where applicable.
 
 ---
 
@@ -48,8 +49,9 @@ Where the workflow model has gaps — missing steps, one-way lanes, or pull-only
 21. [Self-Learning Pipeline](#21-self-learning-pipeline)
 22. [Design Intelligence](#22-design-intelligence)
 23. [Manual & Approval Tasks](#23-manual--approval-tasks)
-24. [Gap Analysis Summary](#24-gap-analysis-summary)
-25. [Coverage Summary Table](#25-coverage-summary-table)
+24. [Warehouse Modernization Pipeline](#24-warehouse-modernization-pipeline)
+25. [Gap Analysis Summary](#25-gap-analysis-summary)
+26. [Coverage Summary Table](#26-coverage-summary-table)
 
 ---
 
@@ -190,6 +192,13 @@ When a LOGA projection fails a UX gate, this is the structured remediation loop.
 
 **Listing:** `listUxGateRemediations({ projectionType, status })` — filter across all open remediations.
 
+**Namespace access _(v1.1.101)_:** All UX gate remediation methods are also accessible as `client.loga.*`:
+```js
+await client.loga.submitUxGateRemediation(body);
+await client.loga.getUxGateRemediationProjection(remediationId);
+await client.loga.promoteUxGateRemediationImplementationCandidate(remediationId, { promotedBy });
+```
+
 ---
 
 ## 8. Agent Communication — Channel Establishment
@@ -212,6 +221,8 @@ The ramp-up sequence for multi-agent communication. All steps are required befor
 | 12 | `getCommunicationChannelParticipants({ ... })` | Confirm both parties are present |
 
 **Presence views:** `getPresenceBoard({ ... })` / `getChannelPresence({ ... })` — LOGA projections of current presence state.
+
+**Full channel establishment composite _(v1.1.101)_:** `establishAgentCommunicationChannel({ projectIdentifier })` — wraps steps 1–12 into a single governed call via `client.agentComms.*`. Internally composes: `resumeProjectWork` → `transferWorkPacket` → `openTransferChannel` → `joinTransferChannel` / `resumeTransferChannel` → `postCollaborationHeartbeat` → `getTransferChannelProjection`. Returns `missing_surfaces[]` for any absent surface so callers can safely degrade rather than fail.
 
 > **Gap:** See [Gap 2 — Presence Has No Auto-Expiry](#gap-2--presence-has-no-auto-expiry).
 
@@ -236,6 +247,8 @@ Ongoing message exchange once a channel is established and both parties are pres
 | 11 | `getMessageDeliveryReceipt({ ... })` | Read the formal delivery receipt |
 
 **Evidence attachment:** `attachCommunicationMessageEvidence({ ... })` — attach evidence to any message at any step.
+
+**Messaging loop composite _(v1.1.101)_:** `runInterAgentMessagingLoop({ channelId, workTransferPacketId, replyBodyMarkdown, closeWhenAcknowledged })` — wraps steps 1–11 via `client.agentComms.*`. Internally composes: `resumeTransferChannel` → `replyToTransferChannel` → `startMessageWatch` → `acknowledgeExpectedMessage` → `postCollaborationHeartbeat` → `closeTransferChannel` (when closure criteria are explicit) → `getTransferChannelProjection`. Returns `missing_surfaces[]`.
 
 > **Gap:** See [Gap 1 — No Push/Subscribe Mechanism](#gap-1--no-pushsubscribe-mechanism).
 
@@ -285,6 +298,8 @@ Moving a work packet from one agent to another with negotiated acceptance and fo
 - `getLogaTransferReceiptsProjection({ workTransferPacketId, workflowRunId })`
 - `getLogaTransferClosureReviewProjection(workTransferPacketId)`
 
+**Refactoring bundle transfer composite _(v1.1.101)_:** `transferRefactoringBundle({ projectIdentifier, sourceAgent, targetAgent, sourceRef, problemStatement, affectedFilesOrSymbols, recommendedAction, acceptanceCriteria, evidenceRefs, riskLevel, handoffNotes })` — wraps the full bundle packaging and transfer sequence via `client.refactoringTransfers.*`. Internally composes: `resumeProjectWork` / `startWork` → `transferWorkPacket` → `openTransferChannel` / `resumeTransferChannel` → `assignCollaborationOwnership` → `postCollaborationProposal` → `startMessageWatch` → `postCollaborationHeartbeat` → `getTransferChannelProjection`. Fails closed if no explicit `targetAgent` is supplied. Returns `missing_surfaces[]`.
+
 ---
 
 ## 12. Collaboration Proposal
@@ -298,6 +313,8 @@ Structured negotiation between agents before beginning joint work. Used when the
 | 3 | `raiseCollaborationBlocker({ ... })` | Either side raises a blocker |
 | 4 | `beginCollaborationImplementation({ ... })` | Both agree — begin joint work |
 | 5 | `requestCollaborationClosure({ ... })` | Request formal close of the collaboration |
+
+**Cross-agent remediation ticket composite _(v1.1.101)_:** `createCrossAgentRemediationTicket({ channelId, workTransferPacketId, assignedTo, requestedBy, sourceRef, blockerSummary, expectedResponse })` — wraps the full ticket creation and notification sequence via `client.communicationTickets.*`. Internally composes: `resumeTransferChannel` → `transferWorkPacket` (when ownership must move) → `raiseCollaborationBlocker` → `reviewCollaborationProposal` (when a proposal id is supplied) → `startMessageWatch` → `postCollaborationHeartbeat` → `getTransferChannelProjection`. Returns `remediation_ticket_id` or `blocker_id` plus `missing_surfaces[]`.
 
 ---
 
@@ -350,6 +367,14 @@ Generate, render, execute, and evidence a governed diagnostic or operational scr
 | 2 | `renderScript(scriptId)` | Render the script with SQL provenance |
 | 3 | `submitScriptArtifact(scriptId, body)` | Submit execution evidence and a workflow artifact |
 | 4 | `getScriptRunEvidence({ workflowRunId, scriptId })` | Read SQL-backed run history |
+
+**Namespace access _(v1.1.101)_:** All script lifecycle methods are also accessible as `client.scripts.*`:
+```js
+await client.scripts.generate(body);
+await client.scripts.render(scriptId);
+await client.scripts.submitArtifact(scriptId, body);
+await client.scripts.getRunEvidence({ workflowRunId, scriptId });
+```
 
 ---
 
@@ -502,9 +527,41 @@ Human-in-the-loop steps where workflow execution pauses for manual completion or
 
 ---
 
-## 24. Gap Analysis
+## 24. Warehouse Modernization Pipeline _(v1.1.101)_
+
+The complete SDK-native pipeline for modernizing legacy assets — from intake registration through classification, candidate discovery, work packet creation, wrapper execution, evidence collection, and gate decision. All methods live on `client.warehouse.*` or `client.workflowComposition.*` (same surface; `warehouse` is the compatibility alias).
+
+| Step | Method | What it does |
+|------|--------|--------------|
+| 1 | `registerModernizationAsset({ projectIdentifier, assetName, assetType, sourceRef, originSystem, businessContext, suspectedValue, knownRisks, assignedClassifier, ... })` | Register an asset intake record; attach governed intake evidence when available; optionally hand off classification to another agent through the transfer substrate |
+| 2 | `classifyModernizationAsset({ projectIdentifier, assetId, classificationCategory, domainArea, reusePotential, modernizationNeed, knownRisks, recommendedNextStep, classificationConfidence, ... })` | Classify a registered asset into warehouse categories using caller-supplied evidence only; record missing classification surfaces in `missing_surfaces[]`; can hand the review to another agent |
+| 3 | `discoverSalvageCandidates({ projectIdentifier, assetId, classificationCategory, candidateSearchIntent, candidateSearchQuery, maxCandidates, relatedSymbols, relatedFilePaths, ... })` | Identify salvage candidates from a classified asset via governed inventory and retrieval surfaces; record missing discovery surfaces in `missing_surfaces[]` |
+| 4 | `createModernizationWorkPacket({ projectIdentifier, selectedCandidates, packetTitle, problemStatement, recommendedModernization, affectedFilesOrSymbols, acceptanceCriteria, riskLevel, targetAgent, collaborationRequired, ... })` | Convert selected salvage candidates into a governed modernization work packet; falls back to `transferWorkPacket` when the dedicated packet surface is absent |
+| 5 | `requestModernizationWrapperExecution({ projectIdentifier, modernizationPacketId, wrapperName, wrapperContractRef, executionScope, allowedBlastRadius, requiredEvidence, acceptanceCriteria, riskLevel, targetAgent, ... })` | Turn a work packet into a governed wrapper execution request; falls back to `transferWorkPacket` when the wrapper-request surface is absent |
+| 6 | `getModernizationWrapperEvidence({ projectIdentifier, modernizationPacketId, wrapperExecutionId, includeOperations, includeFileManifest, includeVerificationSummary, includeProjection })` | Read wrapper evidence — operations log, file manifest, verification summary — without inventing evidence; record missing evidence surfaces in `missing_surfaces[]` |
+| 7 | `decideModernizationGate({ projectIdentifier, modernizationPacketId, requiredEvidence, acceptanceCriteria, decisionMode, decisionBand, reviewer, rationale, recordDecision, ... })` | Convert wrapper evidence into a gate recommendation or recorded gate decision; requires complete evidence before it can recommend a pass |
+
+**Missing surfaces model:** Every step returns `missing_surfaces[]` — an array of governed surfaces absent on the server at call time. Callers must inspect this before treating a step as complete. The pipeline is designed to degrade gracefully when warehouse schema surfaces are partially deployed.
+
+**Namespace access:**
+```js
+// Preferred namespace path
+await client.workflowComposition.registerModernizationAsset({ ... });
+await client.workflowComposition.decideModernizationGate({ ... });
+
+// Compatibility alias — identical methods
+await client.warehouse.createModernizationWorkPacket({ ... });
+```
+
+> **Gap:** The pipeline depends on server-side `warehouse.*` schema surfaces that are partially deployed. All callers must treat `missing_surfaces[]` as authoritative. Generated markdown projections are display metadata only — not authority.
+
+---
+
+## 25. Gap Analysis
 
 > **v1.1.71 update:** Gap re: claim validity check is now **partially closed**. `claimIsValid(claimId)` was added and provides a boolean preflight before governed writes. The backend still does not expose a project-scoped `getActiveClaim(projectId)` — that remains a server-side gap. See the note in Workflow 4.
+
+> **v1.1.101 update:** Four agent communication composites were added — `establishAgentCommunicationChannel`, `runInterAgentMessagingLoop`, `createCrossAgentRemediationTicket`, and `transferRefactoringBundle` — each returning `missing_surfaces[]` for graceful degradation. These composites partially address the manual orchestration burden in Workflows 8, 9, 11, and 12, but the underlying push/subscribe (Gap 1) and presence TTL (Gap 2) gaps remain open at the transport layer.
 
 ---
 
@@ -589,9 +646,9 @@ Human-in-the-loop steps where workflow execution pauses for manual completion or
 
 ---
 
-## 25. Coverage Summary Table
+## 26. Coverage Summary Table
 
-_Updated for v1.1.71. New composites marked **†**._
+_Updated for v1.1.101. New composites marked **†**._
 
 | Workflow | Steps | Composite Helpers | Gaps |
 |----------|-------|-------------------|------|
@@ -602,11 +659,11 @@ _Updated for v1.1.71. New composites marked **†**._
 | 5. Roadmap Item Execution | 12 | `closeRoadmapItemWorkflow` **†** | Gap 8 (no rollback) |
 | 6. Commit Governance & Ship Readiness | 5 | — | None |
 | 7. UX Gate Remediation | 6 | — | None |
-| 8. Agent Communication — Channel Establishment | 12 | — | Gap 2 (presence TTL) |
-| 9. Agent Communication — Messaging Loop | 11 | — | Gap 1 (no push) |
+| 8. Agent Communication — Channel Establishment | 12 | `establishAgentCommunicationChannel` **†** | Gap 2 (presence TTL) |
+| 9. Agent Communication — Messaging Loop | 11 | `runInterAgentMessagingLoop` **†** | Gap 1 (no push) |
 | 10. Agent Coordination Ping-Pong | 6 | — | None |
-| 11. Work Transfer & Handoff | 9 + 2* | `createCommunicationHandoff` | None |
-| 12. Collaboration Proposal | 5 | — | None |
+| 11. Work Transfer & Handoff | 9 + 2* | `createCommunicationHandoff`, `transferRefactoringBundle` **†** | None |
+| 12. Collaboration Proposal | 5 | `createCrossAgentRemediationTicket` **†** | None |
 | 13. Workflow Definition & Governance | 6 + sub-workflows | — | Gap 5 (no cancel), Gap 7 (no schedule) |
 | 14. Script Lifecycle | 4 | — | None |
 | 15. Script Discovery → Workflow Promotion | 5 | — | None |
@@ -618,7 +675,9 @@ _Updated for v1.1.71. New composites marked **†**._
 | 21. Self-Learning Pipeline | 6 | — | Gap 3 (no write surface) |
 | 22. Design Intelligence | 8 | — | Gap 4 (no execute path) |
 | 23. Manual & Approval Tasks | 4 | — | Gap 6 (no rejection path) |
+| 24. Warehouse Modernization Pipeline **†** | 7 | `registerModernizationAsset`, `classifyModernizationAsset`, `discoverSalvageCandidates`, `createModernizationWorkPacket`, `requestModernizationWrapperExecution`, `getModernizationWrapperEvidence`, `decideModernizationGate` | Partial (missing_surfaces model) |
 
-**Total identified gaps: 9** (1 partially closed in v1.1.71)  
-**Workflows fully covered (no gaps): 14 of 23**  
-**New composite helpers added in v1.1.71:** `closeRoadmapItemWorkflow`, `claimIsValid`, `getPortfolioClosureReadiness`
+**Total identified gaps: 9** (1 partially closed in v1.1.71; composites added in v1.1.101 reduce orchestration burden for Gaps 1 & 2 but do not close them)  
+**Workflows fully covered (no gaps): 14 of 24**  
+**New composite helpers added in v1.1.71:** `closeRoadmapItemWorkflow`, `claimIsValid`, `getPortfolioClosureReadiness`  
+**New composite helpers added in v1.1.101:** `establishAgentCommunicationChannel`, `runInterAgentMessagingLoop`, `createCrossAgentRemediationTicket`, `transferRefactoringBundle` — plus 7 warehouse pipeline methods and domain namespace refactoring across 70 namespaces
