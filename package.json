@@ -6,19 +6,23 @@
   "main": "scripts/ping.mjs",
   "scripts": {
     "check": "node --check ./scripts/ping.mjs",
-    "ping": "node ./scripts/ping.mjs",
-    "charter:workflow-discovery": "node ./scripts/create-natural-language-workflow-discovery-loop.mjs",
-    "monitor:publish": "node ./scripts/remote-execution-monitor.mjs",
-    "monitor:watch": "node ./scripts/remote-execution-watch.mjs",
+    "ping": "node --env-file-if-exists=.env ./scripts/ping.mjs",
+    "charter:workflow-discovery": "node --env-file-if-exists=.env ./scripts/create-natural-language-workflow-discovery-loop.mjs",
+    "monitor:publish": "node --env-file-if-exists=.env ./scripts/remote-execution-monitor.mjs",
+    "monitor:watch": "node --env-file-if-exists=.env ./scripts/remote-execution-watch.mjs",
     "start": "node --env-file-if-exists=.env server.mjs",
     "smoke": "npm run ping",
-    "test": "npm run check && node ./scripts/test-markdown-contract-lab.mjs"
+    "test": "npm run check && node --env-file-if-exists=.env ./scripts/test-markdown-contract-lab.mjs",
+    "intel:portfolio": "node --env-file-if-exists=.env ./scripts/pull-portfolio-projection.mjs",
+    "intel:repo": "node --env-file-if-exists=.env ./scripts/pull-repo-intelligence.mjs",
+    "intel:taxonomy": "node --env-file-if-exists=.env ./scripts/pull-engine-file-taxonomy.mjs",
+    "intel:review": "node --env-file-if-exists=.env ./scripts/pull-engine-code-review.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@bpmsoftwaresolutions/ai-engine-client": "^1.1.102"
+    "@bpmsoftwaresolutions/ai-engine-client": "^1.1.127"
   },
   "directories": {
     "doc": "docs"

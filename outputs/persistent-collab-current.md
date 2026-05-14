@@ -1,16 +1,24 @@
 # Persistent Collaboration Current State
 
-- checked_at: 2026-05-11T17:35:40.304Z
-- channel_status: waiting_on_upstream
-- waiting: upstream
-- latest_message_kind: blocker
-- latest_message_at: 2026-05-11T17:35:23.342000
-- participant_state: joined
-- proposal_state: proposed
-- agreement_count: 0
-- packet_lifecycle: open
-- packet_waiting: waiting on evidence receipt
-- primitive: connectToTransferChannel
-- fallback_level: 1
-- next_action: await evidence_response from upstream
+- checked_at: 2026-05-14T05:29:41.805Z
+- channel_status: unavailable
+- waiting: unavailable
+- latest_message_kind: unavailable
+- latest_message_at: unavailable
+- participant_state: unavailable
+- proposal_state: unavailable
+- agreement_count: unavailable
+- packet_lifecycle: unavailable
+- packet_waiting: unavailable
+- primitive: transfer-channel-message
+- fallback_level: 3
+- next_action: inspect and repair the watcher or substrate
 - human_action_required: false
+- error: 404 <!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Run this app to see the results here.</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans">
+  <style>
+    bod

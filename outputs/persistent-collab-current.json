@@ -1,58 +1,35 @@
 {
-  "checked_at": "2026-05-11T17:35:40.304Z",
-  "channel_status": "waiting_on_upstream",
-  "waiting": "upstream",
-  "latest_message_kind": "blocker",
-  "latest_message_at": "2026-05-11T17:35:23.342000",
-  "participant_state": "joined",
-  "proposal_state": "proposed",
-  "agreement_count": 0,
-  "packet_lifecycle": "open",
-  "packet_waiting": "waiting on evidence receipt",
-  "primitive": "connectToTransferChannel",
-  "fallback_level": 1,
-  "next_action": "await evidence_response from upstream",
+  "checked_at": "2026-05-14T05:29:41.805Z",
+  "channel_status": null,
+  "waiting": null,
+  "latest_message_kind": null,
+  "latest_message_at": null,
+  "participant_state": null,
+  "proposal_state": null,
+  "agreement_count": null,
+  "packet_lifecycle": null,
+  "packet_waiting": null,
+  "primitive": "transfer-channel-message",
+  "fallback_level": 3,
+  "next_action": "inspect and repair the watcher or substrate",
   "human_action_required": false,
+  "error": "404 <!DOCTYPE html>\n<html lang=\"en\">\n\n<head>\n  <title>Run this app to see the results here.</title>\n  <link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css?family=IBM+Plex+Sans\">\n  <style>\n    bod",
   "message_watch": {
     "watch_type": "expected_peer_message",
     "channel_id": "45ee885a-6e19-4fc5-8ecf-7e2a203e28b9",
     "watching_agent_role": "downstream",
     "expected_from_role": "upstream",
     "expected_message_kind": "evidence_response",
-    "expected_payload": {
-      "proposal_id": "94a78562-d8c5-4364-b7f9-74dd4fb5ecc0",
-      "required_evidence": [
-        "patch_summary",
-        "validation_commands",
-        "package_version_target"
-      ]
-    },
-    "last_seen_message_id": "57cec387-f96a-4ea7-8c97-6dcce36deb36",
-    "last_seen_message_kind": "blocker",
-    "last_seen_message_at": "2026-05-11T17:35:23.342000",
-    "last_checked_at": "2026-05-11T17:35:40.304Z",
+    "expected_payload": {},
+    "last_seen_message_id": null,
+    "last_seen_message_kind": null,
+    "last_seen_message_at": null,
+    "last_checked_at": "2026-05-14T05:29:41.805Z",
     "stale_after_seconds": 60,
-    "age_seconds": 0,
-    "stale_in_seconds": 60,
-    "current_status": "waiting",
-    "operator_nudge": "Upstream, please send evidence_response or blocker for proposal 94a78562-d8c5-4364-b7f9-74dd4fb5ecc0.",
-    "connected_peers": [
-      {
-        "participant_role": "downstream",
-        "participant_state": "joined",
-        "participant_label": "downstream"
-      },
-      {
-        "participant_role": "upstream",
-        "participant_state": "joined",
-        "participant_label": "upstream"
-      }
-    ],
-    "message_watch_id": "78dfc6ef-0044-4ae5-b0f5-0b3652cbdea5",
-    "workflow_primitive": "connectToTransferChannel",
-    "connection_status": "connected",
-    "continuity_runner_id": "56890389-115b-4ed9-a375-753a95d65efc",
-    "runner_state": "active",
-    "next_retry_action": "await upstream evidence_response"
+    "age_seconds": null,
+    "stale_in_seconds": null,
+    "current_status": "blocked",
+    "operator_nudge": "Watcher or substrate unavailable.",
+    "connected_peers": []
   }
 }
