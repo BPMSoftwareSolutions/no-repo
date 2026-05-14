@@ -4,3 +4,5 @@ node_modules/
 npm-debug.log*
 /.vs
 /docs/upstream/__pycache__
+outputs/*.log
+outputs/*.err.log
